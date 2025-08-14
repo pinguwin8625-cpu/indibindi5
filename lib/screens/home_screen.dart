@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/routes.dart';
+import 'vertical_route_line_painter.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -24,10 +25,8 @@ class HomeScreen extends StatelessWidget {
           children: [_buildTabContent('driver'), _buildTabContent('rider')],
         ),
       ),
-                );
-              }
-
-  // Removed duplicate and incomplete _buildTabContent definition that caused the error.
+    );
+  }
 
   Widget _buildTabContent(String role) {
     RouteInfo selectedRoute = predefinedRoutes[0];
@@ -80,63 +79,89 @@ class HomeScreen extends StatelessWidget {
             ),
             Padding(
               padding: const EdgeInsets.only(left: 16, right: 16, top: 16),
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: selectedRoute.stops.length,
-                itemBuilder: (context, i) {
-                  Widget? marker;
-                  if (i == originIndex) {
-                    marker = Icon(Icons.circle, color: Colors.blue[900], size: 18);
-                  } else if (i == destinationIndex) {
-                    marker = Icon(Icons.flag, color: Colors.red, size: 18);
-                  }
-                  return InkWell(
-                    onTap: () {
-                      setState(() {
-                        if (originIndex == null) {
-                          originIndex = i;
-                          destinationIndex = null;
-                        } else if (destinationIndex == null && i != originIndex && i > originIndex!) {
-                          destinationIndex = i;
-                        } else if (i == originIndex) {
-                          originIndex = null;
-                          destinationIndex = null;
-                        } else if (i == destinationIndex) {
-                          destinationIndex = null;
-                        }
-                      });
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Container(
-                            width: 24,
-                            alignment: Alignment.centerLeft,
-                            child: marker,
-                          ),
-                          SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              selectedRoute.stops[i],
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: i == destinationIndex
-                                    ? Colors.red
-                                    : (i == originIndex ? Colors.blue : Colors.black),
-                                fontWeight: (i == originIndex || i == destinationIndex)
-                                    ? FontWeight.bold
-                                    : FontWeight.normal,
-                              ),
-                              textAlign: TextAlign.left,
-                            ),
-                          ),
-                        ],
+              child: SizedBox(
+                height: selectedRoute.stops.length * 40.0,
+                child: Stack(
+                  children: [
+                    Positioned.fill(
+                      child: CustomPaint(
+                        painter: VerticalRouteLinePainter(
+                          stopCount: selectedRoute.stops.length,
+                          rowHeight: 40,
+                          lineWidth: 2,
+                        ),
                       ),
                     ),
-                  );
-                },
+                    ListView.builder(
+                      physics: NeverScrollableScrollPhysics(),
+                      itemCount: selectedRoute.stops.length,
+                      itemBuilder: (context, i) {
+                        Widget? marker;
+                        if (i == originIndex) {
+                          marker = Icon(
+                            Icons.circle,
+                            color: Colors.blue[900],
+                            size: 18,
+                          );
+                        } else if (i == destinationIndex) {
+                          marker = Icon(Icons.flag, color: Colors.red, size: 18);
+                        }
+                        return InkWell(
+                          onTap: () {
+                            setState(() {
+                              if (originIndex == null) {
+                                originIndex = i;
+                                destinationIndex = null;
+                              } else if (destinationIndex == null &&
+                                  i != originIndex &&
+                                  i > originIndex!) {
+                                destinationIndex = i;
+                              } else if (i == originIndex) {
+                                originIndex = null;
+                                destinationIndex = null;
+                              } else if (i == destinationIndex) {
+                                destinationIndex = null;
+                              }
+                            });
+                          },
+                          child: SizedBox(
+                            height: 40.0,
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                SizedBox(
+                                  width: 28,
+                                  child: Center(child: marker),
+                                ),
+                                SizedBox(width: 8),
+                                Expanded(
+                                  child: Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      selectedRoute.stops[i],
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        color: i == destinationIndex
+                                            ? Colors.red
+                                            : (i == originIndex
+                                                  ? Colors.blue
+                                                  : Colors.black),
+                                        fontWeight:
+                                            (i == originIndex || i == destinationIndex)
+                                                ? FontWeight.bold
+                                                : FontWeight.normal,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
