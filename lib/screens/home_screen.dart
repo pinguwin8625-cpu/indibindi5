@@ -31,6 +31,8 @@ class HomeScreen extends StatelessWidget {
 
   Widget _buildTabContent(String role) {
     RouteInfo selectedRoute = predefinedRoutes[0];
+    int? originIndex;
+    int? destinationIndex;
 
     return StatefulBuilder(
       builder: (context, setState) {
@@ -69,12 +71,66 @@ class HomeScreen extends StatelessWidget {
                   if (value != null) {
                     setState(() {
                       selectedRoute = value;
+                      originIndex = null;
+                      destinationIndex = null;
                     });
                   }
                 },
               ),
             ),
-            // ...add more widgets below for flow-oriented UI...
+            Padding(
+              padding: const EdgeInsets.only(left: 16, right: 16, top: 16),
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: selectedRoute.stops.length,
+                itemBuilder: (context, i) {
+                  Widget? marker;
+                  if (i == originIndex) {
+                    marker = Icon(Icons.circle, color: Colors.blue[900], size: 18);
+                  } else if (i == destinationIndex) {
+                    marker = Icon(Icons.flag, color: Colors.red, size: 18);
+                  }
+                  return InkWell(
+                    onTap: () {
+                      setState(() {
+                        if (originIndex == null) {
+                          originIndex = i;
+                          destinationIndex = null;
+                        } else if (destinationIndex == null && i != originIndex && i > originIndex!) {
+                          destinationIndex = i;
+                        } else if (i == originIndex) {
+                          originIndex = null;
+                          destinationIndex = null;
+                        } else if (i == destinationIndex) {
+                          destinationIndex = null;
+                        }
+                      });
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Row(
+                        children: [
+                          if (marker != null) marker,
+                          if (marker != null) SizedBox(width: 8),
+                          Text(
+                            selectedRoute.stops[i],
+                            style: TextStyle(
+                              fontSize: 16,
+            color: i == destinationIndex
+              ? Colors.red
+              : (i == originIndex ? Colors.blue : Colors.black),
+                              fontWeight: (i == originIndex || i == destinationIndex)
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
           ],
         );
       },
