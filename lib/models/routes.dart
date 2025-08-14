@@ -12,7 +12,7 @@ class RouteInfo {
 }
 
 const List<RouteInfo> predefinedRoutes = [
-  RouteInfo( git in
+  RouteInfo(
     name: 'new york - philadelphia',
     distance: '95 mi',
     duration: '1h 40m',

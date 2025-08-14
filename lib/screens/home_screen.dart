@@ -109,19 +109,27 @@ class HomeScreen extends StatelessWidget {
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          if (marker != null) marker,
-                          if (marker != null) SizedBox(width: 8),
-                          Text(
-                            selectedRoute.stops[i],
-                            style: TextStyle(
-                              fontSize: 16,
-            color: i == destinationIndex
-              ? Colors.red
-              : (i == originIndex ? Colors.blue : Colors.black),
-                              fontWeight: (i == originIndex || i == destinationIndex)
-                                  ? FontWeight.bold
-                                  : FontWeight.normal,
+                          Container(
+                            width: 24,
+                            alignment: Alignment.centerLeft,
+                            child: marker,
+                          ),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              selectedRoute.stops[i],
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: i == destinationIndex
+                                    ? Colors.red
+                                    : (i == originIndex ? Colors.blue : Colors.black),
+                                fontWeight: (i == originIndex || i == destinationIndex)
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
+                              ),
+                              textAlign: TextAlign.left,
                             ),
                           ),
                         ],
