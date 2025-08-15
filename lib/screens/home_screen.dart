@@ -4,6 +4,7 @@ import 'route_line_with_stops.dart';
 import 'dart:math' show max, min;
 import '../utils/date_time_helpers.dart';
 import '../utils/constants.dart';
+import '../widgets/car_seat_layout.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -242,6 +243,39 @@ class HomeScreen extends StatelessWidget {
                 ],
               ),
             ),
+            
+            // Car seat layout (show after route selection)
+            if (originIndex != null && destinationIndex != null)
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      SizedBox(height: 20),
+                      Container(
+                        margin: EdgeInsets.symmetric(horizontal: 16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withValues(alpha: 0.2),
+                              blurRadius: 8,
+                              spreadRadius: 2,
+                            ),
+                          ],
+                        ),
+                        child: CarSeatLayout(
+                          userRole: role,
+                          onSeatsSelected: (selectedSeats) {
+                            // Handle seat selection
+                            print('Selected seats: $selectedSeats');
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
           ],
         );
       },
@@ -430,9 +464,9 @@ class _TimeBoxesContainerState extends State<_TimeBoxesContainer> {
                             height: 50,
                             padding: EdgeInsets.symmetric(horizontal: 16),
                             decoration: BoxDecoration(
-                              color: Colors.grey[200],
+                              color: Color(0xFF00C853).withValues(alpha: 0.1), // Light green background
                               border: Border(
-                                bottom: BorderSide(color: Colors.grey[300]!),
+                                bottom: BorderSide(color: Color(0xFF00C853), width: 2),
                               ),
                             ),
                             child: Row(
@@ -440,11 +474,21 @@ class _TimeBoxesContainerState extends State<_TimeBoxesContainer> {
                               children: [
                                 TextButton(
                                   onPressed: () => Navigator.pop(context),
-                                  child: Text('Cancel'),
+                                  child: Text('Cancel', style: TextStyle(color: Color(0xFF00C853))),
                                 ),
-                                Text(
-                                  'Select Date & Time',
-                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                Row(
+                                  children: [
+                                    Icon(Icons.location_on, color: Color(0xFF00C853), size: 20),
+                                    SizedBox(width: 8),
+                                    Text(
+                                      'Pick-up Time',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF00C853),
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                                 TextButton(
                                   onPressed: () {
@@ -468,7 +512,7 @@ class _TimeBoxesContainerState extends State<_TimeBoxesContainer> {
                                     });
                                     Navigator.pop(context);
                                   },
-                                  child: Text('Done'),
+                                  child: Text('Done', style: TextStyle(color: Color(0xFF00C853))),
                                 ),
                               ],
                             ),
@@ -781,9 +825,9 @@ class _TimeBoxesContainerState extends State<_TimeBoxesContainer> {
                             height: 50,
                             padding: EdgeInsets.symmetric(horizontal: 16),
                             decoration: BoxDecoration(
-                              color: Colors.grey[200],
+                              color: Color(0xFFDD2C00).withValues(alpha: 0.1), // Light red background
                               border: Border(
-                                bottom: BorderSide(color: Colors.grey[300]!),
+                                bottom: BorderSide(color: Color(0xFFDD2C00), width: 2),
                               ),
                             ),
                             child: Row(
@@ -791,11 +835,21 @@ class _TimeBoxesContainerState extends State<_TimeBoxesContainer> {
                               children: [
                                 TextButton(
                                   onPressed: () => Navigator.pop(context),
-                                  child: Text('Cancel'),
+                                  child: Text('Cancel', style: TextStyle(color: Color(0xFFDD2C00))),
                                 ),
-                                Text(
-                                  'Set Arrival Time',
-                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                Row(
+                                  children: [
+                                    Icon(Icons.flag, color: Color(0xFFDD2C00), size: 20),
+                                    SizedBox(width: 8),
+                                    Text(
+                                      'Drop-off Time',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFFDD2C00),
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                                 TextButton(
                                   onPressed: () {
@@ -806,7 +860,7 @@ class _TimeBoxesContainerState extends State<_TimeBoxesContainer> {
                                     });
                                     Navigator.pop(context);
                                   },
-                                  child: Text('Done'),
+                                  child: Text('Done', style: TextStyle(color: Color(0xFFDD2C00))),
                                 ),
                               ],
                             ),

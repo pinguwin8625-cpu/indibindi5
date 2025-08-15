@@ -40,7 +40,7 @@ class RouteInfo {
 
     // Round to nearest whole number to match the format of the full route display
     int roundedDistance = totalDistance.round();
-    return '${roundedDistance} mi';
+    return '$roundedDistance mi';
   }
 
   // Helper method to calculate duration between two stop indexes
@@ -61,7 +61,7 @@ class RouteInfo {
       return minutes > 0 ? '${hours}h ${minutes}m' : '${hours}h';
     }
 
-    return '${totalMinutes} min';
+    return '$totalMinutes min';
   }
 }
 
