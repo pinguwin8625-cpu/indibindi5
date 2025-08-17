@@ -38,18 +38,38 @@ class _CarSeatLayoutState extends State<CarSeatLayout> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(10),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // Simple car layout (car facing right)
-          Center(
-            child: Container(
+    return Align(
+      alignment: Alignment.center,
+      child: Container(
+        padding: EdgeInsets.all(5),
+        decoration: BoxDecoration(
+          color: Theme.of(context).scaffoldBackgroundColor,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Subtle divider line
+            Container(
+              margin: EdgeInsets.symmetric(horizontal: 30, vertical: 10),
+              height: 1,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.transparent,
+                    Colors.grey.withOpacity(0.15),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+            ),
+            // Simple car layout (car facing right)
+            Container(
               width: 220,
               height: 200,
-              child: Stack(
-                children: [
+            child: Stack(
+              children: [
                 // Driver seat (top right - front left when car faces right)
                 Positioned(
                   top: 10,
@@ -108,6 +128,7 @@ class _CarSeatLayoutState extends State<CarSeatLayout> {
             ),
           ),
         ],
+        ),
       ),
     );
   }

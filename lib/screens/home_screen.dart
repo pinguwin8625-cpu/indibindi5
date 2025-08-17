@@ -5,6 +5,7 @@ import 'dart:math' show max, min;
 import '../utils/date_time_helpers.dart';
 import '../utils/constants.dart';
 import '../widgets/car_seat_layout.dart';
+import '../widgets/booking_progress_bar.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -40,35 +41,61 @@ class HomeScreen extends StatelessWidget {
   }
 
   Widget _buildTabContent(String role) {
-    RouteInfo selectedRoute = predefinedRoutes[0];
+    RouteInfo? selectedRoute;
     int? originIndex;
     int? destinationIndex;
+    List<int> selectedSeats = [];
 
     return StatefulBuilder(
       builder: (context, setState) {
         // Compute greyed stops
         List<int> greyedStops = [];
-        if (originIndex != null && destinationIndex != null) {
+        if (selectedRoute != null && originIndex != null && destinationIndex != null) {
           int start = originIndex! < destinationIndex!
               ? originIndex!
               : destinationIndex!;
           int end = originIndex! > destinationIndex!
               ? originIndex!
               : destinationIndex!;
-          for (int i = 0; i < selectedRoute.stops.length; i++) {
+          for (int i = 0; i < selectedRoute!.stops.length; i++) {
             if (i < start || i > end) {
               greyedStops.add(i);
             }
           }
         }
+        
+        // Calculate current step based on user progress
+        int currentStep = 0; // Start at 0 when no route selected
+        if (selectedRoute != null) {
+          currentStep = 1; // Route selection completed
+          if (originIndex != null && destinationIndex != null) {
+            currentStep = 3; // Stops and time selection completed
+            if (selectedSeats.isNotEmpty) {
+              currentStep = 4; // All steps completed
+            }
+          } else if (originIndex != null) {
+            currentStep = 2; // Origin selected
+          }
+        }
+        
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Booking progress bar
+            BookingProgressBar(currentStep: currentStep),
+            
             Padding(
-              padding: const EdgeInsets.only(top: 24, left: 16, right: 16),
+              padding: const EdgeInsets.only(top: 8, left: 16, right: 16),
               child: DropdownButton<RouteInfo>(
                 value: selectedRoute,
                 isExpanded: true,
+                hint: Text(
+                  'Select a route to get started',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey[600],
+                  ),
+                ),
                 items: predefinedRoutes.map((route) {
                   return DropdownMenuItem<RouteInfo>(
                     value: route,
@@ -111,21 +138,24 @@ class HomeScreen extends StatelessWidget {
                 },
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.only(left: 16, right: 16, top: 16),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Stop list
-                  Expanded(
-                    child: SizedBox(
-                      height: selectedRoute.stops.length * 28.0,
+            
+            // Show route content only when a route is selected
+            if (selectedRoute != null)
+              Padding(
+                padding: const EdgeInsets.only(left: 16, right: 16, top: 16),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Stop list
+                    Expanded(
+                      child: SizedBox(
+                        height: selectedRoute!.stops.length * 28.0,
                       child: Stack(
                         children: [
                           Positioned.fill(
                             child: CustomPaint(
                               painter: RouteLineWithStopsPainter(
-                                stopCount: selectedRoute.stops.length,
+                                stopCount: selectedRoute!.stops.length,
                                 rowHeight: 28,
                                 lineWidth: 2,
                                 lineColor: Colors.blueGrey,
@@ -137,10 +167,10 @@ class HomeScreen extends StatelessWidget {
                           ),
                           ListView.builder(
                             physics: NeverScrollableScrollPhysics(),
-                            itemCount: selectedRoute.stops.length,
+                            itemCount: selectedRoute!.stops.length,
                             itemBuilder: (context, i) {
                               bool isFirst = i == 0;
-                              bool isLast = i == selectedRoute.stops.length - 1;
+                              bool isLast = i == selectedRoute!.stops.length - 1;
                               bool disableTap =
                                   (originIndex == null && isLast) ||
                                   (originIndex != null &&
@@ -195,7 +225,7 @@ class HomeScreen extends StatelessWidget {
                                       SizedBox(width: 8),
                                       Expanded(
                                         child: Text(
-                                          selectedRoute.stops[i].name,
+                                          selectedRoute!.stops[i].name,
                                           style: TextStyle(
                                             fontSize: 13,
                                             color: isGreyed
@@ -228,6 +258,26 @@ class HomeScreen extends StatelessWidget {
                       ),
                     ),
                   ),
+
+                  // Subtle vertical divider between stop list and time picker
+                  if (originIndex != null && destinationIndex != null)
+                    Container(
+                      margin: EdgeInsets.symmetric(horizontal: 8),
+                      width: 1,
+                      height: selectedRoute.stops.length * 28.0,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            Colors.grey.withOpacity(0.3),
+                            Colors.grey.withOpacity(0.3),
+                            Colors.transparent,
+                          ],
+                        ),
+                      ),
+                    ),
 
                   // Right side date picker (positioned near origin)
                   if (originIndex != null && destinationIndex != null)
@@ -266,9 +316,11 @@ class HomeScreen extends StatelessWidget {
                         ),
                         child: CarSeatLayout(
                           userRole: role,
-                          onSeatsSelected: (selectedSeats) {
-                            // Handle seat selection
-                            print('Selected seats: $selectedSeats');
+                          onSeatsSelected: (seats) {
+                            setState(() {
+                              selectedSeats = seats;
+                            });
+                            print('Selected seats: $seats');
                           },
                         ),
                       ),
