@@ -50,25 +50,11 @@ class _CarSeatLayoutState extends State<CarSeatLayout> {
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Subtle divider line
-            Container(
-              margin: EdgeInsets.symmetric(horizontal: 30, vertical: 10),
-              height: 1,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.transparent,
-                    Colors.grey.withOpacity(0.15),
-                    Colors.transparent,
-                  ],
-                ),
-              ),
-            ),
             // Simple car layout (car facing right)
-            Container(
+            SizedBox(
               width: 220,
               height: 200,
-            child: Stack(
+              child: Stack(
               children: [
                 // Driver seat (top right - front left when car faces right)
                 Positioned(

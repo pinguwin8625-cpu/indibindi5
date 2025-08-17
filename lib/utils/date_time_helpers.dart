@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import '../models/routes.dart';
 
 bool isTodayDate(DateTime date) {
@@ -36,11 +37,20 @@ DateTime calculateArrivalTime(
   DateTime departureTime,
   RouteInfo route,
   int originIndex,
-  int destinationIndex,
+  int? destinationIndex,
 ) {
+  // If destination is not selected yet, just return departure time
+  if (destinationIndex == null) {
+    return departureTime;
+  }
+  
   final start = originIndex < destinationIndex ? originIndex : destinationIndex;
   final end = originIndex > destinationIndex ? originIndex : destinationIndex;
   final totalMinutes = _segmentMinutes(route, start, end);
+  
+  // Debug print to see calculation
+  debugPrint('calculateArrivalTime: origin=$originIndex, dest=$destinationIndex, start=$start, end=$end, totalMin=$totalMinutes');
+  
   return departureTime.add(Duration(minutes: totalMinutes));
 }
 
@@ -48,10 +58,19 @@ DateTime calculateDepartureTime(
   DateTime arrivalTime,
   RouteInfo route,
   int originIndex,
-  int destinationIndex,
+  int? destinationIndex,
 ) {
+  // If destination is not selected yet, just return arrival time
+  if (destinationIndex == null) {
+    return arrivalTime;
+  }
+  
   final start = originIndex < destinationIndex ? originIndex : destinationIndex;
   final end = originIndex > destinationIndex ? originIndex : destinationIndex;
   final totalMinutes = _segmentMinutes(route, start, end);
+  
+  // Debug print to see calculation
+  debugPrint('calculateDepartureTime: origin=$originIndex, dest=$destinationIndex, start=$start, end=$end, totalMin=$totalMinutes');
+  
   return arrivalTime.subtract(Duration(minutes: totalMinutes));
 }

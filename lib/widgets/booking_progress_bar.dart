@@ -103,6 +103,38 @@ class SideViewCarPainter extends CustomPainter {
     // Draw the solid car body
     canvas.drawPath(carPath, paint);
     
+    // Draw windows
+    final windowPaint = Paint()
+      ..color = Colors.lightBlue[100]!
+      ..style = PaintingStyle.fill;
+    
+    // Front windshield window
+    final frontWindowPath = Path();
+    frontWindowPath.moveTo(size.width * 0.72, size.height * 0.38);
+    frontWindowPath.lineTo(size.width * 0.68, size.height * 0.2);
+    frontWindowPath.lineTo(size.width * 0.75, size.height * 0.2);
+    frontWindowPath.lineTo(size.width * 0.78, size.height * 0.38);
+    frontWindowPath.close();
+    canvas.drawPath(frontWindowPath, windowPaint);
+    
+    // Side window
+    final sideWindowPath = Path();
+    sideWindowPath.moveTo(size.width * 0.4, size.height * 0.38);
+    sideWindowPath.lineTo(size.width * 0.35, size.height * 0.22);
+    sideWindowPath.lineTo(size.width * 0.62, size.height * 0.22);
+    sideWindowPath.lineTo(size.width * 0.65, size.height * 0.38);
+    sideWindowPath.close();
+    canvas.drawPath(sideWindowPath, windowPaint);
+    
+    // Rear window
+    final rearWindowPath = Path();
+    rearWindowPath.moveTo(size.width * 0.22, size.height * 0.38);
+    rearWindowPath.lineTo(size.width * 0.28, size.height * 0.2);
+    rearWindowPath.lineTo(size.width * 0.32, size.height * 0.2);
+    rearWindowPath.lineTo(size.width * 0.35, size.height * 0.38);
+    rearWindowPath.close();
+    canvas.drawPath(rearWindowPath, windowPaint);
+    
     // Draw wheels as solid circles
     final wheelPaint = Paint()
       ..color = Colors.grey[800]!

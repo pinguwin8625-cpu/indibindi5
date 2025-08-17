@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import '../models/routes.dart';
 import 'route_line_with_stops.dart';
 import 'dart:math' show max, min;
@@ -18,13 +19,36 @@ class HomeScreen extends StatelessWidget {
         appBar: AppBar(
           title: const Text(
             'indibindi',
-            style: TextStyle(letterSpacing: 1, color: Colors.white),
+            style: TextStyle(
+              letterSpacing: 1, 
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           backgroundColor: Colors.red,
           iconTheme: IconThemeData(color: Colors.white),
-          bottom: const TabBar(
+          bottom: TabBar(
             tabs: [
-              Tab(icon: Icon(Icons.local_taxi), text: 'Driver'),
+              Tab(
+                icon: Stack(
+                  children: [
+                    Icon(Icons.directions_car),
+                    Positioned(
+                      top: 7,
+                      right: 8,
+                      child: Container(
+                        width: 3,
+                        height: 3,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                text: "Driver",
+              ),
               Tab(icon: Icon(Icons.person), text: 'Rider'),
             ],
             labelStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -45,6 +69,7 @@ class HomeScreen extends StatelessWidget {
     int? originIndex;
     int? destinationIndex;
     List<int> selectedSeats = [];
+    bool hasSelectedDateTime = false;
 
     return StatefulBuilder(
       builder: (context, setState) {
@@ -64,38 +89,41 @@ class HomeScreen extends StatelessWidget {
           }
         }
         
-        // Calculate current step based on user progress
-        int currentStep = 0; // Start at 0 when no route selected
-        if (selectedRoute != null) {
-          currentStep = 1; // Route selection completed
-          if (originIndex != null && destinationIndex != null) {
-            currentStep = 3; // Stops and time selection completed
-            if (selectedSeats.isNotEmpty) {
-              currentStep = 4; // All steps completed
-            }
-          } else if (originIndex != null) {
-            currentStep = 2; // Origin selected
-          }
-        }
-        
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Booking progress bar
-            BookingProgressBar(currentStep: currentStep),
+            // Show booking progress bar always
+            BookingProgressBar(
+              currentStep: _getCurrentStep(
+                selectedRoute,
+                originIndex,
+                destinationIndex,
+                hasSelectedDateTime,
+                selectedSeats,
+              ),
+            ),
             
             Padding(
               padding: const EdgeInsets.only(top: 8, left: 16, right: 16),
-              child: DropdownButton<RouteInfo>(
-                value: selectedRoute,
-                isExpanded: true,
-                hint: Text(
-                  'Select a route to get started',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey[600],
-                  ),
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.red,
+                  borderRadius: BorderRadius.circular(8),
                 ),
+                child: DropdownButton<RouteInfo>(
+                  value: selectedRoute,
+                  isExpanded: true,
+                  underline: Container(), // Remove the default underline border
+                  dropdownColor: Colors.red, // Red background for dropdown items
+                  icon: Icon(Icons.arrow_drop_down, color: Colors.white),
+                  hint: Text(
+                    'Select a route to get started',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.white,
+                    ),
+                  ),
                 items: predefinedRoutes.map((route) {
                   return DropdownMenuItem<RouteInfo>(
                     value: route,
@@ -133,6 +161,7 @@ class HomeScreen extends StatelessWidget {
                       selectedRoute = value;
                       originIndex = null;
                       destinationIndex = null;
+                      hasSelectedDateTime = false; // Reset when route changes
                     });
                   }
                 },
@@ -146,188 +175,196 @@ class HomeScreen extends StatelessWidget {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Stop list
+                    // Left side: Stop list and seat plan
                     Expanded(
-                      child: SizedBox(
-                        height: selectedRoute!.stops.length * 28.0,
-                      child: Stack(
+                      child: Column(
                         children: [
-                          Positioned.fill(
-                            child: CustomPaint(
-                              painter: RouteLineWithStopsPainter(
-                                stopCount: selectedRoute!.stops.length,
-                                rowHeight: 28,
-                                lineWidth: 2,
-                                lineColor: Colors.blueGrey,
-                                originIndex: originIndex,
-                                destinationIndex: destinationIndex,
-                                greyedStops: greyedStops,
-                              ),
-                            ),
-                          ),
-                          ListView.builder(
-                            physics: NeverScrollableScrollPhysics(),
-                            itemCount: selectedRoute!.stops.length,
-                            itemBuilder: (context, i) {
-                              bool isFirst = i == 0;
-                              bool isLast = i == selectedRoute!.stops.length - 1;
-                              bool disableTap =
-                                  (originIndex == null && isLast) ||
-                                  (originIndex != null &&
-                                      destinationIndex == null &&
-                                      isFirst &&
-                                      i > originIndex!);
-                              bool isGreyed = greyedStops.contains(i);
-                              return InkWell(
-                                onTap: disableTap
-                                    ? null
-                                    : () {
-                                        setState(() {
-                                          if (originIndex == null) {
-                                            if (!isLast) {
-                                              originIndex = i;
-                                              destinationIndex = null;
-                                            }
-                                          } else if (destinationIndex == null &&
-                                              i != originIndex &&
-                                              i > originIndex!) {
-                                            if (!isFirst) {
-                                              destinationIndex = i;
-                                            }
-                                          } else if (i == originIndex) {
-                                            originIndex = null;
-                                            destinationIndex = null;
-                                          } else if (i == destinationIndex) {
-                                            destinationIndex = null;
-                                          }
-                                        });
-                                      },
-                                child: Container(
-                                  height: 28.0,
-                                  padding: EdgeInsets.symmetric(
-                                    vertical: 4,
-                                  ), // Add vertical padding
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.center,
-                                    children: [
-                                      Container(
-                                        width: 28,
-                                        alignment: Alignment.center,
-                                        child: _buildStopCircleOrMarker(
-                                          i,
-                                          originIndex,
-                                          destinationIndex,
-                                          isGreyed,
+                          // Stop list section
+                          SizedBox(
+                                height: selectedRoute!.stops.length * 28.0,
+                                child: Stack(
+                                  children: [
+                                    Positioned.fill(
+                                      child: CustomPaint(
+                                        painter: RouteLineWithStopsPainter(
+                                          stopCount: selectedRoute!.stops.length,
+                                          rowHeight: 28,
+                                          lineWidth: 2,
+                                          lineColor: Colors.blueGrey,
+                                          originIndex: originIndex,
+                                          destinationIndex: destinationIndex,
+                                          greyedStops: greyedStops,
                                         ),
                                       ),
-                                      SizedBox(width: 8),
-                                      Expanded(
-                                        child: Text(
-                                          selectedRoute!.stops[i].name,
-                                          style: TextStyle(
-                                            fontSize: 13,
-                                            color: isGreyed
-                                                ? Colors.grey
-                                                : (i == destinationIndex
-                                                      ? Color(
-                                                          0xFFDD2C00,
-                                                        ) // Google Maps red for destination
-                                                      : (i == originIndex
-                                                            ? Color(
-                                                                0xFF00C853,
-                                                              ) // Google Maps green for origin
-                                                            : Colors.black)),
-                                            fontWeight:
-                                                (i == originIndex ||
-                                                    i == destinationIndex)
-                                                ? FontWeight.bold
-                                                : FontWeight.normal,
+                                    ),
+                                    ListView.builder(
+                                      physics: NeverScrollableScrollPhysics(),
+                                      itemCount: selectedRoute!.stops.length,
+                                      itemBuilder: (context, i) {
+                                        bool isFirst = i == 0;
+                                        bool isLast = i == selectedRoute!.stops.length - 1;
+                                        bool disableTap =
+                                            (originIndex == null && isLast) ||
+                                            (originIndex != null &&
+                                                destinationIndex == null &&
+                                                isFirst &&
+                                                i > originIndex!);
+                                        bool isGreyed = greyedStops.contains(i);
+                                        return InkWell(
+                                          onTap: disableTap
+                                              ? null
+                                              : () {
+                                                  setState(() {
+                                                    if (originIndex == null) {
+                                                      if (!isLast) {
+                                                        originIndex = i;
+                                                        destinationIndex = null;
+                                                      }
+                                                    } else if (destinationIndex == null &&
+                                                        i != originIndex &&
+                                                        i > originIndex!) {
+                                                      if (!isFirst) {
+                                                        destinationIndex = i;
+                                                      }
+                                                    } else if (i == originIndex) {
+                                                      originIndex = null;
+                                                      destinationIndex = null;
+                                                    } else if (i == destinationIndex) {
+                                                      destinationIndex = null;
+                                                    }
+                                                    hasSelectedDateTime = false;
+                                                  });
+                                                },
+                                          child: Container(
+                                            height: 28.0,
+                                            padding: EdgeInsets.symmetric(vertical: 4),
+                                            child: Row(
+                                              mainAxisAlignment: MainAxisAlignment.start,
+                                              crossAxisAlignment: CrossAxisAlignment.center,
+                                              children: [
+                                                Container(
+                                                  width: 28,
+                                                  alignment: Alignment.center,
+                                                  child: _buildStopCircleOrMarker(
+                                                    i,
+                                                    originIndex,
+                                                    destinationIndex,
+                                                    isGreyed,
+                                                  ),
+                                                ),
+                                                SizedBox(width: 8),
+                                                Expanded(
+                                                  child: Text(
+                                                    selectedRoute!.stops[i].name,
+                                                    style: TextStyle(
+                                                      fontSize: 13,
+                                                      color: isGreyed
+                                                          ? Colors.grey
+                                                          : (i == destinationIndex
+                                                                ? Color(0xFFDD2C00)
+                                                                : (i == originIndex
+                                                                      ? Color(0xFF00C853)
+                                                                      : Colors.black)),
+                                                      fontWeight: (i == originIndex || i == destinationIndex)
+                                                          ? FontWeight.bold
+                                                          : FontWeight.normal,
+                                                    ),
+                                                    textAlign: TextAlign.left,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
                                           ),
-                                          textAlign: TextAlign.left,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                                        );
+                                      },
+                                    ),
+                                  ],
                                 ),
-                              );
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  // Subtle vertical divider between stop list and time picker
-                  if (originIndex != null && destinationIndex != null)
-                    Container(
-                      margin: EdgeInsets.symmetric(horizontal: 8),
-                      width: 1,
-                      height: selectedRoute.stops.length * 28.0,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.transparent,
-                            Colors.grey.withOpacity(0.3),
-                            Colors.grey.withOpacity(0.3),
-                            Colors.transparent,
+                            ),
+                            
+                            // Car seat layout section (show below stop list)
+                            if (originIndex != null && destinationIndex != null && hasSelectedDateTime)
+                              Container(
+                                key: ValueKey('seat-layout'), // Add key for alignment reference
+                                margin: EdgeInsets.only(top: 20),
+                                height: 250, // Fixed height to match info card
+                                child: CarSeatLayout(
+                                  userRole: role,
+                                  onSeatsSelected: (seats) {
+                                    setState(() {
+                                      selectedSeats = seats;
+                                    });
+                                    if (kDebugMode) {
+                                      debugPrint('Selected seats: $seats');
+                                    }
+                                  },
+                                ),
+                              ),
                           ],
                         ),
                       ),
-                    ),
 
-                  // Right side date picker (positioned near origin)
-                  if (originIndex != null && destinationIndex != null)
+                  // Right side: date picker and seat availability info
+                  if (originIndex != null)
                     Container(
                       margin: EdgeInsets.only(left: 16),
-                      width: 160, // Even narrower box
-                      child: _TimeBoxesContainer(
-                        selectedRoute: selectedRoute,
-                        originIndex: originIndex!,
-                        destinationIndex: destinationIndex!,
+                      width: 160,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Time picker section
+                          _TimeBoxesContainer(
+                              selectedRoute: selectedRoute!,
+                              originIndex: originIndex!,
+                              destinationIndex: destinationIndex,
+                              onDateTimeSelected: (bool selected) {
+                                setState(() {
+                                  hasSelectedDateTime = selected;
+                                });
+                              },
+                            ),
+                          
+                          // Seat availability information card (positioned to match seat layout)
+                          if (destinationIndex != null && hasSelectedDateTime)
+                            Container(
+                              key: ValueKey('info-card'), // Add key for alignment reference
+                              margin: EdgeInsets.only(
+                                top: 20 + (selectedRoute!.stops.length * 28.0) - (destinationIndex! * 28.0 + 28.0), 
+                                // Position card to align with seat layout: margin + stop list height - time picker height
+                              ),
+                              width: 160, // Match the time picker width
+                              height: 250, // Increased to match seat layout height
+                              padding: EdgeInsets.all(0), // Remove internal padding to align borders perfectly
+                              decoration: BoxDecoration(
+                                color: Colors.blue[50],
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Padding(
+                                padding: EdgeInsets.all(16), // Move padding inside
+                                child: Center(
+                                  child: Text(
+                                    role == 'Driver' 
+                                      ? '3 seats\navailable\nfor riders'
+                                      : '3 seats\navailable',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.blue[600],
+                                      height: 1.3,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                     ),
                 ],
               ),
             ),
             
-            // Car seat layout (show after route selection)
-            if (originIndex != null && destinationIndex != null)
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Column(
-                    children: [
-                      SizedBox(height: 20),
-                      Container(
-                        margin: EdgeInsets.symmetric(horizontal: 16),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.grey.withValues(alpha: 0.2),
-                              blurRadius: 8,
-                              spreadRadius: 2,
-                            ),
-                          ],
-                        ),
-                        child: CarSeatLayout(
-                          userRole: role,
-                          onSeatsSelected: (seats) {
-                            setState(() {
-                              selectedSeats = seats;
-                            });
-                            print('Selected seats: $seats');
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+            // Car seat layout moved to be positioned right after stop list
           ],
         );
       },
@@ -439,18 +476,35 @@ class HomeScreen extends StatelessWidget {
     }
     return name; // Return original name if no hyphen is found
   }
+
+  int _getCurrentStep(
+    RouteInfo? selectedRoute,
+    int? originIndex,
+    int? destinationIndex,
+    bool hasSelectedDateTime,
+    List<int> selectedSeats,
+  ) {
+    if (selectedRoute == null) return 0;
+    if (originIndex == null) return 1;
+    if (destinationIndex == null) return 2;
+    if (!hasSelectedDateTime) return 3;
+    if (selectedSeats.isEmpty) return 4;
+    return 4; // All steps completed
+  }
 }
 
 // A separate widget to handle both origin and destination time boxes
 class _TimeBoxesContainer extends StatefulWidget {
   final RouteInfo selectedRoute;
   final int originIndex;
-  final int destinationIndex;
+  final int? destinationIndex;
+  final Function(bool) onDateTimeSelected;
 
   const _TimeBoxesContainer({
     required this.selectedRoute,
     required this.originIndex,
-    required this.destinationIndex,
+    this.destinationIndex,
+    required this.onDateTimeSelected,
   });
 
   @override
@@ -462,6 +516,7 @@ class _TimeBoxesContainerState extends State<_TimeBoxesContainer> {
   late DateTime arrivalTime; // Store arrival time explicitly
   bool isEditingArrival =
       false; // Flag to track if we're editing arrival or departure time
+  bool hasUserSelectedDateTime = false; // Track if user has explicitly selected date/time
 
   @override
   void initState() {
@@ -487,6 +542,15 @@ class _TimeBoxesContainerState extends State<_TimeBoxesContainer> {
   }
 
   @override
+  void didUpdateWidget(_TimeBoxesContainer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Recalculate arrival time if destination has changed
+    if (oldWidget.destinationIndex != widget.destinationIndex) {
+      _recalculateArrivalTime();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -502,7 +566,16 @@ class _TimeBoxesContainerState extends State<_TimeBoxesContainer> {
             await showModalBottomSheet(
               context: context,
               builder: (BuildContext context) {
-                DateTime tempPickedDate = selectedDate;
+                // Initialize with the earliest valid departure time
+                DateTime tempPickedDate = _findEarliestValidDepartureTime(selectedDate);
+                
+                // Create controllers for both wheels to enable snapping animation
+                final FixedExtentScrollController hourController = FixedExtentScrollController(
+                  initialItem: tempPickedDate.hour,
+                );
+                final FixedExtentScrollController minuteController = FixedExtentScrollController(
+                  initialItem: (tempPickedDate.minute / 5).round(),
+                );
 
                 return StatefulBuilder(
                   builder: (BuildContext context, StateSetter setModalState) {
@@ -545,6 +618,7 @@ class _TimeBoxesContainerState extends State<_TimeBoxesContainer> {
                                 TextButton(
                                   onPressed: () {
                                     setState(() {
+                                      hasUserSelectedDateTime = true; // User has explicitly selected date/time
                                       if (isEditingArrival) {
                                         // If editing arrival time, set arrival time and calculate departure time
                                         arrivalTime = tempPickedDate;
@@ -562,6 +636,7 @@ class _TimeBoxesContainerState extends State<_TimeBoxesContainer> {
                                         );
                                       }
                                     });
+                                    widget.onDateTimeSelected(true); // Notify parent
                                     Navigator.pop(context);
                                   },
                                   child: Text('Done', style: TextStyle(color: Color(0xFF00C853))),
@@ -578,10 +653,14 @@ class _TimeBoxesContainerState extends State<_TimeBoxesContainer> {
                                 Expanded(
                                   flex: 2,
                                   child: ListWheelScrollView(
-                                    itemExtent: 40,
-                                    diameterRatio: 1.5,
+                                    itemExtent: 50,
+                                    diameterRatio: 1.2,
+                                    magnification: 1.3,
+                                    useMagnifier: true,
+                                    squeeze: 0.8,
+                                    physics: FixedExtentScrollPhysics(),
                                     controller: FixedExtentScrollController(
-                                      initialItem: 1, // Default to tomorrow
+                                      initialItem: 0,
                                     ),
                                     onSelectedItemChanged: (index) {
                                       setModalState(() {
@@ -638,7 +717,16 @@ class _TimeBoxesContainerState extends State<_TimeBoxesContainer> {
                                         label = '$day $month $weekday';
                                       }
 
-                                      return Center(child: Text(label));
+                                      return Center(
+                                        child: Text(
+                                          label,
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w500,
+                                            color: Color(0xFF00C853),
+                                          ),
+                                        ),
+                                      );
                                     }),
                                   ),
                                 ),
@@ -647,63 +735,67 @@ class _TimeBoxesContainerState extends State<_TimeBoxesContainer> {
                                 Expanded(
                                   flex: 1,
                                   child: ListWheelScrollView(
-                                    itemExtent: 40,
-                                    diameterRatio: 1.5,
-                                    controller: FixedExtentScrollController(
-                                      initialItem: max(
-                                        selectedDate.hour,
-                                        isTodayDate(selectedDate)
-                                            ? DateTime.now().hour
-                                            : 0,
-                                      ),
-                                    ),
+                                    itemExtent: 50,
+                                    diameterRatio: 1.2,
+                                    magnification: 1.3,
+                                    useMagnifier: true,
+                                    squeeze: 0.8,
+                                    physics: FixedExtentScrollPhysics(),
+                                    controller: hourController,
                                     onSelectedItemChanged: (index) {
-                                      // Get minimum valid hour for today
-                                      int minHour = 0;
-                                      if (isTodayDate(tempPickedDate)) {
-                                        minHour = DateTime.now().hour;
-                                      }
-
-                                      // Prevent selecting hours in the past for today
-                                      if (isTodayDate(tempPickedDate) &&
-                                          index < minHour) {
-                                        // If user tries to select a past hour, reset to current hour
-                                        setModalState(() {
-                                          // Wait a moment then scroll back to valid time
-                                          // Reset to current hour (no animation needed)
+                                      // Test if this hour creates a valid departure time
+                                      final testDepartureTime = DateTime(
+                                        tempPickedDate.year,
+                                        tempPickedDate.month,
+                                        tempPickedDate.day,
+                                        index,
+                                        tempPickedDate.minute,
+                                      );
+                                      
+                                      DateTime validTime;
+                                      if (_isValidDepartureTime(testDepartureTime)) {
+                                        validTime = testDepartureTime;
+                                      } else {
+                                        // Find the next valid departure time for this day
+                                        validTime = _findEarliestValidDepartureTime(
+                                          DateTime(tempPickedDate.year, tempPickedDate.month, tempPickedDate.day)
+                                        );
+                                        
+                                        // Animate to the correct hour with snapping effect
+                                        Future.delayed(Duration(milliseconds: 100), () {
+                                          hourController.animateToItem(
+                                            validTime.hour,
+                                            duration: Duration(milliseconds: 400),
+                                            curve: Curves.elasticOut,
+                                          );
                                         });
-                                        return;
                                       }
 
                                       setModalState(() {
-                                        tempPickedDate = DateTime(
-                                          tempPickedDate.year,
-                                          tempPickedDate.month,
-                                          tempPickedDate.day,
-                                          index,
-                                          isTodayDate(tempPickedDate) &&
-                                                  index == DateTime.now().hour
-                                              ? max(
-                                                  tempPickedDate.minute,
-                                                  DateTime.now().minute,
-                                                )
-                                              : tempPickedDate.minute,
-                                        );
+                                        tempPickedDate = validTime;
                                       });
                                     },
                                     children: List.generate(24, (index) {
-                                      // Gray out past hours for today
-                                      bool isPastHour =
-                                          isTodayDate(tempPickedDate) &&
-                                          index < DateTime.now().hour;
+                                      // Check if this hour would result in a valid departure time
+                                      final testDepartureTime = DateTime(
+                                        tempPickedDate.year,
+                                        tempPickedDate.month,
+                                        tempPickedDate.day,
+                                        index,
+                                        tempPickedDate.minute,
+                                      );
+                                      
+                                      final isValid = _isValidDepartureTime(testDepartureTime);
 
                                       return Center(
                                         child: Text(
                                           index.toString().padLeft(2, '0'),
                                           style: TextStyle(
-                                            color: isPastHour
-                                                ? Colors.grey[400]
-                                                : null,
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.w600,
+                                            color: isValid
+                                                ? Color(0xFF00C853)
+                                                : Colors.grey[300], // Grayed out for invalid times
                                           ),
                                         ),
                                       );
@@ -715,44 +807,62 @@ class _TimeBoxesContainerState extends State<_TimeBoxesContainer> {
                                 Expanded(
                                   flex: 1,
                                   child: ListWheelScrollView(
-                                    itemExtent: 40,
-                                    diameterRatio: 1.5,
-                                    controller: FixedExtentScrollController(
-                                      // Use the formerly unused _getNearestFiveMinuteIndex method
-                                      initialItem: nearestFiveMinuteIndex(
-                                        max(
-                                          selectedDate.minute,
-                                          isTodayDate(selectedDate) &&
-                                                  selectedDate.hour ==
-                                                      DateTime.now().hour
-                                              ? DateTime.now().minute
-                                              : 0,
-                                        ),
-                                      ),
-                                    ),
+                                    itemExtent: 50,
+                                    diameterRatio: 1.2,
+                                    magnification: 1.3,
+                                    useMagnifier: true,
+                                    squeeze: 0.8,
+                                    physics: FixedExtentScrollPhysics(),
+                                    controller: minuteController,
                                     onSelectedItemChanged: (index) {
                                       // Convert index to actual minute (multiply by 5)
                                       final minuteValue = index * 5;
 
-                                      // For current hour of today, prevent selecting past minutes
-                                      final now = DateTime.now();
-                                      if (isTodayDate(tempPickedDate) &&
-                                          tempPickedDate.hour == now.hour &&
-                                          minuteValue < now.minute) {
-                                        setModalState(() {
-                                          // Reset to current 5-minute interval (no animation needed)
+                                      // Test if this minute creates a valid departure time
+                                      final testDepartureTime = DateTime(
+                                        tempPickedDate.year,
+                                        tempPickedDate.month,
+                                        tempPickedDate.day,
+                                        tempPickedDate.hour,
+                                        minuteValue,
+                                      );
+                                      
+                                      DateTime validTime;
+                                      if (_isValidDepartureTime(testDepartureTime)) {
+                                        validTime = testDepartureTime;
+                                      } else {
+                                        // Find the next valid departure time starting from this hour
+                                        validTime = _findEarliestValidDepartureTime(
+                                          DateTime(tempPickedDate.year, tempPickedDate.month, tempPickedDate.day, tempPickedDate.hour)
+                                        );
+                                        // If no valid time found in this hour, get the earliest for the day
+                                        if (validTime.hour != tempPickedDate.hour) {
+                                          validTime = _findEarliestValidDepartureTime(
+                                            DateTime(tempPickedDate.year, tempPickedDate.month, tempPickedDate.day)
+                                          );
+                                          
+                                          // Animate hour wheel to the correct hour
+                                          Future.delayed(Duration(milliseconds: 100), () {
+                                            hourController.animateToItem(
+                                              validTime.hour,
+                                              duration: Duration(milliseconds: 400),
+                                              curve: Curves.elasticOut,
+                                            );
+                                          });
+                                        }
+                                        
+                                        // Animate minute wheel to the correct minute
+                                        Future.delayed(Duration(milliseconds: 150), () {
+                                          minuteController.animateToItem(
+                                            (validTime.minute / 5).round(),
+                                            duration: Duration(milliseconds: 400),
+                                            curve: Curves.elasticOut,
+                                          );
                                         });
-                                        return;
                                       }
 
                                       setModalState(() {
-                                        tempPickedDate = DateTime(
-                                          tempPickedDate.year,
-                                          tempPickedDate.month,
-                                          tempPickedDate.day,
-                                          tempPickedDate.hour,
-                                          minuteValue, // Use actual minute value (0, 5, 10, etc.)
-                                        );
+                                        tempPickedDate = validTime;
                                       });
                                     },
                                     children: List.generate(12, (index) {
@@ -760,12 +870,16 @@ class _TimeBoxesContainerState extends State<_TimeBoxesContainer> {
                                       // Convert index to actual minute
                                       final minuteValue = index * 5;
 
-                                      // Gray out past minutes for current hour of today
-                                      final now = DateTime.now();
-                                      bool isPastMinute =
-                                          isTodayDate(tempPickedDate) &&
-                                          tempPickedDate.hour == now.hour &&
-                                          minuteValue < now.minute;
+                                      // Check if this minute would result in a valid departure time
+                                      final testDepartureTime = DateTime(
+                                        tempPickedDate.year,
+                                        tempPickedDate.month,
+                                        tempPickedDate.day,
+                                        tempPickedDate.hour,
+                                        minuteValue,
+                                      );
+                                      
+                                      final isValid = _isValidDepartureTime(testDepartureTime);
 
                                       return Center(
                                         child: Text(
@@ -774,9 +888,11 @@ class _TimeBoxesContainerState extends State<_TimeBoxesContainer> {
                                             '0',
                                           ),
                                           style: TextStyle(
-                                            color: isPastMinute
-                                                ? Colors.grey[400]
-                                                : null,
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.w600,
+                                            color: isValid
+                                                ? Color(0xFF00C853)
+                                                : Colors.grey[300], // Grayed out for invalid times
                                           ),
                                         ),
                                       );
@@ -801,9 +917,9 @@ class _TimeBoxesContainerState extends State<_TimeBoxesContainer> {
               color: Theme.of(context).scaffoldBackgroundColor,
               borderRadius: BorderRadius.circular(4),
               border: Border.all(
-                color: Color(0xFF00C853),
+                color: Color(0xFF00C853), // Green border for pickup
                 width: 1,
-              ), // Google Maps green for origin
+              ),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -813,35 +929,46 @@ class _TimeBoxesContainerState extends State<_TimeBoxesContainer> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // Format date as: "Today", "Tomorrow", or "16 Aug Sat" (year removed)
-                      Text(
-                        formatRelativeDay(selectedDate, DateTime.now()),
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Color(0xFF00C853),
-                          fontWeight: FontWeight.bold,
-                        ), // Google Maps green
-                      ),
-                      SizedBox(width: 6),
-                      // Small dot separator
-                      Container(
-                        width: 3,
-                        height: 3,
-                        decoration: BoxDecoration(
-                          color: Color(0xFF00C853), // Google Maps green
-                          shape: BoxShape.circle,
+                      // Show "Pick up time" or actual date/time based on user selection
+                      if (hasUserSelectedDateTime) ...[
+                        // Format date as: "Today", "Tomorrow", or "16 Aug Sat" (year removed)
+                        Text(
+                          formatRelativeDay(selectedDate, DateTime.now()),
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Color(0xFF00C853),
+                            fontWeight: FontWeight.bold,
+                          ), // Google Maps green
                         ),
-                      ),
-                      SizedBox(width: 6),
-                      // Format time as: "14:30"
-                      Text(
-                        formatTimeHHmm(selectedDate),
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Color(0xFF00C853),
-                          fontWeight: FontWeight.bold,
-                        ), // Google Maps green
-                      ),
+                        SizedBox(width: 6),
+                        // Small dot separator
+                        Container(
+                          width: 3,
+                          height: 3,
+                          decoration: BoxDecoration(
+                            color: Color(0xFF00C853), // Google Maps green
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        SizedBox(width: 6),
+                        // Format time as: "14:30"
+                        Text(
+                          formatTimeHHmm(selectedDate),
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Color(0xFF00C853),
+                            fontWeight: FontWeight.bold,
+                          ), // Google Maps green
+                        ),
+                      ] else
+                        Text(
+                          'Pick up time',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Color(0xFF00C853),
+                            fontWeight: FontWeight.normal,
+                          ),
+                        ),
                     ],
                   ),
                 ),
@@ -850,20 +977,33 @@ class _TimeBoxesContainerState extends State<_TimeBoxesContainer> {
           ),
         ),
 
-        // Add space between origin and destination time boxes
-        SizedBox(
-          height: (widget.destinationIndex - widget.originIndex) * 28.0 - 28.0,
-        ),
+        // Add space between origin and destination time boxes (only if destination is selected)
+        if (widget.destinationIndex != null)
+          SizedBox(
+            height: widget.destinationIndex! - widget.originIndex == 1 
+              ? 8.0  // Minimum spacing for consecutive stops to prevent border touching
+              : (widget.destinationIndex! - widget.originIndex) * 28.0 - 28.0,
+          ),
 
-        // Destination arrival time box - can be clicked to set arrival time
-        GestureDetector(
+        // Destination arrival time box - only show when destination is selected
+        if (widget.destinationIndex != null)
+          GestureDetector(
           onTap: () async {
             // Show bottom sheet with wheel pickers for arrival time
             isEditingArrival = true;
             await showModalBottomSheet(
               context: context,
               builder: (BuildContext context) {
-                DateTime tempPickedDate = arrivalTime;
+                // Initialize with the earliest valid arrival time
+                DateTime tempPickedDate = _findEarliestValidArrivalTime(arrivalTime);
+                
+                // Create controllers for both wheels to enable snapping animation
+                final FixedExtentScrollController hourController = FixedExtentScrollController(
+                  initialItem: tempPickedDate.hour,
+                );
+                final FixedExtentScrollController minuteController = FixedExtentScrollController(
+                  initialItem: (tempPickedDate.minute / 5).round(),
+                );
 
                 return StatefulBuilder(
                   builder: (BuildContext context, StateSetter setModalState) {
@@ -905,11 +1045,21 @@ class _TimeBoxesContainerState extends State<_TimeBoxesContainer> {
                                 ),
                                 TextButton(
                                   onPressed: () {
+                                    debugPrint('Arrival time Done pressed: setting arrivalTime=$tempPickedDate');
                                     setState(() {
+                                      hasUserSelectedDateTime = true; // User has explicitly selected date/time
                                       arrivalTime = tempPickedDate;
-                                      selectedDate = _calculateDepartureTime();
+                                      // Calculate departure time using the new arrival time
+                                      selectedDate = calculateDepartureTime(
+                                        tempPickedDate, // Use the selected time directly
+                                        widget.selectedRoute,
+                                        widget.originIndex,
+                                        widget.destinationIndex,
+                                      );
+                                      debugPrint('Calculated departure time: $selectedDate');
                                       _validateAndAdjustTime(); // Validate the calculated departure time
                                     });
+                                    widget.onDateTimeSelected(true); // Notify parent
                                     Navigator.pop(context);
                                   },
                                   child: Text('Done', style: TextStyle(color: Color(0xFFDD2C00))),
@@ -926,8 +1076,12 @@ class _TimeBoxesContainerState extends State<_TimeBoxesContainer> {
                                 Expanded(
                                   flex: 2,
                                   child: ListWheelScrollView(
-                                    itemExtent: 40,
-                                    diameterRatio: 1.5,
+                                    itemExtent: 50,
+                                    diameterRatio: 1.2,
+                                    magnification: 1.3,
+                                    useMagnifier: true,
+                                    squeeze: 0.8,
+                                    physics: FixedExtentScrollPhysics(),
                                     controller: FixedExtentScrollController(
                                       initialItem: min(
                                         4,
@@ -994,7 +1148,16 @@ class _TimeBoxesContainerState extends State<_TimeBoxesContainer> {
                                         label = '$day $month $weekday';
                                       }
 
-                                      return Center(child: Text(label));
+                                      return Center(
+                                        child: Text(
+                                          label,
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w500,
+                                            color: Color(0xFFDD2C00),
+                                          ),
+                                        ),
+                                      );
                                     }),
                                   ),
                                 ),
@@ -1004,26 +1167,79 @@ class _TimeBoxesContainerState extends State<_TimeBoxesContainer> {
                                 Expanded(
                                   flex: 1,
                                   child: ListWheelScrollView(
-                                    itemExtent: 40,
-                                    diameterRatio: 1.5,
-                                    controller: FixedExtentScrollController(
-                                      initialItem: tempPickedDate.hour,
-                                    ),
+                                    itemExtent: 50,
+                                    diameterRatio: 1.2,
+                                    magnification: 1.3,
+                                    useMagnifier: true,
+                                    squeeze: 0.8,
+                                    physics: FixedExtentScrollPhysics(),
+                                    controller: hourController,
                                     onSelectedItemChanged: (index) {
-                                      setModalState(() {
-                                        tempPickedDate = DateTime(
-                                          tempPickedDate.year,
-                                          tempPickedDate.month,
-                                          tempPickedDate.day,
-                                          index,
-                                          tempPickedDate.minute,
+                                      // Always update to a valid time
+                                      final testArrivalTime = DateTime(
+                                        tempPickedDate.year,
+                                        tempPickedDate.month,
+                                        tempPickedDate.day,
+                                        index,
+                                        tempPickedDate.minute,
+                                      );
+                                      
+                                      DateTime validTime;
+                                      if (_isValidArrivalTime(testArrivalTime)) {
+                                        validTime = testArrivalTime;
+                                      } else {
+                                        // Find the next valid hour for this day
+                                        validTime = _findEarliestValidArrivalTime(
+                                          DateTime(tempPickedDate.year, tempPickedDate.month, tempPickedDate.day)
                                         );
+                                        
+                                        // Animate to the correct hour with snapping effect
+                                        Future.delayed(Duration(milliseconds: 100), () {
+                                          hourController.animateToItem(
+                                            validTime.hour,
+                                            duration: Duration(milliseconds: 400),
+                                            curve: Curves.elasticOut,
+                                          );
+                                        });
+                                        
+                                        // Also update the minute wheel if needed
+                                        if (validTime.minute != tempPickedDate.minute) {
+                                          Future.delayed(Duration(milliseconds: 150), () {
+                                            minuteController.animateToItem(
+                                              (validTime.minute / 5).round(),
+                                              duration: Duration(milliseconds: 400),
+                                              curve: Curves.elasticOut,
+                                            );
+                                          });
+                                        }
+                                      }
+                                      
+                                      setModalState(() {
+                                        tempPickedDate = validTime;
                                       });
                                     },
                                     children: List.generate(24, (index) {
+                                      // Check if this hour would result in a valid arrival time
+                                      final testArrivalTime = DateTime(
+                                        tempPickedDate.year,
+                                        tempPickedDate.month,
+                                        tempPickedDate.day,
+                                        index,
+                                        tempPickedDate.minute,
+                                      );
+                                      
+                                      final isValid = _isValidArrivalTime(testArrivalTime);
+                                      
                                       return Center(
                                         child: Text(
                                           index.toString().padLeft(2, '0'),
+                                          style: TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.w600,
+                                            color: isValid 
+                                              ? Color(0xFFDD2C00) 
+                                              : Colors.grey[300], // Grayed out for invalid times
+                                          ),
                                         ),
                                       );
                                     }),
@@ -1034,32 +1250,91 @@ class _TimeBoxesContainerState extends State<_TimeBoxesContainer> {
                                 Expanded(
                                   flex: 1,
                                   child: ListWheelScrollView(
-                                    itemExtent: 40,
-                                    diameterRatio: 1.5,
-                                    controller: FixedExtentScrollController(
-                                      initialItem: nearestFiveMinuteIndex(
-                                        tempPickedDate.minute,
-                                      ),
-                                    ),
+                                    itemExtent: 50,
+                                    diameterRatio: 1.2,
+                                    magnification: 1.3,
+                                    useMagnifier: true,
+                                    squeeze: 0.8,
+                                    physics: FixedExtentScrollPhysics(),
+                                    controller: minuteController,
                                     onSelectedItemChanged: (index) {
                                       final minuteValue = index * 5;
-                                      setModalState(() {
-                                        tempPickedDate = DateTime(
-                                          tempPickedDate.year,
-                                          tempPickedDate.month,
-                                          tempPickedDate.day,
-                                          tempPickedDate.hour,
-                                          minuteValue,
+                                      
+                                      // Always update to a valid time
+                                      final testArrivalTime = DateTime(
+                                        tempPickedDate.year,
+                                        tempPickedDate.month,
+                                        tempPickedDate.day,
+                                        tempPickedDate.hour,
+                                        minuteValue,
+                                      );
+                                      
+                                      DateTime validTime;
+                                      if (_isValidArrivalTime(testArrivalTime)) {
+                                        validTime = testArrivalTime;
+                                      } else {
+                                        // Find the next valid time starting from this hour
+                                        validTime = _findEarliestValidArrivalTime(
+                                          DateTime(tempPickedDate.year, tempPickedDate.month, tempPickedDate.day, tempPickedDate.hour)
                                         );
+                                        // If no valid time found in this hour, get the earliest for the day
+                                        if (validTime.hour != tempPickedDate.hour) {
+                                          validTime = _findEarliestValidArrivalTime(
+                                            DateTime(tempPickedDate.year, tempPickedDate.month, tempPickedDate.day)
+                                          );
+                                        }
+                                        
+                                        // Animate minute wheel to the correct position with snapping effect
+                                        Future.delayed(Duration(milliseconds: 100), () {
+                                          minuteController.animateToItem(
+                                            (validTime.minute / 5).round(),
+                                            duration: Duration(milliseconds: 400),
+                                            curve: Curves.elasticOut,
+                                          );
+                                        });
+                                        
+                                        // Also animate hour wheel if it changed
+                                        if (validTime.hour != tempPickedDate.hour) {
+                                          Future.delayed(Duration(milliseconds: 50), () {
+                                            hourController.animateToItem(
+                                              validTime.hour,
+                                              duration: Duration(milliseconds: 400),
+                                              curve: Curves.elasticOut,
+                                            );
+                                          });
+                                        }
+                                      }
+                                      
+                                      setModalState(() {
+                                        tempPickedDate = validTime;
                                       });
                                     },
                                     children: List.generate(12, (index) {
                                       final minuteValue = index * 5;
+                                      
+                                      // Check if this minute would result in a valid arrival time
+                                      final testArrivalTime = DateTime(
+                                        tempPickedDate.year,
+                                        tempPickedDate.month,
+                                        tempPickedDate.day,
+                                        tempPickedDate.hour,
+                                        minuteValue,
+                                      );
+                                      
+                                      final isValid = _isValidArrivalTime(testArrivalTime);
+                                      
                                       return Center(
                                         child: Text(
                                           minuteValue.toString().padLeft(
                                             2,
                                             '0',
+                                          ),
+                                          style: TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.w600,
+                                            color: isValid 
+                                              ? Color(0xFFDD2C00)
+                                              : Colors.grey[300], // Grayed out for invalid times
                                           ),
                                         ),
                                       );
@@ -1085,9 +1360,9 @@ class _TimeBoxesContainerState extends State<_TimeBoxesContainer> {
               color: Theme.of(context).scaffoldBackgroundColor,
               borderRadius: BorderRadius.circular(4),
               border: Border.all(
-                color: Color(0xFFDD2C00),
+                color: Color(0xFFDD2C00), // Red border for drop-off
                 width: 1,
-              ), // Google Maps red for destination
+              ),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1097,35 +1372,46 @@ class _TimeBoxesContainerState extends State<_TimeBoxesContainer> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // Format date as: "Today", "Tomorrow", or "16 Aug Sat" (year removed)
-                      Text(
-                        formatRelativeDay(arrivalTime, DateTime.now()),
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Color(0xFFDD2C00),
-                          fontWeight: FontWeight.bold,
-                        ), // Google Maps red
-                      ),
-                      SizedBox(width: 6),
-                      // Small dot separator
-                      Container(
-                        width: 3,
-                        height: 3,
-                        decoration: BoxDecoration(
-                          color: Color(0xFFDD2C00), // Google Maps red
-                          shape: BoxShape.circle,
+                      // Show calculated arrival time when both destination is selected AND pickup time is set
+                      if (widget.destinationIndex != null && hasUserSelectedDateTime) ...[
+                        // Format date as: "Today", "Tomorrow", or "16 Aug Sat" (year removed)
+                        Text(
+                          formatRelativeDay(arrivalTime, DateTime.now()),
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Color(0xFFDD2C00),
+                            fontWeight: FontWeight.bold,
+                          ), // Google Maps red
                         ),
-                      ),
-                      SizedBox(width: 6),
-                      // Format time as: "14:30"
-                      Text(
-                        formatTimeHHmm(arrivalTime),
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Color(0xFFDD2C00),
-                          fontWeight: FontWeight.bold,
-                        ), // Google Maps red
-                      ),
+                        SizedBox(width: 6),
+                        // Small dot separator
+                        Container(
+                          width: 3,
+                          height: 3,
+                          decoration: BoxDecoration(
+                            color: Color(0xFFDD2C00), // Google Maps red
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        SizedBox(width: 6),
+                        // Format time as: "14:30"
+                        Text(
+                          formatTimeHHmm(arrivalTime),
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Color(0xFFDD2C00),
+                            fontWeight: FontWeight.bold,
+                          ), // Google Maps red
+                        ),
+                      ] else
+                        Text(
+                          'Drop off time',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Color(0xFFDD2C00),
+                            fontWeight: FontWeight.normal,
+                          ),
+                        ),
                     ],
                   ),
                 ),
@@ -1153,6 +1439,111 @@ class _TimeBoxesContainerState extends State<_TimeBoxesContainer> {
         );
       }
     }
+  }
+
+  // Recalculate arrival time based on current departure time
+  void _recalculateArrivalTime() {
+    if (widget.destinationIndex != null) {
+      debugPrint('Recalculating arrival time: origin=${widget.originIndex}, dest=${widget.destinationIndex}');
+      setState(() {
+        arrivalTime = calculateArrivalTime(
+          selectedDate,
+          widget.selectedRoute,
+          widget.originIndex,
+          widget.destinationIndex,
+        );
+      });
+    }
+  }
+
+  // Check if a departure time is valid (not in the past and results in valid arrival)
+  bool _isValidDepartureTime(DateTime departureTime) {
+    // Don't allow past times (with 5 minute buffer)
+    final earliestValidTime = DateTime.now().add(Duration(minutes: 5));
+    if (departureTime.isBefore(earliestValidTime)) {
+      return false;
+    }
+    
+    // If destination is selected, check if arrival time would be reasonable
+    if (widget.destinationIndex != null) {
+      final calculatedArrivalTime = calculateArrivalTime(
+        departureTime,
+        widget.selectedRoute,
+        widget.originIndex,
+        widget.destinationIndex,
+      );
+      // Just make sure arrival is after departure (basic sanity check)
+      return calculatedArrivalTime.isAfter(departureTime);
+    }
+    
+    return true;
+  }
+
+  // Find the earliest valid departure time for a given date
+  DateTime _findEarliestValidDepartureTime(DateTime date) {
+    // Start from current time if it's today, otherwise from beginning of day
+    final now = DateTime.now();
+    int startHour = 0;
+    int startMinute = 0;
+    
+    if (isTodayDate(date)) {
+      startHour = now.hour;
+      startMinute = ((now.minute / 5).ceil() * 5); // Round up to next 5-minute interval
+      if (startMinute >= 60) {
+        startHour += 1;
+        startMinute = 0;
+      }
+    }
+    
+    // Find the first valid time starting from the calculated start time
+    for (int hour = startHour; hour < 24; hour++) {
+      int minuteStart = (hour == startHour) ? startMinute : 0;
+      for (int minute = minuteStart; minute < 60; minute += 5) { // 5-minute increments
+        final testTime = DateTime(date.year, date.month, date.day, hour, minute);
+        if (_isValidDepartureTime(testTime)) {
+          return testTime;
+        }
+      }
+    }
+    
+    // If no valid time found today, try tomorrow
+    final tomorrow = date.add(Duration(days: 1));
+    return DateTime(tomorrow.year, tomorrow.month, tomorrow.day, 0, 0);
+  }
+
+  // Check if an arrival time would result in a valid (not past) departure time
+  bool _isValidArrivalTime(DateTime arrivalTime) {
+    if (widget.destinationIndex == null) return true;
+    
+    final calculatedDepartureTime = calculateDepartureTime(
+      arrivalTime,
+      widget.selectedRoute,
+      widget.originIndex,
+      widget.destinationIndex,
+    );
+    
+    // Allow some buffer (5 minutes) from current time
+    final earliestValidTime = DateTime.now().add(Duration(minutes: 5));
+    return calculatedDepartureTime.isAfter(earliestValidTime);
+  }
+
+  // Find the earliest valid arrival time for a given date
+  DateTime _findEarliestValidArrivalTime(DateTime date) {
+    if (widget.destinationIndex == null) return date;
+    
+    // Start from the beginning of the day and find the first valid time
+    for (int hour = 0; hour < 24; hour++) {
+      for (int minute = 0; minute < 60; minute += 5) { // 5-minute increments
+        final testTime = DateTime(date.year, date.month, date.day, hour, minute);
+        if (_isValidArrivalTime(testTime)) {
+          return testTime;
+        }
+      }
+    }
+    
+    // If no valid time found today, try tomorrow
+    final tomorrow = date.add(Duration(days: 1));
+    return DateTime(tomorrow.year, tomorrow.month, tomorrow.day, 0, 0);
   }
 
   // Departure time from current arrival using shared utils
