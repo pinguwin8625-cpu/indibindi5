@@ -52,14 +52,14 @@ class _CarSeatLayoutState extends State<CarSeatLayout> {
           children: [
             // Simple car layout (car facing right)
             SizedBox(
-              width: 220,
-              height: 200,
+              width: 240,
+              height: 240,
               child: Stack(
               children: [
                 // Driver seat (top right - front left when car faces right)
                 Positioned(
-                  top: 10,
-                  right: 10,
+                  top: 5,
+                  right: 5,
                   child: _buildSeat(
                     status: SeatStatus.driver,
                     label: '',
@@ -69,8 +69,8 @@ class _CarSeatLayoutState extends State<CarSeatLayout> {
                 
                 // Front passenger seat (bottom right - front right when car faces right)
                 Positioned(
-                  bottom: 10,
-                  right: 10,
+                  bottom: 5,
+                  right: 5,
                   child: _buildSeat(
                     status: seatStatuses[0],
                     label: '',
@@ -81,7 +81,7 @@ class _CarSeatLayoutState extends State<CarSeatLayout> {
                 // Back left seat (top left)
                 Positioned(
                   top: 5,
-                  left: 10,
+                  left: 5,
                   child: _buildSeat(
                     status: seatStatuses[1],
                     label: '',
@@ -91,8 +91,8 @@ class _CarSeatLayoutState extends State<CarSeatLayout> {
                 
                 // Back center seat (center left)
                 Positioned(
-                  top: 72,
-                  left: 10,
+                  top: 85,
+                  left: 5,
                   child: _buildSeat(
                     status: seatStatuses[2],
                     label: '',
@@ -103,7 +103,7 @@ class _CarSeatLayoutState extends State<CarSeatLayout> {
                 // Back right seat (bottom left)
                 Positioned(
                   bottom: 5,
-                  left: 10,
+                  left: 5,
                   child: _buildSeat(
                     status: seatStatuses[3],
                     label: '',
@@ -149,13 +149,40 @@ class _CarSeatLayoutState extends State<CarSeatLayout> {
         height: 55,
         decoration: BoxDecoration(
           color: backgroundColor,
-          shape: BoxShape.circle,
+          borderRadius: BorderRadius.circular(12), // Rounded square instead of circle
           border: Border.all(color: borderColor, width: 2),
         ),
-        child: Icon(
-          Icons.person,
-          size: 24,
-          color: borderColor,
+        child: status == SeatStatus.driver 
+            ? _buildDriverProfilePhoto()
+            : Icon(
+                Icons.person,
+                size: 24,
+                color: borderColor,
+              ),
+      ),
+    );
+  }
+  
+  Widget _buildDriverProfilePhoto() {
+    return Container(
+      width: 50,
+      height: 50,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(10), // Rounded square to match seat shape
+        gradient: LinearGradient(
+          colors: [Color(0xFF6C5CE7), Color(0xFF4834D4)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Center(
+        child: Text(
+          'DM',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
     );

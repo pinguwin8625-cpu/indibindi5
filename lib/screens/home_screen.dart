@@ -89,9 +89,10 @@ class HomeScreen extends StatelessWidget {
           }
         }
         
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+        return SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
             // Show booking progress bar always
             BookingProgressBar(
               currentStep: _getCurrentStep(
@@ -268,7 +269,7 @@ class HomeScreen extends StatelessWidget {
                                                                 ? Color(0xFFDD2C00)
                                                                 : (i == originIndex
                                                                       ? Color(0xFF00C853)
-                                                                      : Colors.black)),
+                                                                      : Color(0xFF2E2E2E))),
                                                       fontWeight: (i == originIndex || i == destinationIndex)
                                                           ? FontWeight.bold
                                                           : FontWeight.normal,
@@ -288,21 +289,25 @@ class HomeScreen extends StatelessWidget {
                             
                             // Car seat layout section (show below stop list)
                             if (originIndex != null && destinationIndex != null && hasSelectedDateTime)
-                              Container(
-                                key: ValueKey('seat-layout'), // Add key for alignment reference
-                                margin: EdgeInsets.only(top: 20),
-                                height: 250, // Fixed height to match info card
-                                child: CarSeatLayout(
-                                  userRole: role,
-                                  onSeatsSelected: (seats) {
-                                    setState(() {
-                                      selectedSeats = seats;
-                                    });
-                                    if (kDebugMode) {
-                                      debugPrint('Selected seats: $seats');
-                                    }
-                                  },
-                                ),
+                              Column(
+                                children: [
+                                  Container(
+                                    key: ValueKey('seat-layout'), // Add key for alignment reference
+                                    margin: EdgeInsets.only(top: 20),
+                                    height: 250, // Fixed height to match info card
+                                    child: CarSeatLayout(
+                                      userRole: role,
+                                      onSeatsSelected: (seats) {
+                                        setState(() {
+                                          selectedSeats = seats;
+                                        });
+                                        if (kDebugMode) {
+                                          debugPrint('Selected seats: $seats');
+                                        }
+                                      },
+                                    ),
+                                  ),
+                                ],
                               ),
                           ],
                         ),
@@ -345,19 +350,33 @@ class HomeScreen extends StatelessWidget {
                               ),
                               child: Padding(
                                 padding: EdgeInsets.all(16), // Move padding inside
-                                child: Center(
-                                  child: Text(
-                                    role == 'Driver' 
-                                      ? '4 seats\navailable\nfor riders'
-                                      : '4 seats\navailable',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.blue[600],
-                                      height: 1.3,
-                                      fontWeight: FontWeight.w500,
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    // Large number at the top
+                                    Text(
+                                      '${4 - selectedSeats.length}',
+                                      style: TextStyle(
+                                        fontSize: 56, // 4 times bigger than original (14 * 4)
+                                        color: Colors.blue[600],
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
-                                  ),
+                                    SizedBox(height: 8),
+                                    // Descriptive text below
+                                    Text(
+                                      role == 'Driver' 
+                                        ? 'seats\navailable\nfor riders'
+                                        : 'seats\navailable',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.blue[600],
+                                        height: 1.3,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
@@ -369,7 +388,55 @@ class HomeScreen extends StatelessWidget {
             ),
             
             // Car seat layout moved to be positioned right after stop list
+            
+            // Complete Booking button appears with seat layout at same level as dropdown
+            if (destinationIndex != null && hasSelectedDateTime)
+              Padding(
+                padding: const EdgeInsets.only(top: 20, left: 16, right: 16),
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: (4 - selectedSeats.length) > 0 ? Color(0xFF2E2E2E) : Colors.grey[400],
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: InkWell(
+                    onTap: (4 - selectedSeats.length) > 0 ? () {
+                      // Handle final booking submission
+                      if (kDebugMode) {
+                        debugPrint('Final booking submitted!');
+                        debugPrint('Route: ${selectedRoute?.name}');
+                        debugPrint('Origin: ${selectedRoute?.stops[originIndex!].name}');
+                        debugPrint('Destination: ${selectedRoute?.stops[destinationIndex!].name}');
+                        debugPrint('Selected seats: $selectedSeats');
+                      }
+                      
+                      // TODO: Navigate to confirmation screen or process booking
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Booking submitted successfully!'),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                    } : null,
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      width: double.infinity,
+                      child: Center(
+                        child: Text(
+                          (4 - selectedSeats.length) > 0 ? 'Complete Booking' : 'No Available Seats',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.normal,
+                            color: (4 - selectedSeats.length) > 0 ? Color(0xFFFFFFFF) : Colors.grey[600],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
           ],
+        ),
         );
       },
     );
