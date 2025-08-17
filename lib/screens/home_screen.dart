@@ -108,63 +108,67 @@ class HomeScreen extends StatelessWidget {
               child: Container(
                 padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  color: Colors.red,
+                  color: Color(0xFF2E2E2E), // Neutral dark grey background
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: DropdownButton<RouteInfo>(
                   value: selectedRoute,
                   isExpanded: true,
                   underline: Container(), // Remove the default underline border
-                  dropdownColor: Colors.red, // Red background for dropdown items
-                  icon: Icon(Icons.arrow_drop_down, color: Colors.white),
+                  dropdownColor: Color(0xFF2E2E2E), // Dark grey background for dropdown items
+                  icon: Icon(Icons.arrow_drop_down, color: Color(0xFFFFFFFF)), // White icon
                   hint: Text(
                     'Select a route to get started',
                     style: TextStyle(
                       fontSize: 16,
-                      color: Colors.white,
+                      color: Color(0xFFFFFFFF), // White text
                     ),
                   ),
-                items: predefinedRoutes.map((route) {
-                  return DropdownMenuItem<RouteInfo>(
-                    value: route,
-                    child: Row(
-                      children: [
-                        // Route name with integrated direction
-                        Expanded(
-                          child: Row(
-                            children: [
-                              Flexible(
-                                child: Text(
-                                  _getFormattedRouteName(route.name),
-                                  style: TextStyle(fontSize: 16),
+                  items: predefinedRoutes.map((route) {
+                    return DropdownMenuItem<RouteInfo>(
+                      value: route,
+                      child: Row(
+                        children: [
+                          // Route name with integrated direction
+                          Expanded(
+                            child: Row(
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    _getFormattedRouteName(route.name),
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Color(0xFFFFFFFF), // White text
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
-                        SizedBox(width: 8),
-                        // Route details
-                        Text(
-                          '${route.distance} • ${route.duration}',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[600],
+                          SizedBox(width: 8),
+                          // Route details
+                          Text(
+                            '${route.distance} • ${route.duration}',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Color(0xFFFFFFFF), // White text
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  if (value != null) {
-                    setState(() {
-                      selectedRoute = value;
-                      originIndex = null;
-                      destinationIndex = null;
-                      hasSelectedDateTime = false; // Reset when route changes
-                    });
-                  }
-                },
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() {
+                        selectedRoute = value;
+                        originIndex = null;
+                        destinationIndex = null;
+                        hasSelectedDateTime = false; // Reset when route changes
+                      });
+                    }
+                  },
+                ),
               ),
             ),
             
@@ -344,8 +348,8 @@ class HomeScreen extends StatelessWidget {
                                 child: Center(
                                   child: Text(
                                     role == 'Driver' 
-                                      ? '3 seats\navailable\nfor riders'
-                                      : '3 seats\navailable',
+                                      ? '4 seats\navailable\nfor riders'
+                                      : '4 seats\navailable',
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
                                       fontSize: 14,
@@ -401,12 +405,12 @@ class HomeScreen extends StatelessWidget {
               ],
             ),
           ),
-          // Inner circle - green for origin
+          // Inner circle - dark grey for origin
           Container(
             width: 14,
             height: 14,
             decoration: BoxDecoration(
-              color: Color(0xFF00C853), // Google Maps green color
+              color: Color(0xFF2E2E2E), // Neutral dark grey color
               shape: BoxShape.circle,
             ),
           ),
@@ -434,19 +438,19 @@ class HomeScreen extends StatelessWidget {
               ],
             ),
           ),
-          // Inner circle - red for destination
+          // Inner circle - dark grey for destination
           Container(
             width: 14,
             height: 14,
             decoration: BoxDecoration(
-              color: Color(0xFFDD2C00), // Google Maps red color
+              color: Color(0xFF2E2E2E), // Neutral dark grey color
               shape: BoxShape.circle,
             ),
           ),
         ],
       );
     } else {
-      // Regular stop marker using Google Maps style
+      // Regular stop marker using neutral dark grey style
       return Container(
         width: 14,
         height: 14,
@@ -455,7 +459,7 @@ class HomeScreen extends StatelessWidget {
           border: Border.all(
             color: isGreyed
                 ? Colors.grey
-                : Color(0xFF4285F4), // Google Maps blue color
+                : Color(0xFF2E2E2E), // Neutral dark grey color
             width: 2,
           ),
           shape: BoxShape.circle,
@@ -980,9 +984,7 @@ class _TimeBoxesContainerState extends State<_TimeBoxesContainer> {
         // Add space between origin and destination time boxes (only if destination is selected)
         if (widget.destinationIndex != null)
           SizedBox(
-            height: widget.destinationIndex! - widget.originIndex == 1 
-              ? 8.0  // Minimum spacing for consecutive stops to prevent border touching
-              : (widget.destinationIndex! - widget.originIndex) * 28.0 - 28.0,
+            height: (widget.destinationIndex! - widget.originIndex - 1) * 28.0,
           ),
 
         // Destination arrival time box - only show when destination is selected

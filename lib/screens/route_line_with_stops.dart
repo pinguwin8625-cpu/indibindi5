@@ -16,7 +16,7 @@ class RouteLineWithStopsPainter extends CustomPainter {
     required this.stopCount,
     this.rowHeight = 28,
     this.lineWidth = 2,
-    this.lineColor = Colors.blueGrey,
+    this.lineColor = const Color(0xFF2E2E2E), // Neutral dark grey
     this.originIndex,
     this.destinationIndex,
     this.greyedStops,
@@ -43,8 +43,8 @@ class RouteLineWithStopsPainter extends CustomPainter {
             ? originIndex!
             : destinationIndex!;
         if (i >= start && i < end) {
-          // Use Google Maps route color (blue)
-          segmentColor = Color(0xFF4285F4); // Google Maps blue route color
+          // Use neutral dark grey for route
+          segmentColor = Color(0xFF2E2E2E); // Neutral dark grey
         }
       }
 
