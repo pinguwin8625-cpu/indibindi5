@@ -345,7 +345,7 @@ class HomeScreen extends StatelessWidget {
                               height: 250, // Increased to match seat layout height
                               padding: EdgeInsets.all(0), // Remove internal padding to align borders perfectly
                               decoration: BoxDecoration(
-                                color: Colors.blue[50],
+                                color: Colors.transparent, // Transparent background
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Padding(
@@ -358,7 +358,7 @@ class HomeScreen extends StatelessWidget {
                                       '${4 - selectedSeats.length}',
                                       style: TextStyle(
                                         fontSize: 56, // 4 times bigger than original (14 * 4)
-                                        color: Colors.blue[600],
+                                        color: Color(0xFF2E2E2E),
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
@@ -371,7 +371,7 @@ class HomeScreen extends StatelessWidget {
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
                                         fontSize: 14,
-                                        color: Colors.blue[600],
+                                        color: Color(0xFF2E2E2E),
                                         height: 1.3,
                                         fontWeight: FontWeight.w500,
                                       ),

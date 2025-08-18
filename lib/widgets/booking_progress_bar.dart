@@ -100,7 +100,19 @@ class BookingProgressBar extends StatelessWidget {
           AnimatedPositioned(
             duration: Duration(milliseconds: 500),
             curve: Curves.easeInOut,
-            left: progress > 0 ? (progress * (MediaQuery.of(context).size.width - 48 - 24)) + 8 : 8, // Stop 24px before destination marker
+            left: () {
+              // For origin and destination, use custom positions
+              if (currentStep == 0) {
+                return 10.0; // 2px further from origin
+              } else if (currentStep == totalSteps) {
+                return (MediaQuery.of(context).size.width - 48 - 30) + 10;
+              } else {
+                // For stops, align car's bottom center with stop marker
+                double stepProgress = currentStep / totalSteps;
+                double stopPosition = 8 + (stepProgress * (MediaQuery.of(context).size.width - 48));
+                return stopPosition - 15; // 15 is half car width
+              }
+            }(),
             top: 7,
             child: CustomPaint(
               size: Size(30, 15),
