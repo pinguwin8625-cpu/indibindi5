@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import '../models/routes.dart';
 import 'route_line_with_stops.dart';
-import 'rider_seat_selection_screen.dart';
 import 'dart:math' show max, min;
 import '../utils/date_time_helpers.dart';
 import '../utils/constants.dart';
@@ -224,27 +223,6 @@ class HomeScreen extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Stops title card
-                            Container(
-                              margin: EdgeInsets.only(top: 8),
-                              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                              height: 56, // Match DropdownButton's default height
-                              decoration: BoxDecoration(
-                                color: Color(0xFF2E2E2E), // Same dark color as Routes dropdown
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Align(
-                                alignment: Alignment.centerLeft,
-                                child: Text(
-                                  'Stops',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFFFFFFFF), // White text like Routes
-                                  ),
-                                ),
-                              ),
-                            ),
                             // Stop list section
                             SizedBox(
                               height: selectedRoute!.stops.length * 42.0,
@@ -678,28 +656,50 @@ class HomeScreen extends StatelessWidget {
   }
 
   Widget _buildRiderContent() {
+    // Driver content (identical to driver tab)
     RouteInfo? selectedRoute;
     int? originIndex;
     int? destinationIndex;
+    List<int> selectedSeats = [];
+    bool hasSelectedDateTime = false;
     ScrollController scrollController = ScrollController();
-    
+
     return StatefulBuilder(
       builder: (context, setState) {
+        // Compute greyed stops
+        List<int> greyedStops = [];
+        if (selectedRoute != null &&
+            originIndex != null &&
+            destinationIndex != null) {
+          int start = originIndex! < destinationIndex!
+              ? originIndex!
+              : destinationIndex!;
+          int end = originIndex! > destinationIndex!
+              ? originIndex!
+              : destinationIndex!;
+          for (int i = 0; i < selectedRoute!.stops.length; i++) {
+            if (i < start || i > end) {
+              greyedStops.add(i);
+            }
+          }
+        }
+
         return SingleChildScrollView(
           controller: scrollController,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Progress bar for rider
+              // Show booking progress bar always
               BookingProgressBar(
-                currentStep: selectedRoute == null 
-                  ? 0 
-                  : (originIndex == null 
-                    ? 1 
-                    : (destinationIndex == null ? 2 : 3)),
+                currentStep: _getCurrentStep(
+                  selectedRoute,
+                  originIndex,
+                  destinationIndex,
+                  hasSelectedDateTime,
+                  selectedSeats,
+                ),
               ),
 
-              // Route selection dropdown
               Padding(
                 padding: const EdgeInsets.only(top: 8, left: 16, right: 16),
                 child: Container(
@@ -711,12 +711,21 @@ class HomeScreen extends StatelessWidget {
                   child: DropdownButton<RouteInfo>(
                     value: selectedRoute,
                     isExpanded: true,
-                    underline: Container(),
-                    dropdownColor: Color(0xFF2E2E2E),
-                    icon: Icon(Icons.arrow_drop_down, color: Colors.white), // Always white
+                    underline:
+                        Container(), // Remove the default underline border
+                    dropdownColor: Color(
+                      0xFF2E2E2E,
+                    ), // Dark grey background for dropdown items
+                    icon: Icon(
+                      Icons.arrow_drop_down,
+                      color: Color(0xFFFFFFFF), // Always white icon
+                    ),
                     hint: Text(
                       'Routes',
-                      style: TextStyle(fontSize: 16, color: Colors.white),
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Color(0xFFFFFFFF), // White text for hint
+                      ),
                     ),
                     selectedItemBuilder: selectedRoute != null ? (BuildContext context) {
                       return predefinedRoutes.map<Widget>((RouteInfo route) {
@@ -725,7 +734,7 @@ class HomeScreen extends StatelessWidget {
                             _getFormattedRouteName(route.name),
                             style: TextStyle(
                               fontSize: 16,
-                              color: Colors.white, // Always white
+                              color: Color(0xFFFFFFFF), // Always white text
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -737,29 +746,45 @@ class HomeScreen extends StatelessWidget {
                         value: route,
                         child: Row(
                           children: [
+                            // Route name with integrated direction
                             Expanded(
-                              child: Text(
-                                _getFormattedRouteName(route.name),
-                                style: TextStyle(fontSize: 16, color: Colors.white),
+                              child: Row(
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      _getFormattedRouteName(route.name),
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        color: Color(0xFFFFFFFF), // White text
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                             SizedBox(width: 8),
+                            // Route details
                             Text(
                               '${route.distance} • ${route.duration}',
-                              style: TextStyle(fontSize: 14, color: Colors.white),
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Color(0xFFFFFFFF), // White text
+                              ),
                             ),
                           ],
                         ),
                       );
                     }).toList(),
                     onChanged: (value) {
-                      setState(() {
-                        selectedRoute = value;
-                        originIndex = null;
-                        destinationIndex = null;
-                      });
-                      // Auto-scroll to show the stops section
                       if (value != null) {
+                        setState(() {
+                          selectedRoute = value;
+                          originIndex = null;
+                          destinationIndex = null;
+                          hasSelectedDateTime =
+                              false; // Reset when route changes
+                        });
+                        // Auto-scroll to show the stops section
                         Future.delayed(Duration(milliseconds: 300), () {
                           scrollController.animateTo(
                             200.0, // Scroll down to show stops
@@ -773,361 +798,324 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
 
-              // Show route content when route is selected
+              // Show route content only when a route is selected
               if (selectedRoute != null)
                 Padding(
                   padding: const EdgeInsets.only(left: 16, right: 16, top: 16),
-                  child: Column(
+                  child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Stops title card
-                      Container(
-                        margin: EdgeInsets.only(top: 8),
-                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        height: 56, // Match DropdownButton's default height
-                        decoration: BoxDecoration(
-                          color: Color(0xFF2E2E2E), // Same dark color as Routes dropdown
-                          borderRadius: BorderRadius.circular(8),
+                      // Left side: Stop list and seat plan
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Stop list section
+                            SizedBox(
+                              height: selectedRoute!.stops.length * 42.0,
+                              child: Stack(
+                                children: [
+                                  Positioned.fill(
+                                    child: CustomPaint(
+                                      painter: RouteLineWithStopsPainter(
+                                        stopCount: selectedRoute!.stops.length,
+                                        rowHeight: 42,
+                                        lineWidth: 2,
+                                        lineColor: Colors.blueGrey,
+                                        originIndex: originIndex,
+                                        destinationIndex: destinationIndex,
+                                        greyedStops: greyedStops,
+                                      ),
+                                    ),
+                                  ),
+                                  ListView.builder(
+                                    physics: NeverScrollableScrollPhysics(),
+                                    itemCount: selectedRoute!.stops.length,
+                                    itemBuilder: (context, i) {
+                                      bool isFirst = i == 0;
+                                      bool isLast =
+                                          i == selectedRoute!.stops.length - 1;
+                                      bool disableTap =
+                                          (originIndex == null && isLast) ||
+                                          (originIndex != null &&
+                                              destinationIndex == null &&
+                                              isFirst &&
+                                              i > originIndex!);
+                                      bool isGreyed = greyedStops.contains(i);
+                                      return InkWell(
+                                        onTap: disableTap
+                                            ? null
+                                            : () {
+                                                setState(() {
+                                                  if (originIndex == null) {
+                                                    if (!isLast) {
+                                                      originIndex = i;
+                                                      destinationIndex = null;
+                                                    }
+                                                  } else if (destinationIndex ==
+                                                          null &&
+                                                      i != originIndex &&
+                                                      i > originIndex!) {
+                                                    if (!isFirst) {
+                                                      destinationIndex = i;
+                                                    }
+                                                  } else if (i == originIndex) {
+                                                    originIndex = null;
+                                                    destinationIndex = null;
+                                                  } else if (i ==
+                                                      destinationIndex) {
+                                                    destinationIndex = null;
+                                                  }
+                                                  hasSelectedDateTime = false;
+                                                });
+                                              },
+                                        child: Container(
+                                          height: 42.0,
+                                          padding: EdgeInsets.symmetric(
+                                            vertical: 8,
+                                          ),
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.center,
+                                            children: [
+                                              Container(
+                                                width: 28,
+                                                alignment: Alignment.center,
+                                                child: _buildStopCircleOrMarker(
+                                                  i,
+                                                  originIndex,
+                                                  destinationIndex,
+                                                  isGreyed,
+                                                ),
+                                              ),
+                                              SizedBox(width: 8),
+                                              Expanded(
+                                                child: Text(
+                                                  selectedRoute!.stops[i].name,
+                                                  style: TextStyle(
+                                                    fontSize: 13,
+                                                    color: isGreyed
+                                                        ? Colors.grey
+                                                        : (i == destinationIndex
+                                                              ? Color(
+                                                                  0xFFDD2C00,
+                                                                )
+                                                              : (i ==
+                                                                        originIndex
+                                                                    ? Color(
+                                                                        0xFF00C853,
+                                                                      )
+                                                                    : Color(
+                                                                        0xFF2E2E2E,
+                                                                      ))),
+                                                    fontWeight:
+                                                        (i == originIndex ||
+                                                            i ==
+                                                                destinationIndex)
+                                                        ? FontWeight.bold
+                                                        : FontWeight.normal,
+                                                  ),
+                                                  textAlign: TextAlign.left,
+                                                  maxLines: 2,
+                                                  overflow: TextOverflow.visible,
+                                                  softWrap: true,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            // Car seat layout section (show below stop list)
+                            if (originIndex != null &&
+                                destinationIndex != null &&
+                                hasSelectedDateTime)
+                              Column(
+                                children: [
+                                  Container(
+                                    key: ValueKey(
+                                      'seat-layout',
+                                    ), // Add key for alignment reference
+                                    margin: EdgeInsets.only(top: 20),
+                                    height:
+                                        250, // Fixed height to match info card
+                                    child: CarSeatLayout(
+                                      userRole: 'Rider', // Use Rider role for rider tab
+                                      onSeatsSelected: (seats) {
+                                        setState(() {
+                                          selectedSeats = seats;
+                                        });
+                                        if (kDebugMode) {
+                                          debugPrint('Selected seats: $seats');
+                                        }
+                                      },
+                                    ),
+                                  ),
+                                ],
+                              ),
+                          ],
                         ),
-                        child: Align(
-                          alignment: Alignment.centerLeft,
+                      ),
+
+                      // Right side: date picker and seat availability info
+                      if (originIndex != null)
+                        Container(
+                          margin: EdgeInsets.only(left: 16),
+                          width: 160,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Time picker section
+                              _TimeBoxesContainer(
+                                selectedRoute: selectedRoute!,
+                                originIndex: originIndex!,
+                                destinationIndex: destinationIndex,
+                                onDateTimeSelected: (bool selected) {
+                                  setState(() {
+                                    hasSelectedDateTime = selected;
+                                  });
+                                },
+                              ),
+
+                              // Seat availability information card (positioned to match seat layout)
+                              if (destinationIndex != null &&
+                                  hasSelectedDateTime)
+                                Container(
+                                  key: ValueKey(
+                                    'info-card',
+                                  ), // Add key for alignment reference
+                                  margin: EdgeInsets.only(
+                                    top:
+                                        20 +
+                                        (selectedRoute!.stops.length * 42.0) -
+                                        (destinationIndex! * 42.0 + 42.0),
+                                    // Position card to align with seat layout: margin + stop list height - time picker height
+                                  ),
+                                  width: 160, // Match the time picker width
+                                  height:
+                                      250, // Increased to match seat layout height
+                                  padding: EdgeInsets.all(
+                                    0,
+                                  ), // Remove internal padding to align borders perfectly
+                                  decoration: BoxDecoration(
+                                    color: Colors
+                                        .transparent, // Transparent background
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Padding(
+                                    padding: EdgeInsets.all(
+                                      16,
+                                    ), // Move padding inside
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        // Large number at the top
+                                        Text(
+                                          '${4 - selectedSeats.length}',
+                                          style: TextStyle(
+                                            fontSize:
+                                                56, // 4 times bigger than original (14 * 4)
+                                            color: Color(0xFF2E2E2E),
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        SizedBox(height: 8),
+                                        // Descriptive text below
+                                        Text(
+                                          'seats\navailable', // Always show rider text
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: Color(0xFF2E2E2E),
+                                            height: 1.3,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+
+              // Car seat layout moved to be positioned right after stop list
+
+              // Complete Booking button appears with seat layout at same level as dropdown
+              if (destinationIndex != null && hasSelectedDateTime)
+                Padding(
+                  padding: const EdgeInsets.only(top: 20, left: 16, right: 16),
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: (4 - selectedSeats.length) > 0
+                          ? Color(0xFF2E2E2E)
+                          : Colors.grey[400],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: InkWell(
+                      onTap: (4 - selectedSeats.length) > 0
+                          ? () {
+                              // Handle final booking submission
+                              if (kDebugMode) {
+                                debugPrint('Final booking submitted!');
+                                debugPrint('Route: ${selectedRoute?.name}');
+                                debugPrint(
+                                  'Origin: ${selectedRoute?.stops[originIndex!].name}',
+                                );
+                                debugPrint(
+                                  'Destination: ${selectedRoute?.stops[destinationIndex!].name}',
+                                );
+                                debugPrint('Selected seats: $selectedSeats');
+                              }
+
+                              // TODO: Navigate to confirmation screen or process booking
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    'Booking submitted successfully!',
+                                  ),
+                                  backgroundColor: Colors.green,
+                                ),
+                              );
+                            }
+                          : null,
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        width: double.infinity,
+                        child: Center(
                           child: Text(
-                            'Stops',
+                            (4 - selectedSeats.length) > 0
+                                ? 'Complete Booking'
+                                : 'No Available Seats',
                             style: TextStyle(
                               fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFFFFFFFF), // White text like Routes
+                              fontWeight: FontWeight.normal,
+                              color: (4 - selectedSeats.length) > 0
+                                  ? Color(0xFFFFFFFF)
+                                  : Colors.grey[600],
                             ),
                           ),
                         ),
                       ),
-                      
-                      // Stop list for selection
-                      Container(
-                        height: selectedRoute!.stops.length * 50.0,
-                        child: ListView.builder(
-                          physics: NeverScrollableScrollPhysics(),
-                          itemCount: selectedRoute!.stops.length,
-                          itemBuilder: (context, index) {
-                            bool isOrigin = originIndex == index;
-                            bool isDestination = destinationIndex == index;
-                            bool isSelected = isOrigin || isDestination;
-                            
-                            return GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  if (originIndex == null) {
-                                    originIndex = index;
-                                  } else if (destinationIndex == null && index != originIndex) {
-                                    destinationIndex = index;
-                                  } else {
-                                    // Reset selection
-                                    originIndex = index;
-                                    destinationIndex = null;
-                                  }
-                                });
-                              },
-                              child: Container(
-                                height: 48,
-                                margin: EdgeInsets.only(bottom: 2),
-                                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                decoration: BoxDecoration(
-                                  color: isSelected ? Color(0xFFE3F2FD) : Colors.grey[50],
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                    color: isOrigin 
-                                      ? Color(0xFF00C853) 
-                                      : isDestination 
-                                        ? Color(0xFFDD2C00) 
-                                        : Colors.grey[300]!,
-                                    width: isSelected ? 2 : 1,
-                                  ),
-                                ),
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    // Stop marker
-                                    Container(
-                                      width: 16,
-                                      height: 16,
-                                      decoration: BoxDecoration(
-                                        color: isOrigin 
-                                          ? Color(0xFF00C853) 
-                                          : isDestination 
-                                            ? Color(0xFFDD2C00) 
-                                            : Color(0xFF2E2E2E),
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: isSelected
-                                        ? Icon(
-                                            isOrigin ? Icons.location_on : Icons.flag,
-                                            color: Colors.white,
-                                            size: 12,
-                                          )
-                                        : null,
-                                    ),
-                                    SizedBox(width: 12),
-                                    // Stop name
-                                    Expanded(
-                                      child: Text(
-                                        selectedRoute!.stops[index].name,
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                          color: Color(0xFF2E2E2E),
-                                        ),
-                                        maxLines: 2,
-                                        overflow: TextOverflow.visible,
-                                        softWrap: true,
-                                      ),
-                                    ),
-                                    // Selection indicator
-                                    if (isSelected)
-                                      Text(
-                                        isOrigin ? 'Pickup' : 'Drop-off',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold,
-                                          color: isOrigin ? Color(0xFF00C853) : Color(0xFFDD2C00),
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-
-                      // Show ride listings when both stops are selected
-                      if (originIndex != null && destinationIndex != null) ...[
-                        SizedBox(height: 24),
-                        Text(
-                          'Available rides in the next 5 days:',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF2E2E2E),
-                          ),
-                        ),
-                        SizedBox(height: 12),
-                        _buildRideListings(context, selectedRoute!, originIndex!, destinationIndex!),
-                      ],
-                    ],
+                    ),
                   ),
                 ),
             ],
           ),
         );
       },
-    );
-  }
-
-  Widget _buildRideListings(BuildContext context, RouteInfo route, int originIndex, int destinationIndex) {
-    // Mock ride data for the next 5 days
-    List<RideInfo> mockRides = _generateMockRides(route, originIndex, destinationIndex);
-    
-    return Column(
-      children: mockRides.map((ride) => _buildRideCard(context, ride)).toList(),
-    );
-  }
-
-  Widget _buildRideCard(BuildContext context, RideInfo ride) {
-    return Card(
-      margin: EdgeInsets.only(bottom: 12),
-      elevation: 2,
-      child: Padding(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Date and time row
-            Row(
-              children: [
-                Icon(Icons.calendar_today, size: 16, color: Color(0xFF2E2E2E)),
-                SizedBox(width: 8),
-                Text(
-                  '${_formatDate(ride.departureTime)} • ${_formatTime(ride.departureTime)}',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF2E2E2E),
-                  ),
-                ),
-                Spacer(),
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: ride.availableSeats > 0 ? Colors.green[100] : Colors.grey[300],
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    '${ride.availableSeats} seats',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: ride.availableSeats > 0 ? Colors.green[700] : Colors.grey[600],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 12),
-            
-            // Driver info
-            Row(
-              children: [
-                CircleAvatar(
-                  radius: 20,
-                  backgroundImage: NetworkImage(ride.driverPhoto),
-                  backgroundColor: Colors.grey[300],
-                ),
-                SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        ride.driverName,
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF2E2E2E),
-                        ),
-                      ),
-                      Row(
-                        children: [
-                          Icon(Icons.star, color: Colors.amber, size: 14),
-                          SizedBox(width: 4),
-                          Text(
-                            ride.driverRating.toString(),
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Color(0xFF2E2E2E),
-                            ),
-                          ),
-                          SizedBox(width: 12),
-                          Text(
-                            '${ride.price}',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF2E2E2E),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 12),
-            
-            // Select ride button
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: ride.availableSeats > 0 
-                  ? () => _selectRide(context, ride)
-                  : null,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: ride.availableSeats > 0 ? Color(0xFF2E2E2E) : Colors.grey[400],
-                  padding: EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: Text(
-                  ride.availableSeats > 0 ? 'Select This Ride' : 'Full',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  List<RideInfo> _generateMockRides(RouteInfo route, int originIndex, int destinationIndex) {
-    List<RideInfo> rides = [];
-    DateTime now = DateTime.now();
-    
-    // Generate rides for next 5 days
-    for (int day = 0; day < 5; day++) {
-      DateTime date = now.add(Duration(days: day));
-      
-      // 2-4 rides per day
-      int ridesPerDay = 2 + (day % 3);
-      
-      for (int i = 0; i < ridesPerDay; i++) {
-        DateTime departureTime = DateTime(
-          date.year,
-          date.month,
-          date.day,
-          8 + (i * 3) + (day % 2), // Vary times
-          (i * 15) % 60, // Vary minutes
-        );
-        
-        // Skip past times for today
-        if (day == 0 && departureTime.isBefore(now)) continue;
-        
-        rides.add(RideInfo(
-          id: 'ride_${day}_$i',
-          route: route,
-          driverName: _getMockDriverName(day + i),
-          driverPhoto: 'https://randomuser.me/api/portraits/men/${(day + i) % 10 + 1}.jpg',
-          driverRating: 4.2 + ((day + i) % 8) * 0.1,
-          departureTime: departureTime,
-          originIndex: originIndex,
-          destinationIndex: destinationIndex,
-          availableSeats: 1 + ((day + i) % 4),
-          price: '\$${15 + (day + i) * 3}',
-        ));
-      }
-    }
-    
-    // Sort by departure time
-    rides.sort((a, b) => a.departureTime.compareTo(b.departureTime));
-    
-    return rides;
-  }
-
-  String _getMockDriverName(int index) {
-    List<String> names = [
-      'Mike A.', 'Sarah B.', 'John C.', 'Emma D.', 'David E.',
-      'Lisa F.', 'Tom G.', 'Anna H.', 'Chris I.', 'Maria J.'
-    ];
-    return names[index % names.length];
-  }
-
-  String _formatDate(DateTime date) {
-    List<String> days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    List<String> months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
-                          'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    
-    return '${days[date.weekday - 1]}, ${months[date.month - 1]} ${date.day}';
-  }
-
-  String _formatTime(DateTime time) {
-    String hour = time.hour > 12 ? '${time.hour - 12}' : '${time.hour}';
-    if (time.hour == 0) hour = '12';
-    String minute = time.minute.toString().padLeft(2, '0');
-    String period = time.hour >= 12 ? 'PM' : 'AM';
-    return '$hour:$minute $period';
-  }
-
-  void _selectRide(BuildContext context, RideInfo ride) {
-    // Navigate to seat selection for the selected ride
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => RiderSeatSelectionScreen(ride: ride),
-      ),
     );
   }
 }
@@ -1196,7 +1184,7 @@ class _TimeBoxesContainerState extends State<_TimeBoxesContainer> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Origin time box - positioned to align with the origin
-        SizedBox(height: 56.0 + (widget.originIndex * 42.0)), // 56px for Stops title + stop positioning
+        SizedBox(height: widget.originIndex * 42.0), // Stop positioning only (no title offset)
 
         // Origin departure time box
         GestureDetector(
