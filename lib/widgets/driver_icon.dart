@@ -4,7 +4,11 @@ class DriverIcon extends StatelessWidget {
   final double size;
   final Color? color;
 
-  const DriverIcon({super.key, this.size = 24.0, this.color});
+  const DriverIcon({
+    super.key,
+    this.size = 24.0,
+    this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -31,19 +35,19 @@ class DriverIconPainter extends CustomPainter {
     final headPaint = Paint()
       ..color = color
       ..style = PaintingStyle.fill;
-
+    
     canvas.drawCircle(
       Offset(size.width * 0.5, size.height * 0.22),
       size.width * 0.18,
       headPaint,
     );
-
+    
     // Add head outline for definition
     final headOutlinePaint = Paint()
       ..color = color
       ..style = PaintingStyle.stroke
       ..strokeWidth = size.width * 0.06;
-
+    
     canvas.drawCircle(
       Offset(size.width * 0.5, size.height * 0.22),
       size.width * 0.18,
@@ -72,7 +76,7 @@ class DriverIconPainter extends CustomPainter {
         height: size.width * 0.6,
       ),
       -3.14159 * 0.25, // Start angle (top-left quarter)
-      3.14159 * 0.5, // Sweep angle (half circle)
+      3.14159 * 0.5,   // Sweep angle (half circle)
       false,
       wheelPaint,
     );
@@ -90,7 +94,7 @@ class DriverIconPainter extends CustomPainter {
       handPaint,
     );
 
-    // Right hand
+    // Right hand  
     canvas.drawLine(
       Offset(size.width * 0.65, size.height * 0.6),
       Offset(size.width * 0.65, size.height * 0.75),

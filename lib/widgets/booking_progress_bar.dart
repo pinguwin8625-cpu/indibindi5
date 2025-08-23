@@ -13,16 +13,16 @@ class BookingProgressBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     double progress = currentStep / totalSteps;
-
+    
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      height: 30, // Increased height to accommodate larger markers
+      margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8), // Match dropdown margin
+      height: 48, // Match Routes dropdown total height (16px container padding + ~32px DropdownButton)
       child: Stack(
         children: [
           // Origin marker (start point - Google Maps style pin marker)
           Positioned(
             left: 0,
-            top: 2,
+            top: 14, // Centered: (48 - 20) / 2 = 14
             child: CustomPaint(
               size: Size(16, 20),
               painter: GoogleMapsOriginPinPainter(),
@@ -31,7 +31,7 @@ class BookingProgressBar extends StatelessWidget {
           // Destination marker (end point - Google Maps style pin marker)
           Positioned(
             right: 0,
-            top: 2,
+            top: 14, // Centered: (48 - 20) / 2 = 14
             child: CustomPaint(
               size: Size(16, 20),
               painter: GoogleMapsDestinationPinPainter(),
@@ -39,7 +39,7 @@ class BookingProgressBar extends StatelessWidget {
           ),
           // Background track (full width)
           Positioned(
-            top: 20,
+            top: 32, // Centered below pins: 14 + 20 - 2 = 32
             left: 8, // Offset to center between origin and destination markers
             right: 8,
             child: Container(
@@ -53,13 +53,10 @@ class BookingProgressBar extends StatelessWidget {
           // Red progress trail (follows behind the car)
           if (progress > 0)
             Positioned(
-              top: 20,
+              top: 32, // Match background track position
               left: 8, // Offset to match background track
               child: Container(
-                width:
-                    (progress *
-                    (MediaQuery.of(context).size.width -
-                        48)), // Adjusted for marker offsets
+                width: (progress * (MediaQuery.of(context).size.width - 48)), // Adjusted for marker offsets
                 height: 2,
                 decoration: BoxDecoration(
                   color: Colors.red[600],
@@ -67,24 +64,26 @@ class BookingProgressBar extends StatelessWidget {
                 ),
               ),
             ),
-
+          
           // Step markers along the progress line
           ...List.generate(totalSteps - 1, (index) {
             double stepProgress = (index + 1) / totalSteps;
-            double stepPosition =
-                8 + (stepProgress * (MediaQuery.of(context).size.width - 48));
+            double stepPosition = 8 + (stepProgress * (MediaQuery.of(context).size.width - 48));
             bool isCompleted = currentStep > index + 1;
-
+            
             return Positioned(
               left: stepPosition - 4, // Center the 8px marker
-              top: 16,
+              top: 28, // Centered: 32 - 4 = 28 (track position - half marker height)
               child: Container(
                 width: 8,
                 height: 8,
                 decoration: BoxDecoration(
                   color: isCompleted ? Colors.red[600] : Colors.grey[400],
                   shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 1.5),
+                  border: Border.all(
+                    color: Colors.white,
+                    width: 1.5,
+                  ),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withValues(alpha: 0.2),
@@ -110,13 +109,11 @@ class BookingProgressBar extends StatelessWidget {
               } else {
                 // For stops, align car's bottom center with stop marker
                 double stepProgress = currentStep / totalSteps;
-                double stopPosition =
-                    8 +
-                    (stepProgress * (MediaQuery.of(context).size.width - 48));
+                double stopPosition = 8 + (stepProgress * (MediaQuery.of(context).size.width - 48));
                 return stopPosition - 15; // 15 is half car width
               }
             }(),
-            top: 7,
+            top: 19, // Centered: 32 - 13 = 19 (track position - half car height)
             child: CustomPaint(
               size: Size(30, 15),
               painter: SideViewCarPainter(),
@@ -138,41 +135,41 @@ class SideViewCarPainter extends CustomPainter {
 
     // Draw car as one continuous path
     final carPath = Path();
-
+    
     // Start from back-left of car
     carPath.moveTo(size.width * 0.1, size.height * 0.8);
-
+    
     // Bottom of car
     carPath.lineTo(size.width * 0.9, size.height * 0.8);
-
+    
     // Front hood (slanted upward to right)
     carPath.lineTo(size.width, size.height * 0.6);
     carPath.lineTo(size.width, size.height * 0.4);
-
+    
     // Top of main body
     carPath.lineTo(size.width * 0.8, size.height * 0.4);
-
+    
     // Windshield
     carPath.lineTo(size.width * 0.7, size.height * 0.15);
-
+    
     // Roof
     carPath.lineTo(size.width * 0.3, size.height * 0.15);
-
+    
     // Rear windshield
     carPath.lineTo(size.width * 0.2, size.height * 0.4);
-
+    
     // Back to start
     carPath.lineTo(size.width * 0.1, size.height * 0.4);
     carPath.close();
-
+    
     // Draw the solid car body
     canvas.drawPath(carPath, paint);
-
+    
     // Draw windows
     final windowPaint = Paint()
       ..color = Colors.lightBlue[100]!
       ..style = PaintingStyle.fill;
-
+    
     // Front windshield window
     final frontWindowPath = Path();
     frontWindowPath.moveTo(size.width * 0.72, size.height * 0.38);
@@ -181,7 +178,7 @@ class SideViewCarPainter extends CustomPainter {
     frontWindowPath.lineTo(size.width * 0.78, size.height * 0.38);
     frontWindowPath.close();
     canvas.drawPath(frontWindowPath, windowPaint);
-
+    
     // Side window
     final sideWindowPath = Path();
     sideWindowPath.moveTo(size.width * 0.4, size.height * 0.38);
@@ -190,7 +187,7 @@ class SideViewCarPainter extends CustomPainter {
     sideWindowPath.lineTo(size.width * 0.65, size.height * 0.38);
     sideWindowPath.close();
     canvas.drawPath(sideWindowPath, windowPaint);
-
+    
     // Rear window
     final rearWindowPath = Path();
     rearWindowPath.moveTo(size.width * 0.22, size.height * 0.38);
@@ -199,24 +196,24 @@ class SideViewCarPainter extends CustomPainter {
     rearWindowPath.lineTo(size.width * 0.35, size.height * 0.38);
     rearWindowPath.close();
     canvas.drawPath(rearWindowPath, windowPaint);
-
+    
     // Draw wheels as solid circles
     final wheelPaint = Paint()
       ..color = Colors.grey[800]!
       ..style = PaintingStyle.fill;
-
+    
     // Rear wheel
     canvas.drawCircle(
-      Offset(size.width * 0.3, size.height * 0.8),
-      size.height * 0.1,
-      wheelPaint,
+      Offset(size.width * 0.3, size.height * 0.8), 
+      size.height * 0.1, 
+      wheelPaint
     );
-
+    
     // Front wheel
     canvas.drawCircle(
-      Offset(size.width * 0.7, size.height * 0.8),
-      size.height * 0.1,
-      wheelPaint,
+      Offset(size.width * 0.7, size.height * 0.8), 
+      size.height * 0.1, 
+      wheelPaint
     );
   }
 
@@ -249,7 +246,7 @@ class GoogleMapsOriginPinPainter extends CustomPainter {
     final centerPaint = Paint()
       ..color = Colors.white
       ..style = PaintingStyle.fill;
-
+    
     canvas.drawCircle(
       Offset(size.width / 2, size.height * 0.35),
       size.width * 0.2,
@@ -264,10 +261,8 @@ class GoogleMapsOriginPinPainter extends CustomPainter {
     final radius = size.width * 0.35;
 
     // Create teardrop shape
-    path.addOval(
-      Rect.fromCircle(center: Offset(centerX, centerY), radius: radius),
-    );
-
+    path.addOval(Rect.fromCircle(center: Offset(centerX, centerY), radius: radius));
+    
     // Add the point at the bottom
     path.moveTo(centerX, centerY + radius);
     path.lineTo(centerX, size.height + offsetY);

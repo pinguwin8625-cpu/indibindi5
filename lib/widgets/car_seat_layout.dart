@@ -65,10 +65,7 @@ class _CarSeatLayoutState extends State<CarSeatLayout> {
                         ),
                         SizedBox(height: 2),
                         Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
+                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(4),
@@ -94,11 +91,7 @@ class _CarSeatLayoutState extends State<CarSeatLayout> {
                               Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(
-                                    Icons.star,
-                                    color: Colors.amber,
-                                    size: 12,
-                                  ),
+                                  Icon(Icons.star, color: Colors.amber, size: 12),
                                   SizedBox(width: 2),
                                   Text(
                                     '4.8',
@@ -216,17 +209,16 @@ class _CarSeatLayoutState extends State<CarSeatLayout> {
       width: 50,
       height: 50,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(
-          10,
-        ), // Rounded square to match seat shape
+        borderRadius: BorderRadius.circular(10), // Rounded square to match seat shape
         color: Color(0xFFBDBDBD), // Solid grey to indicate not available
       ),
       clipBehavior: Clip.antiAlias,
       child: Image.network(
         'https://randomuser.me/api/portraits/men/1.jpg',
         fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) =>
-            Container(color: Color(0xFFBDBDBD)),
+        errorBuilder: (context, error, stackTrace) => Container(
+          color: Color(0xFFBDBDBD),
+        ),
       ),
     );
   }

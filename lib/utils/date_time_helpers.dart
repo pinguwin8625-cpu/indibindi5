@@ -43,16 +43,14 @@ DateTime calculateArrivalTime(
   if (destinationIndex == null) {
     return departureTime;
   }
-
+  
   final start = originIndex < destinationIndex ? originIndex : destinationIndex;
   final end = originIndex > destinationIndex ? originIndex : destinationIndex;
   final totalMinutes = _segmentMinutes(route, start, end);
-
+  
   // Debug print to see calculation
-  debugPrint(
-    'calculateArrivalTime: origin=$originIndex, dest=$destinationIndex, start=$start, end=$end, totalMin=$totalMinutes',
-  );
-
+  debugPrint('calculateArrivalTime: origin=$originIndex, dest=$destinationIndex, start=$start, end=$end, totalMin=$totalMinutes');
+  
   return departureTime.add(Duration(minutes: totalMinutes));
 }
 
@@ -66,15 +64,13 @@ DateTime calculateDepartureTime(
   if (destinationIndex == null) {
     return arrivalTime;
   }
-
+  
   final start = originIndex < destinationIndex ? originIndex : destinationIndex;
   final end = originIndex > destinationIndex ? originIndex : destinationIndex;
   final totalMinutes = _segmentMinutes(route, start, end);
-
+  
   // Debug print to see calculation
-  debugPrint(
-    'calculateDepartureTime: origin=$originIndex, dest=$destinationIndex, start=$start, end=$end, totalMin=$totalMinutes',
-  );
-
+  debugPrint('calculateDepartureTime: origin=$originIndex, dest=$destinationIndex, start=$start, end=$end, totalMin=$totalMinutes');
+  
   return arrivalTime.subtract(Duration(minutes: totalMinutes));
 }

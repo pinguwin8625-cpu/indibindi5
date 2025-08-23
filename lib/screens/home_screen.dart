@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import '../models/routes.dart';
 import 'route_line_with_stops.dart';
+import 'rider_seat_selection_screen.dart';
 import 'dart:math' show max, min;
 import '../utils/date_time_helpers.dart';
 import '../utils/constants.dart';
@@ -65,11 +66,17 @@ class HomeScreen extends StatelessWidget {
   }
 
   Widget _buildTabContent(String role) {
+    if (role == 'Rider') {
+      return _buildRiderContent();
+    }
+    
+    // Driver content
     RouteInfo? selectedRoute;
     int? originIndex;
     int? destinationIndex;
     List<int> selectedSeats = [];
     bool hasSelectedDateTime = false;
+    ScrollController scrollController = ScrollController();
 
     return StatefulBuilder(
       builder: (context, setState) {
@@ -92,6 +99,7 @@ class HomeScreen extends StatelessWidget {
         }
 
         return SingleChildScrollView(
+          controller: scrollController,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -109,9 +117,9 @@ class HomeScreen extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(top: 8, left: 16, right: 16),
                 child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: selectedRoute != null ? 6 : 8),
                   decoration: BoxDecoration(
-                    color: Color(0xFF2E2E2E), // Neutral dark grey background
+                    color: Color(0xFF2E2E2E), // Keep dark color always
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: DropdownButton<RouteInfo>(
@@ -124,15 +132,29 @@ class HomeScreen extends StatelessWidget {
                     ), // Dark grey background for dropdown items
                     icon: Icon(
                       Icons.arrow_drop_down,
-                      color: Color(0xFFFFFFFF),
-                    ), // White icon
+                      color: Color(0xFFFFFFFF), // Always white icon
+                    ),
                     hint: Text(
-                      'Select a route to get started',
+                      'Routes',
                       style: TextStyle(
                         fontSize: 16,
-                        color: Color(0xFFFFFFFF), // White text
+                        color: Color(0xFFFFFFFF), // White text for hint
                       ),
                     ),
+                    selectedItemBuilder: selectedRoute != null ? (BuildContext context) {
+                      return predefinedRoutes.map<Widget>((RouteInfo route) {
+                        return Center(
+                          child: Text(
+                            _getFormattedRouteName(route.name),
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Color(0xFFFFFFFF), // Always white text
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        );
+                      }).toList();
+                    } : null,
                     items: predefinedRoutes.map((route) {
                       return DropdownMenuItem<RouteInfo>(
                         value: route,
@@ -176,6 +198,14 @@ class HomeScreen extends StatelessWidget {
                           hasSelectedDateTime =
                               false; // Reset when route changes
                         });
+                        // Auto-scroll to show the stops section
+                        Future.delayed(Duration(milliseconds: 300), () {
+                          scrollController.animateTo(
+                            200.0, // Scroll down to show stops
+                            duration: Duration(milliseconds: 500),
+                            curve: Curves.easeInOut,
+                          );
+                        });
                       }
                     },
                   ),
@@ -192,17 +222,39 @@ class HomeScreen extends StatelessWidget {
                       // Left side: Stop list and seat plan
                       Expanded(
                         child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            // Stops title card
+                            Container(
+                              margin: EdgeInsets.only(top: 8),
+                              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              height: 56, // Match DropdownButton's default height
+                              decoration: BoxDecoration(
+                                color: Color(0xFF2E2E2E), // Same dark color as Routes dropdown
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Align(
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  'Stops',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFFFFFFFF), // White text like Routes
+                                  ),
+                                ),
+                              ),
+                            ),
                             // Stop list section
                             SizedBox(
-                              height: selectedRoute!.stops.length * 28.0,
+                              height: selectedRoute!.stops.length * 42.0,
                               child: Stack(
                                 children: [
                                   Positioned.fill(
                                     child: CustomPaint(
                                       painter: RouteLineWithStopsPainter(
                                         stopCount: selectedRoute!.stops.length,
-                                        rowHeight: 28,
+                                        rowHeight: 42,
                                         lineWidth: 2,
                                         lineColor: Colors.blueGrey,
                                         originIndex: originIndex,
@@ -253,9 +305,9 @@ class HomeScreen extends StatelessWidget {
                                                 });
                                               },
                                         child: Container(
-                                          height: 28.0,
+                                          height: 42.0,
                                           padding: EdgeInsets.symmetric(
-                                            vertical: 4,
+                                            vertical: 8,
                                           ),
                                           child: Row(
                                             mainAxisAlignment:
@@ -301,6 +353,9 @@ class HomeScreen extends StatelessWidget {
                                                         : FontWeight.normal,
                                                   ),
                                                   textAlign: TextAlign.left,
+                                                  maxLines: 2,
+                                                  overflow: TextOverflow.visible,
+                                                  softWrap: true,
                                                 ),
                                               ),
                                             ],
@@ -374,8 +429,8 @@ class HomeScreen extends StatelessWidget {
                                   margin: EdgeInsets.only(
                                     top:
                                         20 +
-                                        (selectedRoute!.stops.length * 28.0) -
-                                        (destinationIndex! * 28.0 + 28.0),
+                                        (selectedRoute!.stops.length * 42.0) -
+                                        (destinationIndex! * 42.0 + 42.0),
                                     // Position card to align with seat layout: margin + stop list height - time picker height
                                   ),
                                   width: 160, // Match the time picker width
@@ -621,6 +676,460 @@ class HomeScreen extends StatelessWidget {
     if (selectedSeats.isEmpty) return 4;
     return 4; // All steps completed
   }
+
+  Widget _buildRiderContent() {
+    RouteInfo? selectedRoute;
+    int? originIndex;
+    int? destinationIndex;
+    ScrollController scrollController = ScrollController();
+    
+    return StatefulBuilder(
+      builder: (context, setState) {
+        return SingleChildScrollView(
+          controller: scrollController,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Progress bar for rider
+              BookingProgressBar(
+                currentStep: selectedRoute == null 
+                  ? 0 
+                  : (originIndex == null 
+                    ? 1 
+                    : (destinationIndex == null ? 2 : 3)),
+              ),
+
+              // Route selection dropdown
+              Padding(
+                padding: const EdgeInsets.only(top: 8, left: 16, right: 16),
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: selectedRoute != null ? 6 : 8),
+                  decoration: BoxDecoration(
+                    color: Color(0xFF2E2E2E), // Keep dark color always
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: DropdownButton<RouteInfo>(
+                    value: selectedRoute,
+                    isExpanded: true,
+                    underline: Container(),
+                    dropdownColor: Color(0xFF2E2E2E),
+                    icon: Icon(Icons.arrow_drop_down, color: Colors.white), // Always white
+                    hint: Text(
+                      'Routes',
+                      style: TextStyle(fontSize: 16, color: Colors.white),
+                    ),
+                    selectedItemBuilder: selectedRoute != null ? (BuildContext context) {
+                      return predefinedRoutes.map<Widget>((RouteInfo route) {
+                        return Center(
+                          child: Text(
+                            _getFormattedRouteName(route.name),
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.white, // Always white
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        );
+                      }).toList();
+                    } : null,
+                    items: predefinedRoutes.map((route) {
+                      return DropdownMenuItem<RouteInfo>(
+                        value: route,
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                _getFormattedRouteName(route.name),
+                                style: TextStyle(fontSize: 16, color: Colors.white),
+                              ),
+                            ),
+                            SizedBox(width: 8),
+                            Text(
+                              '${route.distance} • ${route.duration}',
+                              style: TextStyle(fontSize: 14, color: Colors.white),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        selectedRoute = value;
+                        originIndex = null;
+                        destinationIndex = null;
+                      });
+                      // Auto-scroll to show the stops section
+                      if (value != null) {
+                        Future.delayed(Duration(milliseconds: 300), () {
+                          scrollController.animateTo(
+                            200.0, // Scroll down to show stops
+                            duration: Duration(milliseconds: 500),
+                            curve: Curves.easeInOut,
+                          );
+                        });
+                      }
+                    },
+                  ),
+                ),
+              ),
+
+              // Show route content when route is selected
+              if (selectedRoute != null)
+                Padding(
+                  padding: const EdgeInsets.only(left: 16, right: 16, top: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Stops title card
+                      Container(
+                        margin: EdgeInsets.only(top: 8),
+                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        height: 56, // Match DropdownButton's default height
+                        decoration: BoxDecoration(
+                          color: Color(0xFF2E2E2E), // Same dark color as Routes dropdown
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Stops',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFFFFFFFF), // White text like Routes
+                            ),
+                          ),
+                        ),
+                      ),
+                      
+                      // Stop list for selection
+                      Container(
+                        height: selectedRoute!.stops.length * 50.0,
+                        child: ListView.builder(
+                          physics: NeverScrollableScrollPhysics(),
+                          itemCount: selectedRoute!.stops.length,
+                          itemBuilder: (context, index) {
+                            bool isOrigin = originIndex == index;
+                            bool isDestination = destinationIndex == index;
+                            bool isSelected = isOrigin || isDestination;
+                            
+                            return GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  if (originIndex == null) {
+                                    originIndex = index;
+                                  } else if (destinationIndex == null && index != originIndex) {
+                                    destinationIndex = index;
+                                  } else {
+                                    // Reset selection
+                                    originIndex = index;
+                                    destinationIndex = null;
+                                  }
+                                });
+                              },
+                              child: Container(
+                                height: 48,
+                                margin: EdgeInsets.only(bottom: 2),
+                                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: isSelected ? Color(0xFFE3F2FD) : Colors.grey[50],
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: isOrigin 
+                                      ? Color(0xFF00C853) 
+                                      : isDestination 
+                                        ? Color(0xFFDD2C00) 
+                                        : Colors.grey[300]!,
+                                    width: isSelected ? 2 : 1,
+                                  ),
+                                ),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    // Stop marker
+                                    Container(
+                                      width: 16,
+                                      height: 16,
+                                      decoration: BoxDecoration(
+                                        color: isOrigin 
+                                          ? Color(0xFF00C853) 
+                                          : isDestination 
+                                            ? Color(0xFFDD2C00) 
+                                            : Color(0xFF2E2E2E),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: isSelected
+                                        ? Icon(
+                                            isOrigin ? Icons.location_on : Icons.flag,
+                                            color: Colors.white,
+                                            size: 12,
+                                          )
+                                        : null,
+                                    ),
+                                    SizedBox(width: 12),
+                                    // Stop name
+                                    Expanded(
+                                      child: Text(
+                                        selectedRoute!.stops[index].name,
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                          color: Color(0xFF2E2E2E),
+                                        ),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.visible,
+                                        softWrap: true,
+                                      ),
+                                    ),
+                                    // Selection indicator
+                                    if (isSelected)
+                                      Text(
+                                        isOrigin ? 'Pickup' : 'Drop-off',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                          color: isOrigin ? Color(0xFF00C853) : Color(0xFFDD2C00),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+
+                      // Show ride listings when both stops are selected
+                      if (originIndex != null && destinationIndex != null) ...[
+                        SizedBox(height: 24),
+                        Text(
+                          'Available rides in the next 5 days:',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF2E2E2E),
+                          ),
+                        ),
+                        SizedBox(height: 12),
+                        _buildRideListings(context, selectedRoute!, originIndex!, destinationIndex!),
+                      ],
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildRideListings(BuildContext context, RouteInfo route, int originIndex, int destinationIndex) {
+    // Mock ride data for the next 5 days
+    List<RideInfo> mockRides = _generateMockRides(route, originIndex, destinationIndex);
+    
+    return Column(
+      children: mockRides.map((ride) => _buildRideCard(context, ride)).toList(),
+    );
+  }
+
+  Widget _buildRideCard(BuildContext context, RideInfo ride) {
+    return Card(
+      margin: EdgeInsets.only(bottom: 12),
+      elevation: 2,
+      child: Padding(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Date and time row
+            Row(
+              children: [
+                Icon(Icons.calendar_today, size: 16, color: Color(0xFF2E2E2E)),
+                SizedBox(width: 8),
+                Text(
+                  '${_formatDate(ride.departureTime)} • ${_formatTime(ride.departureTime)}',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF2E2E2E),
+                  ),
+                ),
+                Spacer(),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: ride.availableSeats > 0 ? Colors.green[100] : Colors.grey[300],
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '${ride.availableSeats} seats',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: ride.availableSeats > 0 ? Colors.green[700] : Colors.grey[600],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 12),
+            
+            // Driver info
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 20,
+                  backgroundImage: NetworkImage(ride.driverPhoto),
+                  backgroundColor: Colors.grey[300],
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        ride.driverName,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF2E2E2E),
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          Icon(Icons.star, color: Colors.amber, size: 14),
+                          SizedBox(width: 4),
+                          Text(
+                            ride.driverRating.toString(),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF2E2E2E),
+                            ),
+                          ),
+                          SizedBox(width: 12),
+                          Text(
+                            '${ride.price}',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF2E2E2E),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 12),
+            
+            // Select ride button
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: ride.availableSeats > 0 
+                  ? () => _selectRide(context, ride)
+                  : null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: ride.availableSeats > 0 ? Color(0xFF2E2E2E) : Colors.grey[400],
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: Text(
+                  ride.availableSeats > 0 ? 'Select This Ride' : 'Full',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  List<RideInfo> _generateMockRides(RouteInfo route, int originIndex, int destinationIndex) {
+    List<RideInfo> rides = [];
+    DateTime now = DateTime.now();
+    
+    // Generate rides for next 5 days
+    for (int day = 0; day < 5; day++) {
+      DateTime date = now.add(Duration(days: day));
+      
+      // 2-4 rides per day
+      int ridesPerDay = 2 + (day % 3);
+      
+      for (int i = 0; i < ridesPerDay; i++) {
+        DateTime departureTime = DateTime(
+          date.year,
+          date.month,
+          date.day,
+          8 + (i * 3) + (day % 2), // Vary times
+          (i * 15) % 60, // Vary minutes
+        );
+        
+        // Skip past times for today
+        if (day == 0 && departureTime.isBefore(now)) continue;
+        
+        rides.add(RideInfo(
+          id: 'ride_${day}_$i',
+          route: route,
+          driverName: _getMockDriverName(day + i),
+          driverPhoto: 'https://randomuser.me/api/portraits/men/${(day + i) % 10 + 1}.jpg',
+          driverRating: 4.2 + ((day + i) % 8) * 0.1,
+          departureTime: departureTime,
+          originIndex: originIndex,
+          destinationIndex: destinationIndex,
+          availableSeats: 1 + ((day + i) % 4),
+          price: '\$${15 + (day + i) * 3}',
+        ));
+      }
+    }
+    
+    // Sort by departure time
+    rides.sort((a, b) => a.departureTime.compareTo(b.departureTime));
+    
+    return rides;
+  }
+
+  String _getMockDriverName(int index) {
+    List<String> names = [
+      'Mike A.', 'Sarah B.', 'John C.', 'Emma D.', 'David E.',
+      'Lisa F.', 'Tom G.', 'Anna H.', 'Chris I.', 'Maria J.'
+    ];
+    return names[index % names.length];
+  }
+
+  String _formatDate(DateTime date) {
+    List<String> days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    List<String> months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                          'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
+    return '${days[date.weekday - 1]}, ${months[date.month - 1]} ${date.day}';
+  }
+
+  String _formatTime(DateTime time) {
+    String hour = time.hour > 12 ? '${time.hour - 12}' : '${time.hour}';
+    if (time.hour == 0) hour = '12';
+    String minute = time.minute.toString().padLeft(2, '0');
+    String period = time.hour >= 12 ? 'PM' : 'AM';
+    return '$hour:$minute $period';
+  }
+
+  void _selectRide(BuildContext context, RideInfo ride) {
+    // Navigate to seat selection for the selected ride
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => RiderSeatSelectionScreen(ride: ride),
+      ),
+    );
+  }
 }
 
 // A separate widget to handle both origin and destination time boxes
@@ -687,7 +1196,7 @@ class _TimeBoxesContainerState extends State<_TimeBoxesContainer> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Origin time box - positioned to align with the origin
-        SizedBox(height: widget.originIndex * 28.0),
+        SizedBox(height: 56.0 + (widget.originIndex * 42.0)), // 56px for Stops title + stop positioning
 
         // Origin departure time box
         GestureDetector(
@@ -1106,7 +1615,7 @@ class _TimeBoxesContainerState extends State<_TimeBoxesContainer> {
             );
           },
           child: Container(
-            height: 28.0, // Match stop item height
+            height: 42.0, // Match stop item height
             padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
               color: Theme.of(context).scaffoldBackgroundColor,
@@ -1175,7 +1684,7 @@ class _TimeBoxesContainerState extends State<_TimeBoxesContainer> {
         // Add space between origin and destination time boxes (only if destination is selected)
         if (widget.destinationIndex != null)
           SizedBox(
-            height: (widget.destinationIndex! - widget.originIndex - 1) * 28.0,
+            height: (widget.destinationIndex! - widget.originIndex - 1) * 42.0,
           ),
 
         // Destination arrival time box - only show when destination is selected
@@ -1628,7 +2137,7 @@ class _TimeBoxesContainerState extends State<_TimeBoxesContainer> {
               isEditingArrival = false; // Reset flag after modal is closed
             },
             child: Container(
-              height: 28.0, // Match stop item height
+              height: 42.0, // Match stop item height
               padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
                 color: Theme.of(context).scaffoldBackgroundColor,
