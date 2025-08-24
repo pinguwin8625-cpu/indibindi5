@@ -108,14 +108,7 @@ class RouteSelectionWidget extends StatelessWidget {
         ),
         
         // Divider between route dropdown and stops
-        if (selectedRoute != null)
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 8,
-            ),
-            child: Divider(),
-          ),
+
       ],
     );
   }

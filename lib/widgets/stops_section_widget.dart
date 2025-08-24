@@ -3,6 +3,7 @@ import '../models/routes.dart';
 import '../screens/route_line_with_stops.dart';
 
 class StopsSectionWidget extends StatefulWidget {
+  final bool hideUnusedStops;
   final RouteInfo selectedRoute;
   final int? originIndex;
   final int? destinationIndex;
@@ -20,6 +21,7 @@ class StopsSectionWidget extends StatefulWidget {
     required this.onOriginChanged,
     required this.onDestinationChanged,
     required this.onResetDateTime,
+    this.hideUnusedStops = false,
   });
 
   @override
@@ -29,42 +31,61 @@ class StopsSectionWidget extends StatefulWidget {
 class _StopsSectionWidgetState extends State<StopsSectionWidget> {
   @override
   Widget build(BuildContext context) {
+    // Filter stops if hideUnusedStops is true and both origin and destination are selected
+    List<StopInfo> visibleStops = widget.selectedRoute.stops;
+    if (widget.hideUnusedStops && widget.originIndex != null && widget.destinationIndex != null) {
+      int start = widget.originIndex!;
+      int end = widget.destinationIndex!;
+      if (start > end) {
+        int temp = start;
+        start = end;
+        end = temp;
+      }
+      visibleStops = visibleStops.sublist(start, end + 1);
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Main stops section (title is now handled separately)
         SizedBox(
-          height: widget.selectedRoute.stops.length * 42.0,
+          height: visibleStops.length * 42.0,
           child: Stack(
             children: [
               Positioned.fill(
                 child: CustomPaint(
                   painter: RouteLineWithStopsPainter(
-                    stopCount: widget.selectedRoute.stops.length,
+                    stopCount: visibleStops.length,
                     rowHeight: 42,
                     lineWidth: 2,
                     lineColor: Color(0xFF2E2E2E),
-                    originIndex: widget.originIndex,
-                    destinationIndex: widget.destinationIndex,
-                    greyedStops: widget.greyedStops,
+                    originIndex: 0,
+                    destinationIndex: visibleStops.length > 1 ? visibleStops.length - 1 : 0,
+                    greyedStops: const [],
                   ),
                 ),
               ),
               Column(
                 children: [
-                  // Regular stops
+                  // Only build visible stops
                   ...List.generate(
-                    widget.selectedRoute.stops.length,
-                    (i) => _buildStopRow(i),
+                    visibleStops.length,
+                    (i) => _buildVisibleStopRow(visibleStops, i),
                   ),
                 ],
               ),
             ],
           ),
         ),
-        // Expand/Collapse button for the entire section
-        // Removed per user request
       ],
+    );
+
+  }
+
+  // Helper to build stop row for visible stops
+  Widget _buildVisibleStopRow(List<StopInfo> stops, int i) {
+    // You may want to adjust the tap/grey logic for visible stops if needed
+    return _buildStopRow(
+      widget.selectedRoute.stops.indexOf(stops[i]),
     );
   }
 

@@ -65,63 +65,13 @@ class _TabContentWidgetState extends State<TabContentWidget> {
                         destinationIndex = null;
                         hasSelectedDateTime = false;
                       });
-                      // Auto-scroll to position divider at bottom of progress bar
-                      Future.delayed(Duration(milliseconds: 300), () {
-                        scrollController.animateTo(
-                          85.0,
-                          duration: Duration(milliseconds: 500),
-                          curve: Curves.easeInOut,
-                        );
-                      });
                     }
                   },
                 ),
 
                 // Show route content only when a route is selected
                 if (selectedRoute != null) ...[
-                  // Stops title in its own row - separate from stops content
-                  Padding(
-                    padding: const EdgeInsets.only(
-                      top: 8,
-                      left: 16,
-                      right: 16,
-                    ),
-                    child: Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Color(0xFF2E2E2E),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: 'Stops',
-                          isExpanded: true,
-                          onChanged: null, // Disabled
-                          dropdownColor: Color(0xFF2E2E2E),
-                          icon: SizedBox(), // Remove arrow icon
-                          items: [
-                            DropdownMenuItem<String>(
-                              value: 'Stops',
-                              child: Center(
-                                child: Text(
-                                  'Stops',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: Color(0xFFFFFFFF),
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
+
 
                   // Main content area with stops and time picker
                   Padding(
@@ -134,7 +84,7 @@ class _TabContentWidgetState extends State<TabContentWidget> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Left side: Stop list and seat plan
-                        Expanded(
+                        Flexible(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -144,6 +94,7 @@ class _TabContentWidgetState extends State<TabContentWidget> {
                                 originIndex: originIndex,
                                 destinationIndex: destinationIndex,
                                 greyedStops: greyedStops,
+                                hideUnusedStops: hasSelectedDateTime,
                                 onOriginChanged: (index) {
                                   setState(() {
                                     originIndex = index;
@@ -153,21 +104,6 @@ class _TabContentWidgetState extends State<TabContentWidget> {
                                   setState(() {
                                     destinationIndex = index;
                                   });
-                                  // Auto-scroll to seat layout if time is already selected
-                                  if (hasSelectedDateTime) {
-                                    Future.delayed(
-                                      Duration(milliseconds: 300),
-                                      () {
-                                        double scrollPosition =
-                                            _calculateScrollToSeatLayout();
-                                        scrollController.animateTo(
-                                          scrollPosition, // Dynamic scroll position
-                                          duration: Duration(milliseconds: 500),
-                                          curve: Curves.easeInOut,
-                                        );
-                                      },
-                                    );
-                                  }
                                 },
                                 onResetDateTime: () {
                                   setState(() {
@@ -225,18 +161,7 @@ class _TabContentWidgetState extends State<TabContentWidget> {
                   ),
 
                   // Standard divider between stops/time section and seat layout
-                  if (originIndex != null &&
-                      destinationIndex != null &&
-                      hasSelectedDateTime)
-                    Padding(
-                      padding: const EdgeInsets.only(
-                        left: 16,
-                        right: 16,
-                        top: 23, // Increased by 15px
-                        bottom: 8,
-                      ),
-                      child: Divider(),
-                    ),
+
 
                   // Full-width seat layout section - outside the Row for proper centering
                   if (originIndex != null &&
@@ -265,23 +190,27 @@ class _TabContentWidgetState extends State<TabContentWidget> {
 
                 // Complete Booking button - moved away from the car
                 if (destinationIndex != null && hasSelectedDateTime)
-                  BookingButtonWidget(
-                    selectedRoute: selectedRoute,
-                    originIndex: originIndex,
-                    destinationIndex: destinationIndex,
-                    selectedSeats: selectedSeats,
+                  Column(
+                    children: [
+                      BookingButtonWidget(
+                        selectedRoute: selectedRoute,
+                        originIndex: originIndex,
+                        destinationIndex: destinationIndex,
+                        selectedSeats: selectedSeats,
+                      ),
+                      SizedBox(height: 32),
+                    ],
                   ),
 
                 // Calculated spacer to ensure divider can align with progress bar
                 // Only add enough space to enable the auto-scroll alignment
-                if (originIndex != null &&
+                (originIndex != null &&
                     destinationIndex != null &&
                     hasSelectedDateTime)
-                  Container(height: MediaQuery.of(context).size.height * 0.6)
-                else
-                  Container(
-                    height: 50,
-                  ), // Small spacer when seat layout not shown
+                  ? SizedBox.shrink() // No spacer when seat layout is shown
+                  : Container(
+                      height: 50,
+                    ), // Small spacer when seat layout not shown
               ],
             ),
           ),
