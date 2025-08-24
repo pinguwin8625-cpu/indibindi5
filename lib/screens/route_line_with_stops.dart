@@ -57,8 +57,10 @@ class RouteLineWithStopsPainter extends CustomPainter {
         ..strokeWidth = lineWidth;
 
       // Draw line segment (solid for Google Maps style)
-      if (i >= (originIndex ?? -1) && i <= (destinationIndex ?? -1) ||
-          i >= (destinationIndex ?? -1) && i <= (originIndex ?? -1)) {
+      // Only draw solid line if both origin AND destination are selected
+      if (originIndex != null && destinationIndex != null &&
+          (i >= (originIndex ?? -1) && i < (destinationIndex ?? -1) ||
+          i >= (destinationIndex ?? -1) && i < (originIndex ?? -1))) {
         // Draw solid line for active route segment
         canvas.drawLine(
           Offset(x, yStart),
@@ -66,7 +68,7 @@ class RouteLineWithStopsPainter extends CustomPainter {
           paint..strokeWidth = 3.5,
         );
       } else {
-        // Draw dashed line for inactive segments
+        // Draw dashed line for inactive segments or when destination is unselected
         double currentY = yStart;
         while (currentY < yEnd) {
           final dashEnd = (currentY + dashHeight).clamp(currentY, yEnd);
