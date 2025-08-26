@@ -33,7 +33,9 @@ class _StopsSectionWidgetState extends State<StopsSectionWidget> {
   Widget build(BuildContext context) {
     // Filter stops if hideUnusedStops is true and both origin and destination are selected
     List<StopInfo> visibleStops = widget.selectedRoute.stops;
-    if (widget.hideUnusedStops && widget.originIndex != null && widget.destinationIndex != null) {
+    if (widget.hideUnusedStops &&
+        widget.originIndex != null &&
+        widget.destinationIndex != null) {
       int start = widget.originIndex!;
       int end = widget.destinationIndex!;
       if (start > end) {
@@ -59,7 +61,9 @@ class _StopsSectionWidgetState extends State<StopsSectionWidget> {
                     lineWidth: 2,
                     lineColor: Color(0xFF2E2E2E),
                     originIndex: 0,
-                    destinationIndex: visibleStops.length > 1 ? visibleStops.length - 1 : 0,
+                    destinationIndex: visibleStops.length > 1
+                        ? visibleStops.length - 1
+                        : 0,
                     greyedStops: const [],
                   ),
                 ),
@@ -78,15 +82,12 @@ class _StopsSectionWidgetState extends State<StopsSectionWidget> {
         ),
       ],
     );
-
   }
 
   // Helper to build stop row for visible stops
   Widget _buildVisibleStopRow(List<StopInfo> stops, int i) {
     // You may want to adjust the tap/grey logic for visible stops if needed
-    return _buildStopRow(
-      widget.selectedRoute.stops.indexOf(stops[i]),
-    );
+    return _buildStopRow(widget.selectedRoute.stops.indexOf(stops[i]));
   }
 
   Widget _buildStopRow(int i) {

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/routes.dart';
 
-class BookingButtonWidget extends StatelessWidget {
+class BookingButtonWidget extends StatefulWidget {
   final RouteInfo? selectedRoute;
   final int? originIndex;
   final int? destinationIndex;
@@ -16,44 +16,66 @@ class BookingButtonWidget extends StatelessWidget {
   });
 
   @override
+  State<BookingButtonWidget> createState() => _BookingButtonWidgetState();
+}
+
+class _BookingButtonWidgetState extends State<BookingButtonWidget> {
+  bool isBookingCompleted = false;
+
+  @override
   Widget build(BuildContext context) {
-    final isEnabled = (4 - selectedSeats.length) > 0;
+    final isEnabled = (4 - widget.selectedSeats.length) > 0 && !isBookingCompleted;
+    
+    String buttonText;
+    Color buttonColor;
+    Color textColor;
+    
+    if (isBookingCompleted) {
+      buttonText = 'Booking Completed';
+      buttonColor = Color(0xFF00C853); // Standard green
+      textColor = Colors.white;
+    } else if (isEnabled) {
+      buttonText = 'Complete Booking';
+      buttonColor = Color(0xFF2E2E2E);
+      textColor = Color(0xFFFFFFFF);
+    } else {
+      buttonText = 'No Available Seats';
+      buttonColor = Colors.grey[400]!;
+      textColor = Colors.grey[600]!;
+    }
 
     return Padding(
       padding: const EdgeInsets.only(top: 8, left: 16, right: 16),
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: isEnabled ? Color(0xFF2E2E2E) : Colors.grey[400],
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: DropdownButtonHideUnderline(
-          child: DropdownButton<String>(
-            value: isEnabled ? 'Complete Booking' : 'No Available Seats',
-            isExpanded: true,
-            onChanged: null, // Disabled dropdown functionality
-            dropdownColor: Color(0xFF2E2E2E),
-            icon: SizedBox(), // Remove arrow icon
-            items: [
-              DropdownMenuItem<String>(
-                value: isEnabled ? 'Complete Booking' : 'No Available Seats',
-                child: Center(
-                  child: Text(
-                    isEnabled ? 'Complete Booking' : 'No Available Seats',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: isEnabled ? Color(0xFFFFFFFF) : Colors.grey[600],
-                      fontWeight: FontWeight.bold,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
+      child: GestureDetector(
+        onTap: isEnabled ? _completeBooking : null,
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: buttonColor,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Container(
+            height: 42.0,
+            child: Center(
+              child: Text(
+                buttonText,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: textColor,
+                  fontWeight: FontWeight.bold,
                 ),
+                textAlign: TextAlign.center,
               ),
-            ],
+            ),
           ),
         ),
       ),
     );
   }
 
+  void _completeBooking() {
+    setState(() {
+      isBookingCompleted = true;
+    });
+  }
 }

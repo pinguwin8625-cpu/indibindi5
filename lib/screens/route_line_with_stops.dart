@@ -58,9 +58,10 @@ class RouteLineWithStopsPainter extends CustomPainter {
 
       // Draw line segment (solid for Google Maps style)
       // Only draw solid line if both origin AND destination are selected
-      if (originIndex != null && destinationIndex != null &&
+      if (originIndex != null &&
+          destinationIndex != null &&
           (i >= (originIndex ?? -1) && i < (destinationIndex ?? -1) ||
-          i >= (destinationIndex ?? -1) && i < (originIndex ?? -1))) {
+              i >= (destinationIndex ?? -1) && i < (originIndex ?? -1))) {
         // Draw solid line for active route segment
         canvas.drawLine(
           Offset(x, yStart),

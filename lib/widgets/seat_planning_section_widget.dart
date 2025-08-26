@@ -20,7 +20,8 @@ class SeatPlanningSectionWidget extends StatelessWidget {
       children: [
         Container(
           key: ValueKey('seat-layout'),
-          height: 434, // Reduced to give only 10px extra space (5px top + 5px bottom)
+          height:
+              434, // Reduced to give only 10px extra space (5px top + 5px bottom)
           decoration: BoxDecoration(),
           child: CarSeatLayout(
             userRole: userRole,

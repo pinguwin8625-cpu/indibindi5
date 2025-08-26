@@ -5,13 +5,11 @@ import '../widgets/car_seat_layout.dart';
 class RiderSeatSelectionScreen extends StatefulWidget {
   final RideInfo ride;
 
-  const RiderSeatSelectionScreen({
-    super.key,
-    required this.ride,
-  });
+  const RiderSeatSelectionScreen({super.key, required this.ride});
 
   @override
-  State<RiderSeatSelectionScreen> createState() => _RiderSeatSelectionScreenState();
+  State<RiderSeatSelectionScreen> createState() =>
+      _RiderSeatSelectionScreenState();
 }
 
 class _RiderSeatSelectionScreenState extends State<RiderSeatSelectionScreen> {
@@ -23,10 +21,7 @@ class _RiderSeatSelectionScreenState extends State<RiderSeatSelectionScreen> {
       appBar: AppBar(
         title: Text(
           'Select Your Seats',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.red,
         iconTheme: IconThemeData(color: Colors.white),
@@ -57,7 +52,9 @@ class _RiderSeatSelectionScreenState extends State<RiderSeatSelectionScreen> {
                         children: [
                           CircleAvatar(
                             radius: 24,
-                            backgroundImage: NetworkImage(widget.ride.driverPhoto),
+                            backgroundImage: NetworkImage(
+                              widget.ride.driverPhoto,
+                            ),
                             backgroundColor: Colors.grey[300],
                           ),
                           SizedBox(width: 12),
@@ -75,7 +72,11 @@ class _RiderSeatSelectionScreenState extends State<RiderSeatSelectionScreen> {
                                 ),
                                 Row(
                                   children: [
-                                    Icon(Icons.star, color: Colors.amber, size: 16),
+                                    Icon(
+                                      Icons.star,
+                                      color: Colors.amber,
+                                      size: 16,
+                                    ),
                                     SizedBox(width: 4),
                                     Text(
                                       widget.ride.driverRating.toString(),
@@ -102,7 +103,11 @@ class _RiderSeatSelectionScreenState extends State<RiderSeatSelectionScreen> {
                       SizedBox(height: 12),
                       Row(
                         children: [
-                          Icon(Icons.access_time, size: 16, color: Color(0xFF2E2E2E)),
+                          Icon(
+                            Icons.access_time,
+                            size: 16,
+                            color: Color(0xFF2E2E2E),
+                          ),
                           SizedBox(width: 8),
                           Text(
                             _formatDateTime(widget.ride.departureTime),
@@ -145,10 +150,7 @@ class _RiderSeatSelectionScreenState extends State<RiderSeatSelectionScreen> {
               ),
               Text(
                 '${widget.ride.availableSeats} seats available',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[600],
-                ),
+                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
               ),
 
               SizedBox(height: 16),
@@ -180,8 +182,8 @@ class _RiderSeatSelectionScreenState extends State<RiderSeatSelectionScreen> {
                       ? () => _confirmBooking()
                       : null,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: selectedSeats.isNotEmpty 
-                        ? Color(0xFF2E2E2E) 
+                    backgroundColor: selectedSeats.isNotEmpty
+                        ? Color(0xFF2E2E2E)
                         : Colors.grey[400],
                     padding: EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
@@ -209,12 +211,25 @@ class _RiderSeatSelectionScreenState extends State<RiderSeatSelectionScreen> {
 
   String _formatDateTime(DateTime dateTime) {
     List<String> days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    List<String> months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
-                          'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    
-    String date = '${days[dateTime.weekday - 1]}, ${months[dateTime.month - 1]} ${dateTime.day}';
+    List<String> months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+
+    String date =
+        '${days[dateTime.weekday - 1]}, ${months[dateTime.month - 1]} ${dateTime.day}';
     String time = _formatTime(dateTime);
-    
+
     return '$date at $time';
   }
 

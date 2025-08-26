@@ -1,6 +1,6 @@
 class StopInfo {
   final String name;
-  final double distanceFromPrevious; // Distance from previous stop in miles
+  final double distanceFromPrevious; // Distance from previous stop in kilometers
   final int durationFromPrevious; // Duration from previous stop in minutes
 
   const StopInfo({
@@ -28,7 +28,7 @@ class RouteInfo {
 
   // Helper method to calculate distance between two stop indexes
   String calculateDistance(int startIndex, int endIndex) {
-    if (startIndex == endIndex) return '0 mi';
+    if (startIndex == endIndex) return '0 km';
 
     int start = startIndex < endIndex ? startIndex : endIndex;
     int end = startIndex > endIndex ? startIndex : endIndex;
@@ -40,7 +40,7 @@ class RouteInfo {
 
     // Round to nearest whole number to match the format of the full route display
     int roundedDistance = totalDistance.round();
-    return '$roundedDistance mi';
+    return '$roundedDistance km';
   }
 
   // Helper method to calculate duration between two stop indexes
@@ -68,154 +68,154 @@ class RouteInfo {
 const List<RouteInfo> predefinedRoutes = [
   RouteInfo(
     name: 'New York - Philadelphia',
-    distance: '150 mi',
+    distance: '241 km',
     duration: '2h 30m',
     stops: [
       StopInfo(name: 'New York - Times Square'),
       StopInfo(
         name: 'New York - Penn Station',
-        distanceFromPrevious: 2.1,
+        distanceFromPrevious: 3.4,
         durationFromPrevious: 5,
       ),
       StopInfo(
         name: 'Secaucus Junction',
-        distanceFromPrevious: 5.8,
+        distanceFromPrevious: 9.3,
         durationFromPrevious: 8,
       ),
       StopInfo(
         name: 'Newark Penn Station',
-        distanceFromPrevious: 4.2,
+        distanceFromPrevious: 6.8,
         durationFromPrevious: 7,
       ),
       StopInfo(
         name: 'Elizabeth',
-        distanceFromPrevious: 6.3,
+        distanceFromPrevious: 10.1,
         durationFromPrevious: 10,
       ),
       StopInfo(
         name: 'Rahway',
-        distanceFromPrevious: 5.7,
+        distanceFromPrevious: 9.2,
         durationFromPrevious: 8,
       ),
       StopInfo(
         name: 'Metropark',
-        distanceFromPrevious: 8.1,
+        distanceFromPrevious: 13.0,
         durationFromPrevious: 12,
       ),
       StopInfo(
         name: 'New Brunswick',
-        distanceFromPrevious: 9.4,
+        distanceFromPrevious: 15.1,
         durationFromPrevious: 14,
       ),
       StopInfo(
         name: 'Princeton Junction',
-        distanceFromPrevious: 12.6,
+        distanceFromPrevious: 20.3,
         durationFromPrevious: 18,
       ),
       StopInfo(
         name: 'Trenton',
-        distanceFromPrevious: 15.3,
+        distanceFromPrevious: 24.6,
         durationFromPrevious: 20,
       ),
       StopInfo(
         name: 'Morrisville',
-        distanceFromPrevious: 4.2,
+        distanceFromPrevious: 6.8,
         durationFromPrevious: 6,
       ),
       StopInfo(
         name: 'Levittown',
-        distanceFromPrevious: 8.7,
+        distanceFromPrevious: 14.0,
         durationFromPrevious: 12,
       ),
       StopInfo(
         name: 'Bristol',
-        distanceFromPrevious: 6.9,
+        distanceFromPrevious: 11.1,
         durationFromPrevious: 10,
       ),
       StopInfo(
         name: 'Camden',
-        distanceFromPrevious: 18.2,
+        distanceFromPrevious: 29.3,
         durationFromPrevious: 25,
       ),
       StopInfo(
         name: 'Philadelphia - Center City',
-        distanceFromPrevious: 5.8,
+        distanceFromPrevious: 9.3,
         durationFromPrevious: 12,
       ),
     ],
   ),
   RouteInfo(
     name: 'Los Angeles - San Diego',
-    distance: '180 mi',
+    distance: '290 km',
     duration: '2h 45m',
     stops: [
       StopInfo(name: 'Los Angeles - Downtown'),
       StopInfo(
         name: 'Los Angeles - LAX Airport',
-        distanceFromPrevious: 18.2,
+        distanceFromPrevious: 29.3,
         durationFromPrevious: 20,
       ),
       StopInfo(
         name: 'El Segundo',
-        distanceFromPrevious: 5.1,
+        distanceFromPrevious: 8.2,
         durationFromPrevious: 8,
       ),
       StopInfo(
         name: 'Torrance',
-        distanceFromPrevious: 8.7,
+        distanceFromPrevious: 14.0,
         durationFromPrevious: 12,
       ),
       StopInfo(
         name: 'Long Beach',
-        distanceFromPrevious: 15.3,
+        distanceFromPrevious: 24.6,
         durationFromPrevious: 18,
       ),
       StopInfo(
         name: 'Anaheim',
-        distanceFromPrevious: 22.4,
+        distanceFromPrevious: 36.1,
         durationFromPrevious: 25,
       ),
       StopInfo(
         name: 'Irvine',
-        distanceFromPrevious: 18.5,
+        distanceFromPrevious: 29.8,
         durationFromPrevious: 20,
       ),
       StopInfo(
         name: 'San Juan Capistrano',
-        distanceFromPrevious: 25.6,
+        distanceFromPrevious: 41.2,
         durationFromPrevious: 25,
       ),
       StopInfo(
         name: 'Oceanside',
-        distanceFromPrevious: 32.1,
+        distanceFromPrevious: 51.7,
         durationFromPrevious: 30,
       ),
       StopInfo(
         name: 'San Diego - Airport',
-        distanceFromPrevious: 35.4,
+        distanceFromPrevious: 57.0,
         durationFromPrevious: 35,
       ),
     ],
   ),
   RouteInfo(
     name: 'Chicago - Milwaukee',
-    distance: '140 mi',
+    distance: '225 km',
     duration: '2h 15m',
     stops: [
       StopInfo(name: 'Chicago - Union Station'),
       StopInfo(
         name: 'Chicago - O\'Hare Airport',
-        distanceFromPrevious: 17.5,
+        distanceFromPrevious: 28.2,
         durationFromPrevious: 20,
       ),
       StopInfo(
         name: 'Des Plaines',
-        distanceFromPrevious: 8.2,
+        distanceFromPrevious: 13.2,
         durationFromPrevious: 10,
       ),
       StopInfo(
         name: 'Schaumburg',
-        distanceFromPrevious: 12.1,
+        distanceFromPrevious: 19.5,
         durationFromPrevious: 15,
       ),
       StopInfo(
@@ -277,7 +277,7 @@ const List<RouteInfo> predefinedRoutes = [
   ),
   RouteInfo(
     name: 'Houston - Dallas',
-    distance: '280 mi',
+    distance: '451 km',
     duration: '3h 15m',
     stops: [
       StopInfo(name: 'Houston - Downtown'),
@@ -330,7 +330,7 @@ const List<RouteInfo> predefinedRoutes = [
   ),
   RouteInfo(
     name: 'San Francisco - Sacramento',
-    distance: '140 mi',
+    distance: '225 km',
     duration: '2h 10m',
     stops: [
       StopInfo(name: 'San Francisco - Fisherman\'s Wharf'),
@@ -408,7 +408,7 @@ const List<RouteInfo> predefinedRoutes = [
   ),
   RouteInfo(
     name: 'Boston - Providence',
-    distance: '65 mi',
+    distance: '105 km',
     duration: '1h 20m',
     stops: [
       StopInfo(name: 'Boston - Back Bay'),
@@ -461,7 +461,7 @@ const List<RouteInfo> predefinedRoutes = [
   ),
   RouteInfo(
     name: 'Atlanta - Charlotte',
-    distance: '245 mi',
+    distance: '394 km',
     duration: '3h 45m',
     stops: [
       StopInfo(name: 'Atlanta'),
@@ -489,7 +489,7 @@ const List<RouteInfo> predefinedRoutes = [
   ),
   RouteInfo(
     name: 'Seattle - Portland',
-    distance: '175 mi',
+    distance: '282 km',
     duration: '2h 45m',
     stops: [
       StopInfo(name: 'Seattle'),
@@ -517,7 +517,7 @@ const List<RouteInfo> predefinedRoutes = [
   ),
   RouteInfo(
     name: 'Miami - Orlando',
-    distance: '280 mi',
+    distance: '451 km',
     duration: '4h 15m',
     stops: [
       StopInfo(name: 'Miami - South Beach'),
@@ -595,7 +595,7 @@ const List<RouteInfo> predefinedRoutes = [
   ),
   RouteInfo(
     name: 'Denver - Colorado Springs',
-    distance: '85 mi',
+    distance: '137 km',
     duration: '1h 30m',
     stops: [
       StopInfo(name: 'Denver - Downtown'),

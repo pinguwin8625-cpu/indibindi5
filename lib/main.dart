@@ -12,7 +12,10 @@ class IndibindiApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'indibindi',
-      theme: ThemeData(primarySwatch: Colors.red),
+      theme: ThemeData(
+        primarySwatch: Colors.red,
+        primaryColor: Color(0xFFDD2C00), // Use custom red as primary color
+      ),
       home: const HomeScreen(),
     );
   }

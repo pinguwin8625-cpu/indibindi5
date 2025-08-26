@@ -18,7 +18,7 @@ class HomeScreen extends StatelessWidget {
               fontWeight: FontWeight.bold,
             ),
           ),
-          backgroundColor: Colors.red,
+          backgroundColor: Color(0xFFDD2C00), // Use custom red instead of Colors.red
           iconTheme: IconThemeData(color: Colors.white),
           bottom: TabBar(
             tabs: [

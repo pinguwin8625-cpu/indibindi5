@@ -11,7 +11,9 @@ class BookingLogic {
     if (selectedRoute != null &&
         originIndex != null &&
         destinationIndex != null) {
-      int start = originIndex < destinationIndex ? originIndex : destinationIndex;
+      int start = originIndex < destinationIndex
+          ? originIndex
+          : destinationIndex;
       int end = originIndex > destinationIndex ? originIndex : destinationIndex;
       for (int i = 0; i < selectedRoute.stops.length; i++) {
         if (i < start || i > end) {
