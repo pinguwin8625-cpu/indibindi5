@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../models/routes.dart';
 
@@ -19,18 +18,11 @@ class BookingButtonWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isEnabled = (4 - selectedSeats.length) > 0;
-    
+
     return Padding(
-      padding: const EdgeInsets.only(
-        top: 8,
-        left: 16,
-        right: 16,
-      ),
+      padding: const EdgeInsets.only(top: 8, left: 16, right: 16),
       child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: 6,
-        ),
+        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
           color: isEnabled ? Color(0xFF2E2E2E) : Colors.grey[400],
           borderRadius: BorderRadius.circular(8),
@@ -64,21 +56,4 @@ class BookingButtonWidget extends StatelessWidget {
     );
   }
 
-  void _handleBookingSubmission(BuildContext context) {
-    if (kDebugMode) {
-      debugPrint('Final booking submitted!');
-      debugPrint('Route: ${selectedRoute?.name}');
-      debugPrint('Origin: ${selectedRoute?.stops[originIndex!].name}');
-      debugPrint('Destination: ${selectedRoute?.stops[destinationIndex!].name}');
-      debugPrint('Selected seats: $selectedSeats');
-    }
-
-    // TODO: Navigate to confirmation screen or process booking
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Booking submitted successfully!'),
-        backgroundColor: Colors.green,
-      ),
-    );
-  }
 }

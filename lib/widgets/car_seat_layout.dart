@@ -319,7 +319,7 @@ class _CarSeatLayoutState extends State<CarSeatLayout> {
         borderRadius: BorderRadius.circular(3),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withAlpha((0.06 * 255).round()),
             blurRadius: 1,
             offset: Offset(0, 1),
           ),

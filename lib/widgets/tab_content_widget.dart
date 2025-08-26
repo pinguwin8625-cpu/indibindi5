@@ -168,7 +168,7 @@ class _TabContentWidgetState extends State<TabContentWidget> {
                       destinationIndex != null &&
                       hasSelectedDateTime)
                     // Centered seat layout - full width centering
-                    Container(
+                    SizedBox(
                       width: double.infinity,
                       child: Center(
                         child: SeatPlanningSectionWidget(
@@ -208,7 +208,7 @@ class _TabContentWidgetState extends State<TabContentWidget> {
                     destinationIndex != null &&
                     hasSelectedDateTime)
                   ? SizedBox.shrink() // No spacer when seat layout is shown
-                  : Container(
+                  : SizedBox(
                       height: 50,
                     ), // Small spacer when seat layout not shown
               ],

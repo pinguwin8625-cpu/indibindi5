@@ -30,85 +30,98 @@ class RouteSelectionWidget extends StatelessWidget {
               color: Color(0xFF2E2E2E), // Keep dark color always
               borderRadius: BorderRadius.circular(8),
             ),
-            child: DropdownButton<RouteInfo>(
-              value: selectedRoute,
-              isExpanded: true,
-              underline: Container(), // Remove the default underline border
-              dropdownColor: Color(0xFF2E2E2E), // Dark grey background for dropdown items
-              icon: Icon(
-                Icons.arrow_drop_down,
-                color: Color(0xFFFFFFFF), // Always white icon
-              ),
-              hint: Center(
-                child: Text(
-                  'Routes',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Color(0xFFFFFFFF), // White text for hint
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                DropdownButton<RouteInfo>(
+                  value: selectedRoute,
+                  isExpanded: true,
+                  underline: Container(), // Remove the default underline border
+                  dropdownColor: Color(0xFF2E2E2E), // Dark grey background for dropdown items
+                  icon: Icon(
+                    Icons.arrow_drop_down,
+                    color: Color(0xFFFFFFFF), // Always white icon
                   ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              selectedItemBuilder: selectedRoute != null
-                  ? (BuildContext context) {
-                      return predefinedRoutes.map<Widget>((RouteInfo route) {
-                        return Center(
-                          child: Text(
-                            _getFormattedRouteName(route.name),
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Color(0xFFFFFFFF), // Always white text
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        );
-                      }).toList();
-                    }
-                  : null,
-              items: predefinedRoutes.map((route) {
-                return DropdownMenuItem<RouteInfo>(
-                  value: route,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // Route name with integrated direction
-                      Expanded(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Flexible(
+                  hint: Center(
+                    child: Text(
+                      'Routes',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Color(0xFFFFFFFF), // White text for hint
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  selectedItemBuilder: selectedRoute != null
+                      ? (BuildContext context) {
+                          return predefinedRoutes.map<Widget>((RouteInfo route) {
+                            return Center(
                               child: Text(
                                 _getFormattedRouteName(route.name),
                                 style: TextStyle(
                                   fontSize: 16,
-                                  color: Color(0xFFFFFFFF), // White text
+                                  color: Color(0xFFFFFFFF), // Always white text
+                                  fontWeight: FontWeight.bold,
                                 ),
-                                textAlign: TextAlign.center,
                               ),
+                            );
+                          }).toList();
+                        }
+                      : null,
+                  items: predefinedRoutes.map((route) {
+                    return DropdownMenuItem<RouteInfo>(
+                      value: route,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          // Route name with integrated direction
+                          Expanded(
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    _getFormattedRouteName(route.name),
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Color(0xFFFFFFFF), // White text
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
+                          ),
+                          SizedBox(width: 8),
+                          // Route details
+                          Text(
+                            '${route.distance} • ${route.duration}',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Color(0xFFFFFFFF), // White text
+                            ),
+                          ),
+                        ],
                       ),
-                      SizedBox(width: 8),
-                      // Route details
-                      Text(
-                        '${route.distance} • ${route.duration}',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Color(0xFFFFFFFF), // White text
-                        ),
+                    );
+                  }).toList(),
+                  onChanged: onRouteChanged,
+                ),
+                if (selectedRoute != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2.0),
+                    child: Text(
+                      '${selectedRoute!.distance} • ${selectedRoute!.duration}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFFCCCCCC),
                       ),
-                    ],
+                    ),
                   ),
-                );
-              }).toList(),
-              onChanged: onRouteChanged,
+              ],
             ),
           ),
         ),
-        
-        // Divider between route dropdown and stops
-
       ],
     );
   }
