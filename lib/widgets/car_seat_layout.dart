@@ -64,16 +64,18 @@ class SteeringWheelPainter extends CustomPainter {
     final path = Path()
       ..addOval(Rect.fromCircle(center: center, radius: outerRadius))
       ..addOval(Rect.fromCircle(center: center, radius: innerRadius));
-
+    
     // Set fill rule to even-odd to create a hole in the center
     path.fillType = PathFillType.evenOdd;
-
+    
     canvas.drawPath(path, paint);
   }
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
+
+
 
 class CarSeatLayout extends StatefulWidget {
   final String userRole; // 'Driver' or 'Rider'
@@ -142,8 +144,8 @@ class _CarSeatLayoutState extends State<CarSeatLayout> {
                             children: [
                               // LEFT COLUMN - Back seats (rear left, center, rear right)
                               Column(
-                                mainAxisAlignment: MainAxisAlignment
-                                    .center, // Changed from spaceEvenly to center
+                                mainAxisAlignment:
+                                    MainAxisAlignment.center, // Changed from spaceEvenly to center
                                 children: [
                                   // Seat 2 with label
                                   Column(
@@ -157,9 +159,7 @@ class _CarSeatLayoutState extends State<CarSeatLayout> {
                                       _buildSeatLabel('Passenger-1', '4.6'),
                                     ],
                                   ),
-                                  SizedBox(
-                                    height: 5,
-                                  ), // 5px spacing between seats
+                                  SizedBox(height: 5), // 5px spacing between seats
                                   // Seat 3 with label
                                   Column(
                                     children: [
@@ -172,9 +172,7 @@ class _CarSeatLayoutState extends State<CarSeatLayout> {
                                       _buildSeatLabel('Passenger-2', '4.9'),
                                     ],
                                   ),
-                                  SizedBox(
-                                    height: 5,
-                                  ), // 5px spacing between seats
+                                  SizedBox(height: 5), // 5px spacing between seats
                                   // Seat 4 with label
                                   Column(
                                     children: [
@@ -192,41 +190,39 @@ class _CarSeatLayoutState extends State<CarSeatLayout> {
 
                               // RIGHT COLUMN - Front seats (driver and front passenger) - moved 20px left
                               Padding(
-                                padding: EdgeInsets.only(
-                                  right: 20,
-                                ), // Move frontcar seats 20px left
+                                padding: EdgeInsets.only(right: 20), // Move frontcar seats 20px left
                                 child: Column(
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceEvenly,
                                   children: [
-                                    // Driver seat with info
-                                    Column(
-                                      children: [
-                                        _buildSeat(
-                                          status: SeatStatus.driver,
-                                          label: '',
-                                          onTap: null,
-                                        ),
-                                        SizedBox(height: 4),
-                                        _buildSeatLabel('Driver', '4.8'),
-                                      ],
-                                    ),
+                                  // Driver seat with info
+                                  Column(
+                                    children: [
+                                      _buildSeat(
+                                        status: SeatStatus.driver,
+                                        label: '',
+                                        onTap: null,
+                                      ),
+                                      SizedBox(height: 4),
+                                      _buildSeatLabel('Driver', '4.8'),
+                                    ],
+                                  ),
 
-                                    // Front passenger seat with label
-                                    Column(
-                                      children: [
-                                        _buildSeat(
-                                          status: seatStatuses[0],
-                                          label: '',
-                                          onTap: () => _toggleSeat(0),
-                                        ),
-                                        SizedBox(height: 4),
-                                        _buildSeatLabel('Passenger-4', '4.5'),
-                                      ],
-                                    ),
-                                  ],
-                                ),
+                                  // Front passenger seat with label
+                                  Column(
+                                    children: [
+                                      _buildSeat(
+                                        status: seatStatuses[0],
+                                        label: '',
+                                        onTap: () => _toggleSeat(0),
+                                      ),
+                                      SizedBox(height: 4),
+                                      _buildSeatLabel('Passenger-4', '4.5'),
+                                    ],
+                                  ),
+                                ],
                               ),
+                            ),
                             ],
                           ),
                         ),
@@ -240,8 +236,7 @@ class _CarSeatLayoutState extends State<CarSeatLayout> {
                     top: 90, // Vertically centered with the driver seat
                     child: Transform(
                       alignment: Alignment.center,
-                      transform: Matrix4.identity()
-                        ..rotateY(1.047198), // 60 degrees in radians (45 + 15)
+                      transform: Matrix4.identity()..rotateY(1.047198), // 60 degrees in radians (45 + 15)
                       child: CustomPaint(
                         size: Size(40, 40),
                         painter: SteeringWheelPainter(),
@@ -263,9 +258,12 @@ class _CarSeatLayoutState extends State<CarSeatLayout> {
                   // 30px horizontal line to the right of steering wheel
                   Positioned(
                     right: 11, // Moved 2px more right (from 13 to 11)
-                    top:
-                        109, // Vertically center with wheel (90 + 20 - 1 = 109)
-                    child: Container(width: 25, height: 4, color: Colors.black),
+                    top: 109, // Vertically center with wheel (90 + 20 - 1 = 109)
+                    child: Container(
+                      width: 25,
+                      height: 4,
+                      color: Colors.black,
+                    ),
                   ),
                 ],
               ),
@@ -290,8 +288,7 @@ class _CarSeatLayoutState extends State<CarSeatLayout> {
         borderColor = Color(0xFF00C853); // Standard green border
         break;
       case SeatStatus.occupied:
-        backgroundColor =
-            Colors.red[100]!; // Red background for unavailable seats
+        backgroundColor = Colors.red[100]!; // Red background for unavailable seats
         borderColor = Color(0xFFDD2C00); // Standard red border
         break;
       case SeatStatus.driver:
@@ -328,12 +325,9 @@ class _CarSeatLayoutState extends State<CarSeatLayout> {
                 width: 24,
                 height: 24,
                 decoration: BoxDecoration(
-                  color: status == SeatStatus.available
-                      ? Colors
-                            .red // Red background when available (minus sign)
-                      : Color(
-                          0xFF00C853,
-                        ), // Standard green background when occupied (plus sign)
+                  color: status == SeatStatus.available 
+                      ? Colors.red // Red background when available (minus sign)
+                      : Color(0xFF00C853), // Standard green background when occupied (plus sign)
                   shape: BoxShape.circle,
                 ),
                 child: Center(
