@@ -6,12 +6,14 @@ class SeatPlanningSectionWidget extends StatelessWidget {
   final String userRole;
   final List<int> selectedSeats;
   final Function(List<int>) onSeatsSelected;
+  final bool isDisabled;
 
   const SeatPlanningSectionWidget({
     super.key,
     required this.userRole,
     required this.selectedSeats,
     required this.onSeatsSelected,
+    this.isDisabled = false,
   });
 
   @override
@@ -25,6 +27,7 @@ class SeatPlanningSectionWidget extends StatelessWidget {
           decoration: BoxDecoration(),
           child: CarSeatLayout(
             userRole: userRole,
+            isDisabled: isDisabled,
             onSeatsSelected: (seats) {
               onSeatsSelected(seats);
               if (kDebugMode) {

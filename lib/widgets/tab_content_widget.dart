@@ -26,6 +26,7 @@ class _TabContentWidgetState extends State<TabContentWidget> {
   DateTime? departureTime;
   DateTime? arrivalTime;
   ScrollController scrollController = ScrollController();
+  bool isBookingCompleted = false;
 
   @override
   Widget build(BuildContext context) {
@@ -64,8 +65,9 @@ class _TabContentWidgetState extends State<TabContentWidget> {
                   hasSelectedDateTime: hasSelectedDateTime,
                   departureTime: departureTime,
                   arrivalTime: arrivalTime,
+                  isDisabled: isBookingCompleted,
                   onRouteChanged: (value) {
-                    if (value != null) {
+                    if (value != null && !isBookingCompleted) {
                       setState(() {
                         selectedRoute = value;
                         originIndex = null;
@@ -102,20 +104,27 @@ class _TabContentWidgetState extends State<TabContentWidget> {
                                   destinationIndex: destinationIndex,
                                   greyedStops: greyedStops,
                                   hideUnusedStops: hasSelectedDateTime,
+                                  isDisabled: isBookingCompleted,
                                   onOriginChanged: (index) {
-                                    setState(() {
-                                      originIndex = index;
-                                    });
+                                    if (!isBookingCompleted) {
+                                      setState(() {
+                                        originIndex = index;
+                                      });
+                                    }
                                   },
                                   onDestinationChanged: (index) {
-                                    setState(() {
-                                      destinationIndex = index;
-                                    });
+                                    if (!isBookingCompleted) {
+                                      setState(() {
+                                        destinationIndex = index;
+                                      });
+                                    }
                                   },
                                   onResetDateTime: () {
-                                    setState(() {
-                                      hasSelectedDateTime = false;
-                                    });
+                                    if (!isBookingCompleted) {
+                                      setState(() {
+                                        hasSelectedDateTime = false;
+                                      });
+                                    }
                                   },
                                 ),
                               ],
@@ -187,6 +196,7 @@ class _TabContentWidgetState extends State<TabContentWidget> {
                         child: SeatPlanningSectionWidget(
                           userRole: widget.userRole,
                           selectedSeats: selectedSeats,
+                          isDisabled: isBookingCompleted,
                           onSeatsSelected: (seats) {
                             setState(() {
                               selectedSeats = seats;
@@ -210,6 +220,11 @@ class _TabContentWidgetState extends State<TabContentWidget> {
                         originIndex: originIndex,
                         destinationIndex: destinationIndex,
                         selectedSeats: selectedSeats,
+                        onBookingCompleted: () {
+                          setState(() {
+                            isBookingCompleted = true;
+                          });
+                        },
                       ),
                       SizedBox(height: 32),
                     ],

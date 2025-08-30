@@ -9,6 +9,7 @@ class RouteSelectionWidget extends StatelessWidget {
   final bool hasSelectedDateTime;
   final DateTime? departureTime;
   final DateTime? arrivalTime;
+  final bool isDisabled;
 
   const RouteSelectionWidget({
     super.key,
@@ -19,6 +20,7 @@ class RouteSelectionWidget extends StatelessWidget {
     this.hasSelectedDateTime = false,
     this.departureTime,
     this.arrivalTime,
+    this.isDisabled = false,
   });
 
   @override
@@ -141,7 +143,7 @@ class RouteSelectionWidget extends StatelessWidget {
                       ),
                     );
                   }).toList(),
-                  onChanged: onRouteChanged,
+                  onChanged: isDisabled ? null : onRouteChanged,
                 ),
                 if (selectedRoute != null)
                   Padding(

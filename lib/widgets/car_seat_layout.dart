@@ -80,11 +80,13 @@ class SteeringWheelPainter extends CustomPainter {
 class CarSeatLayout extends StatefulWidget {
   final String userRole; // 'Driver' or 'Rider'
   final Function(List<int>) onSeatsSelected;
+  final bool isDisabled;
 
   const CarSeatLayout({
     super.key,
     required this.userRole,
     required this.onSeatsSelected,
+    this.isDisabled = false,
   });
 
   @override
@@ -153,7 +155,7 @@ class _CarSeatLayoutState extends State<CarSeatLayout> {
                                       _buildSeat(
                                         status: seatStatuses[1],
                                         label: '',
-                                        onTap: () => _toggleSeat(1),
+                                        onTap: widget.isDisabled ? null : () => _toggleSeat(1),
                                       ),
                                       SizedBox(height: 4),
                                       _buildSeatLabel('Passenger-1', '4.6'),
@@ -166,7 +168,7 @@ class _CarSeatLayoutState extends State<CarSeatLayout> {
                                       _buildSeat(
                                         status: seatStatuses[2],
                                         label: '',
-                                        onTap: () => _toggleSeat(2),
+                                        onTap: widget.isDisabled ? null : () => _toggleSeat(2),
                                       ),
                                       SizedBox(height: 4),
                                       _buildSeatLabel('Passenger-2', '4.9'),
@@ -179,7 +181,7 @@ class _CarSeatLayoutState extends State<CarSeatLayout> {
                                       _buildSeat(
                                         status: seatStatuses[3],
                                         label: '',
-                                        onTap: () => _toggleSeat(3),
+                                        onTap: widget.isDisabled ? null : () => _toggleSeat(3),
                                       ),
                                       SizedBox(height: 4),
                                       _buildSeatLabel('Passenger-3', '4.7'),
@@ -214,7 +216,7 @@ class _CarSeatLayoutState extends State<CarSeatLayout> {
                                       _buildSeat(
                                         status: seatStatuses[0],
                                         label: '',
-                                        onTap: () => _toggleSeat(0),
+                                        onTap: widget.isDisabled ? null : () => _toggleSeat(0),
                                       ),
                                       SizedBox(height: 4),
                                       _buildSeatLabel('Passenger-4', '4.5'),

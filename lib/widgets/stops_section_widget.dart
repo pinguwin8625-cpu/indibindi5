@@ -11,6 +11,7 @@ class StopsSectionWidget extends StatefulWidget {
   final Function(int?) onOriginChanged;
   final Function(int?) onDestinationChanged;
   final VoidCallback onResetDateTime;
+  final bool isDisabled;
 
   const StopsSectionWidget({
     super.key,
@@ -22,6 +23,7 @@ class StopsSectionWidget extends StatefulWidget {
     required this.onDestinationChanged,
     required this.onResetDateTime,
     this.hideUnusedStops = false,
+    this.isDisabled = false,
   });
 
   @override
@@ -94,6 +96,7 @@ class _StopsSectionWidgetState extends State<StopsSectionWidget> {
     bool isFirst = i == 0;
     bool isLast = i == widget.selectedRoute.stops.length - 1;
     bool disableTap =
+        widget.isDisabled ||
         (widget.originIndex == null && isLast) ||
         (widget.originIndex != null &&
             widget.destinationIndex == null &&

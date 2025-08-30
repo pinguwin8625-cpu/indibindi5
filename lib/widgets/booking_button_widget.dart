@@ -6,6 +6,7 @@ class BookingButtonWidget extends StatefulWidget {
   final int? originIndex;
   final int? destinationIndex;
   final List<int> selectedSeats;
+  final VoidCallback? onBookingCompleted;
 
   const BookingButtonWidget({
     super.key,
@@ -13,6 +14,7 @@ class BookingButtonWidget extends StatefulWidget {
     required this.originIndex,
     required this.destinationIndex,
     required this.selectedSeats,
+    this.onBookingCompleted,
   });
 
   @override
@@ -77,5 +79,10 @@ class _BookingButtonWidgetState extends State<BookingButtonWidget> {
     setState(() {
       isBookingCompleted = true;
     });
+    
+    // Notify parent widget that booking is completed
+    if (widget.onBookingCompleted != null) {
+      widget.onBookingCompleted!();
+    }
   }
 }

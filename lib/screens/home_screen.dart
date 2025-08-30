@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../widgets/tab_content_widget.dart';
+import '../widgets/layered_booking_widget.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -52,8 +52,8 @@ class HomeScreen extends StatelessWidget {
         ),
         body: TabBarView(
           children: [
-            TabContentWidget(userRole: 'Driver'),
-            TabContentWidget(userRole: 'Rider'),
+            LayeredBookingWidget(userRole: 'Driver'),
+            LayeredBookingWidget(userRole: 'Rider'),
           ],
         ),
       ),
