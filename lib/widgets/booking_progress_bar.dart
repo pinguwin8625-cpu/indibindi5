@@ -235,7 +235,7 @@ class GoogleMapsOriginPinPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Color(0xFF00C853)
+      ..color = Color(0xFF2E2E2E) // Match dropdown background color
       ..style = PaintingStyle.fill;
 
     final shadowPaint = Paint()

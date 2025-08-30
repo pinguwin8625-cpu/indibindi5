@@ -24,34 +24,32 @@ class RouteSelectionWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Determine if selections are complete
-    bool selectionsComplete = hasSelectedDateTime && 
-                             originIndex != null && 
-                             destinationIndex != null;
-    
-    // Determine if stops are selected but time is not
-    bool stopsSelectedOnly = !hasSelectedDateTime && 
-                            originIndex != null && 
-                            destinationIndex != null;
-    
+    bool selectionsComplete =
+        hasSelectedDateTime && originIndex != null && destinationIndex != null;
+
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.only(top: 16, left: 16, right: 16), // Reduced from 40 to 16 for better balance
+          padding: const EdgeInsets.only(
+            top: 16,
+            left: 16,
+            right: 16,
+          ), // Reduced from 40 to 16 for better balance
           child: Container(
             width: double.infinity,
             padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: selectionsComplete 
-                  ? Theme.of(context).scaffoldBackgroundColor // Match background when complete
-                  : stopsSelectedOnly
-                      ? Color(0xFFF5F5F5) // Very light grey when stops selected but no time
-                      : Color(0xFF2E2E2E), // Dark color during initial selection
+              color: selectionsComplete
+                  ? Theme.of(context)
+                        .scaffoldBackgroundColor // Match background when complete (Phase 3)
+                  : Color(0xFF2E2E2E), // Dark color for Phase 1 and Phase 2
               borderRadius: BorderRadius.circular(8),
-              border: selectionsComplete 
-                  ? Border.all(color: Color(0xFFDD2C00), width: 2) // Red border when complete
-                  : stopsSelectedOnly
-                      ? Border.all(color: Color(0xFFCCCCCC), width: 1) // Light grey border when stops selected
-                      : null, // No border during initial selection
+              border: selectionsComplete
+                  ? Border.all(
+                      color: Color(0xFF2E2E2E),
+                      width: 2,
+                    ) // Dark border when complete (Phase 3)
+                  : null, // No border for Phase 1 and Phase 2
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -63,11 +61,15 @@ class RouteSelectionWidget extends StatelessWidget {
                   dropdownColor: Color(
                     0xFF2E2E2E,
                   ), // Dark grey background for dropdown items
-                  borderRadius: BorderRadius.circular(12), // Curved corners for dropdown menu
+                  borderRadius: BorderRadius.circular(
+                    12,
+                  ), // Curved corners for dropdown menu
                   icon: Icon(
                     Icons.arrow_drop_down,
-                    color: selectionsComplete 
-                        ? Color(0xFFDD2C00) // Red arrow when complete
+                    color: selectionsComplete
+                        ? Color(
+                            0xFF2E2E2E,
+                          ) // Dark background color when complete
                         : Color(0xFFFFFFFF), // White arrow during selection
                   ),
                   hint: Center(
@@ -82,7 +84,9 @@ class RouteSelectionWidget extends StatelessWidget {
                   ),
                   selectedItemBuilder: selectedRoute != null
                       ? (BuildContext context) {
-                          return predefinedRoutes.map<Widget>((RouteInfo route) {
+                          return predefinedRoutes.map<Widget>((
+                            RouteInfo route,
+                          ) {
                             return Center(
                               child: ConstrainedBox(
                                 constraints: BoxConstraints(maxWidth: 300),
@@ -154,12 +158,18 @@ class RouteSelectionWidget extends StatelessWidget {
 
   // Helper method to build colored display text for selected item
   Widget _buildColoredDisplayText(RouteInfo route) {
+    // Determine if we're in Phase 3 (selections complete)
+    bool selectionsComplete =
+        hasSelectedDateTime && originIndex != null && destinationIndex != null;
+
     // If stops are selected, show colored stop names
-    if (originIndex != null && destinationIndex != null &&
-        originIndex! < route.stops.length && destinationIndex! < route.stops.length) {
+    if (originIndex != null &&
+        destinationIndex != null &&
+        originIndex! < route.stops.length &&
+        destinationIndex! < route.stops.length) {
       String originStop = route.stops[originIndex!].name;
       String destinationStop = route.stops[destinationIndex!].name;
-      
+
       return RichText(
         text: TextSpan(
           children: [
@@ -167,7 +177,13 @@ class RouteSelectionWidget extends StatelessWidget {
               text: originStop,
               style: TextStyle(
                 fontSize: 16,
-                color: Color(0xFF00C853), // Green for departure
+                color: selectionsComplete
+                    ? Color(
+                        0xFF2E2E2E,
+                      ) // Dark text for Phase 3 (on light background)
+                    : Color(
+                        0xFFFFFFFF,
+                      ), // White text for Phase 2 (on dark background)
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -175,7 +191,9 @@ class RouteSelectionWidget extends StatelessWidget {
               text: ' → ',
               style: TextStyle(
                 fontSize: 16,
-                color: Color(0xFFFFFFFF), // White for arrow
+                color: selectionsComplete
+                    ? Color(0xFF2E2E2E) // Dark text for Phase 3
+                    : Color(0xFFFFFFFF), // White text for Phase 2
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -183,7 +201,9 @@ class RouteSelectionWidget extends StatelessWidget {
               text: destinationStop,
               style: TextStyle(
                 fontSize: 16,
-                color: Color(0xFFDD2C00), // Red for arrival
+                color: selectionsComplete
+                    ? Color(0xFF2E2E2E) // Dark text for Phase 3
+                    : Color(0xFFFFFFFF), // White text for Phase 2
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -193,13 +213,15 @@ class RouteSelectionWidget extends StatelessWidget {
         overflow: TextOverflow.ellipsis,
       );
     }
-    
-    // Otherwise show formatted route name in white
+
+    // Otherwise show formatted route name
     return Text(
       _getFormattedRouteName(route.name),
       style: TextStyle(
         fontSize: 16,
-        color: Color(0xFFFFFFFF),
+        color: selectionsComplete
+            ? Color(0xFF2E2E2E) // Dark text for Phase 3 (on light background)
+            : Color(0xFFFFFFFF), // White text for Phase 1 (on dark background)
         fontWeight: FontWeight.bold,
       ),
       maxLines: 1,
@@ -223,14 +245,18 @@ class RouteSelectionWidget extends StatelessWidget {
   // Helper method to build the route details layout with proper alignment
   Widget _buildRouteDetailsLayout() {
     if (selectedRoute == null) return Container();
-    
+
     // If stops are selected and times are available, show aligned layout
-    if (originIndex != null && destinationIndex != null && hasSelectedDateTime && 
-        departureTime != null && arrivalTime != null &&
-        originIndex! < selectedRoute!.stops.length && destinationIndex! < selectedRoute!.stops.length) {
+    if (originIndex != null &&
+        destinationIndex != null &&
+        hasSelectedDateTime &&
+        departureTime != null &&
+        arrivalTime != null &&
+        originIndex! < selectedRoute!.stops.length &&
+        destinationIndex! < selectedRoute!.stops.length) {
       return _buildTimeAlignedLayout();
     }
-    
+
     // Fallback to simple text for other cases
     return Text(
       _getSimpleRouteDetails(),
@@ -244,13 +270,22 @@ class RouteSelectionWidget extends StatelessWidget {
   // Build layout with departure time aligned to departure stop, arrival time to arrival stop
   Widget _buildTimeAlignedLayout() {
     // Add bounds checking
-    if (selectedRoute == null || originIndex == null || destinationIndex == null ||
-        originIndex! >= selectedRoute!.stops.length || destinationIndex! >= selectedRoute!.stops.length) {
+    if (selectedRoute == null ||
+        originIndex == null ||
+        destinationIndex == null ||
+        originIndex! >= selectedRoute!.stops.length ||
+        destinationIndex! >= selectedRoute!.stops.length) {
       return Container();
     }
-    
-    String distance = selectedRoute!.calculateDistance(originIndex!, destinationIndex!);
-    String duration = selectedRoute!.calculateDuration(originIndex!, destinationIndex!);
+
+    String distance = selectedRoute!.calculateDistance(
+      originIndex!,
+      destinationIndex!,
+    );
+    String duration = selectedRoute!.calculateDuration(
+      originIndex!,
+      destinationIndex!,
+    );
     String depTime = _formatTime(departureTime!);
     String arrTime = _formatTime(arrivalTime!);
 
@@ -259,13 +294,13 @@ class RouteSelectionWidget extends StatelessWidget {
         // Times row with distance/duration in center
         Row(
           children: [
-            // Departure time (left side) - Green
+            // Departure time (left side)
             Expanded(
               child: Text(
                 depTime,
                 style: TextStyle(
-                  fontSize: 12, 
-                  color: Color(0xFF00C853), // Green for departure time
+                  fontSize: 12,
+                  color: Color(0xFF2E2E2E), // Dark color for departure time
                   fontWeight: FontWeight.bold,
                 ),
                 textAlign: TextAlign.center,
@@ -275,18 +310,20 @@ class RouteSelectionWidget extends StatelessWidget {
             Text(
               '$distance • $duration',
               style: TextStyle(
-                fontSize: 12, 
-                color: Color(0xFF666666), // Darker gray for more prominence when locked
+                fontSize: 12,
+                color: Color(
+                  0xFF666666,
+                ), // Darker gray for more prominence when locked
               ),
               textAlign: TextAlign.center,
             ),
-            // Arrival time (right side) - Red
+            // Arrival time (right side)
             Expanded(
               child: Text(
                 arrTime,
                 style: TextStyle(
-                  fontSize: 12, 
-                  color: Color(0xFFDD2C00), // Red for arrival time
+                  fontSize: 12,
+                  color: Color(0xFF2E2E2E), // Dark color for arrival time
                   fontWeight: FontWeight.bold,
                 ),
                 textAlign: TextAlign.center,
@@ -301,15 +338,23 @@ class RouteSelectionWidget extends StatelessWidget {
   // Helper method to get simple route details for fallback cases
   String _getSimpleRouteDetails() {
     if (selectedRoute == null) return '';
-    
+
     // If stops are selected but no times, show calculated distance and duration
-    if (originIndex != null && destinationIndex != null &&
-        originIndex! < selectedRoute!.stops.length && destinationIndex! < selectedRoute!.stops.length) {
-      String distance = selectedRoute!.calculateDistance(originIndex!, destinationIndex!);
-      String duration = selectedRoute!.calculateDuration(originIndex!, destinationIndex!);
+    if (originIndex != null &&
+        destinationIndex != null &&
+        originIndex! < selectedRoute!.stops.length &&
+        destinationIndex! < selectedRoute!.stops.length) {
+      String distance = selectedRoute!.calculateDistance(
+        originIndex!,
+        destinationIndex!,
+      );
+      String duration = selectedRoute!.calculateDuration(
+        originIndex!,
+        destinationIndex!,
+      );
       return '$distance • $duration';
     }
-    
+
     // Default: show full route distance and duration
     return '${selectedRoute!.distance} • ${selectedRoute!.duration}';
   }

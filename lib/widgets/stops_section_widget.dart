@@ -154,11 +154,7 @@ class _StopsSectionWidgetState extends State<StopsSectionWidget> {
                   fontSize: 13,
                   color: isGreyed
                       ? Colors.grey
-                      : (i == widget.destinationIndex
-                            ? Color(0xFFDD2C00)
-                            : (i == widget.originIndex
-                                  ? Color(0xFF00C853)
-                                  : Color(0xFF2E2E2E))),
+                      : Color(0xFF2E2E2E), // Use same dark color for all stops
                   fontWeight:
                       (i == widget.originIndex || i == widget.destinationIndex)
                       ? FontWeight.bold

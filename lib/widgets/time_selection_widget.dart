@@ -84,7 +84,7 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
                 ? formatRelativeDay(selectedDate, DateTime.now())
                 : 'Pick up time',
             hasUserSelectedDateTime ? formatTimeHHmm(selectedDate) : null,
-            Color(0xFF00C853), // Green for pickup
+            Color(0xFF2E2E2E), // Dark color for pickup
           ),
         ),
 
@@ -105,7 +105,7 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
               (widget.destinationIndex != null && hasUserSelectedDateTime)
                   ? formatTimeHHmm(arrivalTime)
                   : null,
-              Color(0xFFDD2C00), // Red for drop-off
+              Color(0xFF2E2E2E), // Dark color for drop-off
             ),
           ),
       ],
@@ -191,7 +191,7 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
       context: context,
       builder: (context) => _buildTimePicker(
         'Pick-up Time',
-        Color(0xFF00C853),
+        Color(0xFF2E2E2E),
         Icons.location_on,
         _findEarliestValidDepartureTime(selectedDate),
         (tempPickedDate) {
@@ -222,7 +222,7 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
       context: context,
       builder: (context) => _buildTimePicker(
         'Drop-off Time',
-        Color(0xFFDD2C00),
+        Color(0xFF2E2E2E),
         Icons.flag,
         _findEarliestValidArrivalTime(arrivalTime),
         (tempPickedDate) {
