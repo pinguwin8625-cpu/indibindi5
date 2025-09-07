@@ -32,11 +32,20 @@ class BookingLogic {
     bool hasSelectedDateTime,
     List<int> selectedSeats,
   ) {
-    if (selectedRoute == null) return 0;
-    if (originIndex == null) return 1;
-    if (destinationIndex == null) return 2;
-    if (!hasSelectedDateTime) return 3;
-    if (selectedSeats.isEmpty) return 4;
-    return 4; // All steps completed
+    int step;
+    if (selectedRoute == null) {
+      step = 0; // Stage 0: Nothing selected
+    } else if (originIndex == null) {
+      step = 1; // Stage 1: Route selected
+    } else if (destinationIndex == null) {
+      step = 2; // Stage 2: Pick up stop selected
+    } else if (!hasSelectedDateTime) {
+      step = 3; // Stage 3: Drop off stop selected, time not yet selected
+    } else {
+      step = 4; // Stage 4: Time selected (only when both stops AND time are selected)
+    }
+    
+    print('🚗 BookingLogic.getCurrentStep: route=${selectedRoute?.name}, origin=$originIndex, dest=$destinationIndex, hasTime=$hasSelectedDateTime → step=$step');
+    return step;
   }
 }

@@ -31,11 +31,7 @@ class _TabContentWidgetState extends State<TabContentWidget> {
   @override
   Widget build(BuildContext context) {
     // Compute greyed stops
-    List<int> greyedStops = BookingLogic.computeGreyedStops(
-      selectedRoute,
-      originIndex,
-      destinationIndex,
-    );
+    List<int> greyedStops = BookingLogic.computeGreyedStops(selectedRoute, originIndex, destinationIndex);
 
     return Column(
       children: [
@@ -83,11 +79,7 @@ class _TabContentWidgetState extends State<TabContentWidget> {
                   // Main content area with stops and time picker - only show if time not selected
                   if (!hasSelectedDateTime)
                     Padding(
-                      padding: const EdgeInsets.only(
-                        left: 16,
-                        right: 16,
-                        top: 16,
-                      ),
+                      padding: const EdgeInsets.only(left: 16, right: 16, top: 16),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -174,21 +166,19 @@ class _TabContentWidgetState extends State<TabContentWidget> {
                                       //   },
                                       // );
                                       // }
-                                  },
-                                ),
-                              ],
+                                    },
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
 
                   // Standard divider between stops/time section and seat layout
 
                   // Full-width seat layout section - outside the Row for proper centering
-                  if (originIndex != null &&
-                      destinationIndex != null &&
-                      hasSelectedDateTime)
+                  if (originIndex != null && destinationIndex != null && hasSelectedDateTime)
                     // Centered seat layout - full width centering
                     SizedBox(
                       width: double.infinity,
@@ -208,8 +198,7 @@ class _TabContentWidgetState extends State<TabContentWidget> {
                 ],
 
                 // Spacing between seat layout and booking button
-                if (destinationIndex != null && hasSelectedDateTime)
-                  SizedBox(height: 0),
+                if (destinationIndex != null && hasSelectedDateTime) SizedBox(height: 0),
 
                 // Complete Booking button - moved away from the car
                 if (destinationIndex != null && hasSelectedDateTime)
@@ -232,13 +221,9 @@ class _TabContentWidgetState extends State<TabContentWidget> {
 
                 // Calculated spacer to ensure divider can align with progress bar
                 // Only add enough space to enable the auto-scroll alignment
-                (originIndex != null &&
-                        destinationIndex != null &&
-                        hasSelectedDateTime)
+                (originIndex != null && destinationIndex != null && hasSelectedDateTime)
                     ? SizedBox.shrink() // No spacer when seat layout is shown
-                    : SizedBox(
-                        height: 50,
-                      ), // Small spacer when seat layout not shown
+                    : SizedBox(height: 50), // Small spacer when seat layout not shown
               ],
             ),
           ),

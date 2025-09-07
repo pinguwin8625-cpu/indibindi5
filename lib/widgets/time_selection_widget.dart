@@ -84,7 +84,7 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
                 ? formatRelativeDay(selectedDate, DateTime.now())
                 : 'Pick up time',
             hasUserSelectedDateTime ? formatTimeHHmm(selectedDate) : null,
-            Color(0xFF2E2E2E), // Dark color for pickup
+            Colors.green, // Green color for pickup
           ),
         ),
 
@@ -105,7 +105,7 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
               (widget.destinationIndex != null && hasUserSelectedDateTime)
                   ? formatTimeHHmm(arrivalTime)
                   : null,
-              Color(0xFF2E2E2E), // Dark color for drop-off
+              Colors.red, // Red color for drop-off
             ),
           ),
       ],
@@ -191,7 +191,7 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
       context: context,
       builder: (context) => _buildTimePicker(
         'Pick-up Time',
-        Color(0xFF2E2E2E),
+        Colors.green,
         Icons.location_on,
         _findEarliestValidDepartureTime(selectedDate),
         (tempPickedDate) {
@@ -210,7 +210,12 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             _notifyTimesChanged();
           });
-          widget.onDateTimeSelected(true);
+          // Only call onDateTimeSelected when user actually picks time AND both stops are selected
+          if (widget.destinationIndex != null) {
+            // Re-enable callback when user actually picks time
+            widget.onDateTimeSelected(true);
+            print('🕐 Time picker: User selected departure time, calling onDateTimeSelected(true)');
+          }
         },
       ),
     );
@@ -222,7 +227,7 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
       context: context,
       builder: (context) => _buildTimePicker(
         'Drop-off Time',
-        Color(0xFF2E2E2E),
+        Colors.red,
         Icons.flag,
         _findEarliestValidArrivalTime(arrivalTime),
         (tempPickedDate) {
@@ -249,7 +254,12 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             _notifyTimesChanged();
           });
-          widget.onDateTimeSelected(true);
+          // Only call onDateTimeSelected when user actually picks time AND both stops are selected
+          if (widget.destinationIndex != null) {
+            // Re-enable callback when user actually picks time
+            widget.onDateTimeSelected(true);
+            print('🕐 Time picker: User selected arrival time, calling onDateTimeSelected(true)');
+          }
         },
       ),
     );

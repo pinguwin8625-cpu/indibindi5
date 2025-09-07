@@ -107,19 +107,21 @@ class BookingProgressBar extends StatelessWidget {
             duration: Duration(milliseconds: 500),
             curve: Curves.easeInOut,
             left: () {
-              // For origin and destination, use custom positions
+              // Simple car positioning based on booking progress
+              double carPosition;
               if (currentStep == 0) {
-                return 10.0; // 2px further from origin
-              } else if (currentStep == totalSteps) {
-                return (MediaQuery.of(context).size.width - 48 - 30) + 10;
+                carPosition = 10.0; // Start position
+              } else if (currentStep >= totalSteps) {
+                carPosition = (MediaQuery.of(context).size.width - 48 - 30) + 10; // End position
               } else {
-                // For stops, align car's bottom center with stop marker
+                // Car moves proportionally with booking progress
                 double stepProgress = currentStep / totalSteps;
-                double stopPosition =
-                    8 +
-                    (stepProgress * (MediaQuery.of(context).size.width - 48));
-                return stopPosition - 15; // 15 is half car width
+                double stopPosition = 8 + (stepProgress * (MediaQuery.of(context).size.width - 48));
+                carPosition = stopPosition - 15; // 15 is half car width
               }
+              
+              print('🚗 Car position: currentStep=$currentStep, totalSteps=$totalSteps, carPosition=$carPosition');
+              return carPosition;
             }(),
             top:
                 19, // Centered: 32 - 13 = 19 (track position - half car height)
@@ -235,7 +237,8 @@ class GoogleMapsOriginPinPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Color(0xFF2E2E2E) // Match dropdown background color
+      ..color =
+          Color(0xFF2E2E2E) // Match dropdown background color
       ..style = PaintingStyle.fill;
 
     final shadowPaint = Paint()

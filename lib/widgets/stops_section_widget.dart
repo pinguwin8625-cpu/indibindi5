@@ -66,7 +66,7 @@ class _StopsSectionWidgetState extends State<StopsSectionWidget> {
                     destinationIndex: visibleStops.length > 1
                         ? visibleStops.length - 1
                         : 0,
-                    greyedStops: const [],
+                    greyedStops: widget.greyedStops,
                   ),
                 ),
               ),
@@ -115,6 +115,7 @@ class _StopsSectionWidgetState extends State<StopsSectionWidget> {
           : () {
               if (widget.originIndex == null) {
                 if (!isLast) {
+                  print('🎯 StopsSection: Setting origin to $i');
                   widget.onOriginChanged(i);
                   widget.onDestinationChanged(null);
                 }
@@ -122,12 +123,15 @@ class _StopsSectionWidgetState extends State<StopsSectionWidget> {
                   i != widget.originIndex &&
                   i > widget.originIndex!) {
                 if (!isFirst) {
+                  print('🎯 StopsSection: Setting destination to $i');
                   widget.onDestinationChanged(i);
                 }
               } else if (i == widget.originIndex) {
+                print('🎯 StopsSection: Clearing origin (was $i)');
                 widget.onOriginChanged(null);
                 widget.onDestinationChanged(null);
               } else if (i == widget.destinationIndex) {
+                print('🎯 StopsSection: Clearing destination (was $i)');
                 widget.onDestinationChanged(null);
               }
               widget.onResetDateTime();
@@ -203,12 +207,12 @@ class _StopsSectionWidgetState extends State<StopsSectionWidget> {
               ],
             ),
           ),
-          // Inner circle - dark grey for origin
+          // Inner circle - green for origin
           Container(
             width: 14,
             height: 14,
             decoration: BoxDecoration(
-              color: Color(0xFF2E2E2E),
+              color: Colors.green,
               shape: BoxShape.circle,
             ),
           ),
@@ -236,12 +240,12 @@ class _StopsSectionWidgetState extends State<StopsSectionWidget> {
               ],
             ),
           ),
-          // Inner circle - dark grey for destination
+          // Inner circle - red for destination
           Container(
             width: 14,
             height: 14,
             decoration: BoxDecoration(
-              color: Color(0xFF2E2E2E),
+              color: Colors.red,
               shape: BoxShape.circle,
             ),
           ),

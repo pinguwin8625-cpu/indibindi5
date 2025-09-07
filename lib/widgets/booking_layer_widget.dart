@@ -50,12 +50,10 @@ class BookingLayerWidget extends StatelessWidget {
             children: [
               IconButton(
                 onPressed: onBack,
-                icon: Icon(Icons.arrow_back, color: Colors.white),
+                icon: Icon(Icons.arrow_back_ios, color: Color(0xFF8E8E8E), size: 20),
                 style: IconButton.styleFrom(
-                  backgroundColor: Color(0xFF2E2E2E),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+                  backgroundColor: Colors.transparent,
+                  padding: EdgeInsets.all(8),
                 ),
               ),
               SizedBox(width: 16),
@@ -64,19 +62,12 @@ class BookingLayerWidget extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Book Your Trip',
+                      'Choose your seats',
                       style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.w600,
-                        color: Colors.white,
+                        color: Color(0xFF2E2E2E),
                         letterSpacing: 0.5,
-                      ),
-                    ),
-                    Text(
-                      '$originStop → $destinationStop',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.white70,
                       ),
                     ),
                   ],
@@ -101,7 +92,7 @@ class BookingLayerWidget extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.w600,
-                        color: Colors.white,
+                        color: Colors.black,
                         height: 1.3,
                       ),
                     ),
@@ -122,48 +113,6 @@ class BookingLayerWidget extends StatelessWidget {
 
                   // Show seat selection if time is selected
                   if (hasSelectedDateTime) ...[
-                    Text(
-                      'Choose your seats',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                        height: 1.3,
-                      ),
-                    ),
-                    SizedBox(height: 16),
-                    
-                    // Departure/Arrival time display
-                    Container(
-                      padding: EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Color(0xFF2E2E2E).withOpacity(0.5),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Color(0xFF2E2E2E), width: 1),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.schedule,
-                            color: Colors.white70,
-                            size: 20,
-                          ),
-                          SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              'Departure: ${departureTime?.toString().substring(10, 16) ?? "N/A"} | Arrival: ${arrivalTime?.toString().substring(10, 16) ?? "N/A"}',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.white70,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    
-                    SizedBox(height: 24),
-                    
                     // Seat layout
                     SeatPlanningSectionWidget(
                       userRole: userRole,

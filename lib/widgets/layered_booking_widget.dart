@@ -6,11 +6,7 @@ import '../widgets/stops_layer_widget.dart';
 import '../widgets/booking_layer_widget.dart';
 import '../utils/booking_logic.dart';
 
-enum BookingLayer {
-  routeSelection,
-  stopsSelection,
-  timeAndSeats,
-}
+enum BookingLayer { routeSelection, stopsSelection, timeAndSeats }
 
 class LayeredBookingWidget extends StatefulWidget {
   final String userRole;
@@ -23,7 +19,7 @@ class LayeredBookingWidget extends StatefulWidget {
 
 class _LayeredBookingWidgetState extends State<LayeredBookingWidget> {
   BookingLayer currentLayer = BookingLayer.routeSelection;
-  
+
   // Shared state across layers
   RouteInfo? selectedRoute;
   int? originIndex;
@@ -69,6 +65,7 @@ class _LayeredBookingWidgetState extends State<LayeredBookingWidget> {
             hasSelectedDateTime,
             selectedSeats,
           ),
+          totalSteps: 4,
         ),
 
         // Layer navigation
@@ -106,7 +103,10 @@ class _LayeredBookingWidgetState extends State<LayeredBookingWidget> {
               destinationIndex = null;
               hasSelectedDateTime = false;
             });
-            _navigateToLayer(BookingLayer.stopsSelection);
+            // Show green selection for 250ms before navigating
+            Future.delayed(Duration(milliseconds: 250), () {
+              _navigateToLayer(BookingLayer.stopsSelection);
+            });
           },
         );
 
@@ -117,13 +117,40 @@ class _LayeredBookingWidgetState extends State<LayeredBookingWidget> {
           selectedRoute: selectedRoute!,
           originIndex: originIndex,
           destinationIndex: destinationIndex,
+          departureTime: departureTime,
+          arrivalTime: arrivalTime,
+          hasSelectedDateTime: hasSelectedDateTime,
           isBookingCompleted: isBookingCompleted,
-          onStopsSelected: (origin, destination) {
+          onStopsAndTimeSelected: (origin, destination, departure, arrival) {
             setState(() {
               originIndex = origin;
               destinationIndex = destination;
+              departureTime = departure;
+              arrivalTime = arrival;
+              hasSelectedDateTime = true;
             });
             _navigateToLayer(BookingLayer.timeAndSeats);
+          },
+          onOriginSelected: (origin) {
+            setState(() {
+              originIndex = origin;
+              // Reset time selection when origin changes
+              hasSelectedDateTime = false;
+            });
+          },
+          onDestinationSelected: (destination) {
+            setState(() {
+              destinationIndex = destination;
+              // Reset time selection when destination changes
+              hasSelectedDateTime = false;
+            });
+          },
+          onTimeSelected: (departure, arrival) {
+            setState(() {
+              departureTime = departure;
+              arrivalTime = arrival;
+              hasSelectedDateTime = true;
+            });
           },
           onBack: _goBack,
         );
