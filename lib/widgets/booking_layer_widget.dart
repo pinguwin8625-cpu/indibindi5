@@ -38,9 +38,6 @@ class BookingLayerWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    String originStop = selectedRoute.stops[originIndex].name;
-    String destinationStop = selectedRoute.stops[destinationIndex].name;
-
     return Column(
       children: [
         // Header with back button
@@ -51,10 +48,7 @@ class BookingLayerWidget extends StatelessWidget {
               IconButton(
                 onPressed: onBack,
                 icon: Icon(Icons.arrow_back_ios, color: Color(0xFF8E8E8E), size: 20),
-                style: IconButton.styleFrom(
-                  backgroundColor: Colors.transparent,
-                  padding: EdgeInsets.all(8),
-                ),
+                style: IconButton.styleFrom(backgroundColor: Colors.transparent, padding: EdgeInsets.all(8)),
               ),
               SizedBox(width: 16),
               Expanded(
@@ -89,15 +83,10 @@ class BookingLayerWidget extends StatelessWidget {
                   if (!hasSelectedDateTime) ...[
                     Text(
                       'When do you want to travel?',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black,
-                        height: 1.3,
-                      ),
+                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600, color: Colors.black, height: 1.3),
                     ),
                     SizedBox(height: 16),
-                    
+
                     TimeSelectionWidget(
                       selectedRoute: selectedRoute,
                       originIndex: originIndex,
@@ -120,9 +109,9 @@ class BookingLayerWidget extends StatelessWidget {
                       isDisabled: isBookingCompleted,
                       onSeatsSelected: onSeatsSelected,
                     ),
-                    
+
                     SizedBox(height: 24),
-                    
+
                     // Booking button
                     BookingButtonWidget(
                       selectedRoute: selectedRoute,
@@ -132,7 +121,7 @@ class BookingLayerWidget extends StatelessWidget {
                       onBookingCompleted: onBookingCompleted,
                     ),
                   ],
-                  
+
                   SizedBox(height: 32),
                 ],
               ),

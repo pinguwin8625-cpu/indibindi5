@@ -25,19 +25,14 @@ class RouteSelectionWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Determine if selections are complete
-    bool selectionsComplete =
-        hasSelectedDateTime && originIndex != null && destinationIndex != null;
-
     return Column(
       children: [
         // Routes List - in separate transparent boxes
         Column(
           children: predefinedRoutes.asMap().entries.map((entry) {
-            int index = entry.key;
             RouteInfo route = entry.value;
             bool isSelected = selectedRoute == route;
-            
+
             return Container(
               margin: EdgeInsets.only(bottom: 12),
               child: InkWell(
@@ -46,10 +41,7 @@ class RouteSelectionWidget extends StatelessWidget {
                   padding: EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: Colors.transparent,
-                    border: Border.all(
-                      color: isSelected ? Colors.green : Color(0xFFE0E0E0),
-                      width: isSelected ? 2 : 1,
-                    ),
+                    border: Border.all(color: isSelected ? Colors.green : Color(0xFFE0E0E0), width: isSelected ? 2 : 1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Column(
@@ -71,18 +63,11 @@ class RouteSelectionWidget extends StatelessWidget {
                           // Duration
                           Row(
                             children: [
-                              Icon(Icons.access_time, 
-                                size: 16, 
-                                color: Color(0xFF8E8E8E)
-                              ),
+                              Icon(Icons.access_time, size: 16, color: Color(0xFF8E8E8E)),
                               SizedBox(width: 4),
                               Text(
                                 route.duration,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Color(0xFF8E8E8E),
-                                  fontWeight: FontWeight.w500,
-                                ),
+                                style: TextStyle(fontSize: 14, color: Color(0xFF8E8E8E), fontWeight: FontWeight.w500),
                               ),
                             ],
                           ),
@@ -90,18 +75,11 @@ class RouteSelectionWidget extends StatelessWidget {
                           // Distance
                           Row(
                             children: [
-                              Icon(Icons.straighten, 
-                                size: 16, 
-                                color: Color(0xFF8E8E8E)
-                              ),
+                              Icon(Icons.straighten, size: 16, color: Color(0xFF8E8E8E)),
                               SizedBox(width: 4),
                               Text(
                                 route.distance,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Color(0xFF8E8E8E),
-                                  fontWeight: FontWeight.w500,
-                                ),
+                                style: TextStyle(fontSize: 14, color: Color(0xFF8E8E8E), fontWeight: FontWeight.w500),
                               ),
                             ],
                           ),
@@ -117,10 +95,7 @@ class RouteSelectionWidget extends StatelessWidget {
 
         // Show selected route details if needed
         if (selectedRoute != null && hasSelectedDateTime)
-          Padding(
-            padding: const EdgeInsets.only(top: 16.0),
-            child: _buildRouteDetailsLayout(),
-          ),
+          Padding(padding: const EdgeInsets.only(top: 16.0), child: _buildRouteDetailsLayout()),
       ],
     );
   }
@@ -134,7 +109,7 @@ class RouteSelectionWidget extends StatelessWidget {
         return '${parts[0]} → ${parts[1]}';
       }
     }
-    
+
     return routeName;
   }
 
@@ -142,8 +117,7 @@ class RouteSelectionWidget extends StatelessWidget {
     if (selectedRoute == null) return Container();
 
     // Determine if selections are complete
-    bool selectionsComplete =
-        hasSelectedDateTime && originIndex != null && destinationIndex != null;
+    bool selectionsComplete = hasSelectedDateTime && originIndex != null && destinationIndex != null;
 
     // Show departure and arrival times if they exist
     if (departureTime != null && arrivalTime != null) {
@@ -154,9 +128,7 @@ class RouteSelectionWidget extends StatelessWidget {
         width: double.infinity,
         padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: selectionsComplete
-              ? Color(0xFF2E2E2E).withOpacity(0.1)
-              : Colors.white.withOpacity(0.1),
+          color: selectionsComplete ? Color(0xFF2E2E2E).withOpacity(0.1) : Colors.white.withOpacity(0.1),
           borderRadius: BorderRadius.circular(6),
         ),
         child: Row(
@@ -170,8 +142,7 @@ class RouteSelectionWidget extends StatelessWidget {
                   'Departure',
                   style: TextStyle(
                     fontSize: 10,
-                    color: (selectionsComplete ? Color(0xFF2E2E2E) : Colors.white)
-                        .withOpacity(0.7),
+                    color: (selectionsComplete ? Color(0xFF2E2E2E) : Colors.white).withOpacity(0.7),
                   ),
                 ),
                 Text(
@@ -187,8 +158,7 @@ class RouteSelectionWidget extends StatelessWidget {
             // Arrow
             Icon(
               Icons.arrow_forward,
-              color: (selectionsComplete ? Color(0xFF2E2E2E) : Colors.white)
-                  .withOpacity(0.7),
+              color: (selectionsComplete ? Color(0xFF2E2E2E) : Colors.white).withOpacity(0.7),
               size: 16,
             ),
             // Arrival info
@@ -199,8 +169,7 @@ class RouteSelectionWidget extends StatelessWidget {
                   'Arrival',
                   style: TextStyle(
                     fontSize: 10,
-                    color: (selectionsComplete ? Color(0xFF2E2E2E) : Colors.white)
-                        .withOpacity(0.7),
+                    color: (selectionsComplete ? Color(0xFF2E2E2E) : Colors.white).withOpacity(0.7),
                   ),
                 ),
                 Text(

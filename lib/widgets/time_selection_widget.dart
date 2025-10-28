@@ -27,10 +27,9 @@ class TimeSelectionWidget extends StatefulWidget {
 class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
   late DateTime selectedDate; // Used for departure time
   late DateTime arrivalTime; // Store arrival time explicitly
-  bool isEditingArrival =
-      false; // Flag to track if we're editing arrival or departure time
-  bool hasUserSelectedDateTime =
-      false; // Track if user has explicitly selected date/time
+  bool isEditingArrival = false; // Flag to track if we're editing arrival or departure time
+  bool hasUserSelectedDateTime = false; // Track if user has explicitly selected date/time
+  bool _isAutomaticRecalculation = false; // Track automatic vs user-driven time updates
 
   @override
   void initState() {
@@ -45,13 +44,8 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
     }
 
     // Initialize arrival time based on departure time
-    arrivalTime = calculateArrivalTime(
-      selectedDate,
-      widget.selectedRoute,
-      widget.originIndex,
-      widget.destinationIndex,
-    );
-    
+    arrivalTime = calculateArrivalTime(selectedDate, widget.selectedRoute, widget.originIndex, widget.destinationIndex);
+
     // Notify parent of initial times
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _notifyTimesChanged();
@@ -73,16 +67,12 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Origin time box - positioned to align with the origin
-        SizedBox(
-          height: widget.originIndex * 42.0,
-        ), // Stop positioning only (no title offset)
+        SizedBox(height: widget.originIndex * 42.0), // Stop positioning only (no title offset)
         // Origin departure time box
         GestureDetector(
           onTap: () => _showDepartureTimePicker(),
           child: _buildTimeBox(
-            hasUserSelectedDateTime
-                ? formatRelativeDay(selectedDate, DateTime.now())
-                : 'Pick up time',
+            hasUserSelectedDateTime ? formatRelativeDay(selectedDate, DateTime.now()) : 'Pick up time',
             hasUserSelectedDateTime ? formatTimeHHmm(selectedDate) : null,
             Colors.green, // Green color for pickup
           ),
@@ -90,9 +80,7 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
 
         // Add space between origin and destination time boxes (only if destination is selected)
         if (widget.destinationIndex != null)
-          SizedBox(
-            height: (widget.destinationIndex! - widget.originIndex - 1) * 42.0,
-          ),
+          SizedBox(height: (widget.destinationIndex! - widget.originIndex - 1) * 42.0),
 
         // Destination arrival time box - only show when destination is selected
         if (widget.destinationIndex != null)
@@ -102,9 +90,7 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
               (widget.destinationIndex != null && hasUserSelectedDateTime)
                   ? formatRelativeDay(arrivalTime, DateTime.now())
                   : 'Drop off time',
-              (widget.destinationIndex != null && hasUserSelectedDateTime)
-                  ? formatTimeHHmm(arrivalTime)
-                  : null,
+              (widget.destinationIndex != null && hasUserSelectedDateTime) ? formatTimeHHmm(arrivalTime) : null,
               Colors.red, // Red color for drop-off
             ),
           ),
@@ -124,11 +110,7 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
           borderRadius: BorderRadius.circular(8), // More button-like rounded corners
           border: Border.all(color: color, width: 2), // Thicker border for button style
           boxShadow: [
-            BoxShadow(
-              color: color.withOpacity(0.1),
-              blurRadius: 2,
-              offset: Offset(0, 1),
-            ),
+            BoxShadow(color: color.withOpacity(0.1), blurRadius: 2, offset: Offset(0, 1)),
           ], // Subtle shadow for button effect
         ),
         child: Row(
@@ -153,10 +135,7 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
                     Container(
                       width: 2.7, // 3 * 0.9
                       height: 2.7, // 3 * 0.9
-                      decoration: BoxDecoration(
-                        color: color,
-                        shape: BoxShape.circle,
-                      ),
+                      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
                     ),
                     SizedBox(width: 5.4), // 6 * 0.9
                     Text(
@@ -211,10 +190,13 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
             _notifyTimesChanged();
           });
           // Only call onDateTimeSelected when user actually picks time AND both stops are selected
-          if (widget.destinationIndex != null) {
-            // Re-enable callback when user actually picks time
+          // AND we're not in the middle of automatic recalculation
+          if (widget.destinationIndex != null && !_isAutomaticRecalculation) {
+            // User actually picked departure time
             widget.onDateTimeSelected(true);
             print('🕐 Time picker: User selected departure time, calling onDateTimeSelected(true)');
+          } else if (_isAutomaticRecalculation) {
+            print('🕐 Time picker: Automatic recalculation, NOT calling onDateTimeSelected');
           }
         },
       ),
@@ -232,9 +214,7 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
         _findEarliestValidArrivalTime(arrivalTime),
         (tempPickedDate) {
           if (kDebugMode) {
-            debugPrint(
-              'Arrival time Done pressed: setting arrivalTime=$tempPickedDate',
-            );
+            debugPrint('Arrival time Done pressed: setting arrivalTime=$tempPickedDate');
           }
           setState(() {
             hasUserSelectedDateTime = true;
@@ -255,10 +235,13 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
             _notifyTimesChanged();
           });
           // Only call onDateTimeSelected when user actually picks time AND both stops are selected
-          if (widget.destinationIndex != null) {
-            // Re-enable callback when user actually picks time
+          // AND we're not in the middle of automatic recalculation
+          if (widget.destinationIndex != null && !_isAutomaticRecalculation) {
+            // User actually picked arrival time
             widget.onDateTimeSelected(true);
             print('🕐 Time picker: User selected arrival time, calling onDateTimeSelected(true)');
+          } else if (_isAutomaticRecalculation) {
+            print('🕐 Time picker: Automatic recalculation, NOT calling onDateTimeSelected');
           }
         },
       ),
@@ -266,21 +249,11 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
     isEditingArrival = false;
   }
 
-  Widget _buildTimePicker(
-    String title,
-    Color color,
-    IconData icon,
-    DateTime initialTime,
-    Function(DateTime) onDone,
-  ) {
+  Widget _buildTimePicker(String title, Color color, IconData icon, DateTime initialTime, Function(DateTime) onDone) {
     DateTime tempPickedDate = initialTime;
 
-    final hourController = FixedExtentScrollController(
-      initialItem: tempPickedDate.hour,
-    );
-    final minuteController = FixedExtentScrollController(
-      initialItem: (tempPickedDate.minute / 5).round(),
-    );
+    final hourController = FixedExtentScrollController(initialItem: tempPickedDate.hour);
+    final minuteController = FixedExtentScrollController(initialItem: (tempPickedDate.minute / 5).round());
 
     return StatefulBuilder(
       builder: (context, setModalState) {
@@ -310,11 +283,7 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
                         SizedBox(width: 8),
                         Text(
                           title,
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: color,
-                            fontSize: 16,
-                          ),
+                          style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 16),
                         ),
                       ],
                     ),
@@ -338,9 +307,7 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
                       flex: 2,
                       child: _buildDayWheel(color, (index) {
                         setModalState(() {
-                          final date = DateTime.now().add(
-                            Duration(days: index),
-                          );
+                          final date = DateTime.now().add(Duration(days: index));
                           tempPickedDate = DateTime(
                             date.year,
                             date.month,
@@ -355,33 +322,21 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
                     // Hour wheel
                     Expanded(
                       flex: 1,
-                      child: _buildHourWheel(
-                        color,
-                        tempPickedDate,
-                        hourController,
-                        minuteController,
-                        (validTime) {
-                          setModalState(() {
-                            tempPickedDate = validTime;
-                          });
-                        },
-                      ),
+                      child: _buildHourWheel(color, tempPickedDate, hourController, minuteController, (validTime) {
+                        setModalState(() {
+                          tempPickedDate = validTime;
+                        });
+                      }),
                     ),
 
                     // Minute wheel
                     Expanded(
                       flex: 1,
-                      child: _buildMinuteWheel(
-                        color,
-                        tempPickedDate,
-                        hourController,
-                        minuteController,
-                        (validTime) {
-                          setModalState(() {
-                            tempPickedDate = validTime;
-                          });
-                        },
-                      ),
+                      child: _buildMinuteWheel(color, tempPickedDate, hourController, minuteController, (validTime) {
+                        setModalState(() {
+                          tempPickedDate = validTime;
+                        });
+                      }),
                     ),
                   ],
                 ),
@@ -421,15 +376,7 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
           'Nov',
           'Dec',
         ][date.month - 1];
-        final weekday = [
-          'Mon',
-          'Tue',
-          'Wed',
-          'Thu',
-          'Fri',
-          'Sat',
-          'Sun',
-        ][date.weekday - 1];
+        final weekday = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][date.weekday - 1];
 
         if (index == 0) {
           label = "Today";
@@ -442,11 +389,7 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
         return Center(
           child: Text(
             label,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: color,
-            ),
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: color),
           ),
         );
       }),
@@ -478,25 +421,13 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
         );
 
         DateTime validTime;
-        if (isEditingArrival
-            ? _isValidArrivalTime(testTime)
-            : _isValidDepartureTime(testTime)) {
+        if (isEditingArrival ? _isValidArrivalTime(testTime) : _isValidDepartureTime(testTime)) {
           validTime = testTime;
         } else {
           validTime = isEditingArrival
-              ? _findEarliestValidArrivalTime(
-                  DateTime(
-                    tempPickedDate.year,
-                    tempPickedDate.month,
-                    tempPickedDate.day,
-                  ),
-                )
+              ? _findEarliestValidArrivalTime(DateTime(tempPickedDate.year, tempPickedDate.month, tempPickedDate.day))
               : _findEarliestValidDepartureTime(
-                  DateTime(
-                    tempPickedDate.year,
-                    tempPickedDate.month,
-                    tempPickedDate.day,
-                  ),
+                  DateTime(tempPickedDate.year, tempPickedDate.month, tempPickedDate.day),
                 );
 
           Future.delayed(Duration(milliseconds: 100), () {
@@ -519,18 +450,12 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
           tempPickedDate.minute,
         );
 
-        final isValid = isEditingArrival
-            ? _isValidArrivalTime(testTime)
-            : _isValidDepartureTime(testTime);
+        final isValid = isEditingArrival ? _isValidArrivalTime(testTime) : _isValidDepartureTime(testTime);
 
         return Center(
           child: Text(
             index.toString().padLeft(2, '0'),
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: isValid ? color : Colors.grey[300],
-            ),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: isValid ? color : Colors.grey[300]),
           ),
         );
       }),
@@ -563,27 +488,15 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
         );
 
         DateTime validTime;
-        if (isEditingArrival
-            ? _isValidArrivalTime(testTime)
-            : _isValidDepartureTime(testTime)) {
+        if (isEditingArrival ? _isValidArrivalTime(testTime) : _isValidDepartureTime(testTime)) {
           validTime = testTime;
         } else {
           validTime = isEditingArrival
               ? _findEarliestValidArrivalTime(
-                  DateTime(
-                    tempPickedDate.year,
-                    tempPickedDate.month,
-                    tempPickedDate.day,
-                    tempPickedDate.hour,
-                  ),
+                  DateTime(tempPickedDate.year, tempPickedDate.month, tempPickedDate.day, tempPickedDate.hour),
                 )
               : _findEarliestValidDepartureTime(
-                  DateTime(
-                    tempPickedDate.year,
-                    tempPickedDate.month,
-                    tempPickedDate.day,
-                    tempPickedDate.hour,
-                  ),
+                  DateTime(tempPickedDate.year, tempPickedDate.month, tempPickedDate.day, tempPickedDate.hour),
                 );
 
           Future.delayed(Duration(milliseconds: 150), () {
@@ -617,18 +530,12 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
           minuteValue,
         );
 
-        final isValid = isEditingArrival
-            ? _isValidArrivalTime(testTime)
-            : _isValidDepartureTime(testTime);
+        final isValid = isEditingArrival ? _isValidArrivalTime(testTime) : _isValidDepartureTime(testTime);
 
         return Center(
           child: Text(
             minuteValue.toString().padLeft(2, '0'),
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: isValid ? color : Colors.grey[300],
-            ),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: isValid ? color : Colors.grey[300]),
           ),
         );
       }),
@@ -655,10 +562,9 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
   void _recalculateArrivalTime() {
     if (widget.destinationIndex != null) {
       if (kDebugMode) {
-        debugPrint(
-          'Recalculating arrival time: origin=${widget.originIndex}, dest=${widget.destinationIndex}',
-        );
+        debugPrint('Recalculating arrival time: origin=${widget.originIndex}, dest=${widget.destinationIndex}');
       }
+      _isAutomaticRecalculation = true; // Mark that this is automatic
       setState(() {
         arrivalTime = calculateArrivalTime(
           selectedDate,
@@ -670,6 +576,7 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
       // Schedule callback after build is complete
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _notifyTimesChanged();
+        _isAutomaticRecalculation = false; // Done with automatic update
       });
     }
   }
@@ -716,13 +623,7 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
     for (int hour = startHour; hour < 24; hour++) {
       int minuteStart = (hour == startHour) ? startMinute : 0;
       for (int minute = minuteStart; minute < 60; minute += 5) {
-        final testTime = DateTime(
-          date.year,
-          date.month,
-          date.day,
-          hour,
-          minute,
-        );
+        final testTime = DateTime(date.year, date.month, date.day, hour, minute);
         if (_isValidDepartureTime(testTime)) {
           return testTime;
         }
@@ -752,13 +653,7 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
 
     for (int hour = 0; hour < 24; hour++) {
       for (int minute = 0; minute < 60; minute += 5) {
-        final testTime = DateTime(
-          date.year,
-          date.month,
-          date.day,
-          hour,
-          minute,
-        );
+        final testTime = DateTime(date.year, date.month, date.day, hour, minute);
         if (_isValidArrivalTime(testTime)) {
           return testTime;
         }
