@@ -242,7 +242,7 @@ class _CarSeatLayoutState extends State<CarSeatLayout> {
                       child: CustomPaint(
                         size: Size(40, 40),
                         painter: SteeringWheelPainter(),
-                        child: Container(
+                        child: SizedBox(
                           width: 40,
                           height: 40,
                           child: Center(

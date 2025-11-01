@@ -56,7 +56,7 @@ class _BookingButtonWidgetState extends State<BookingButtonWidget> {
             color: buttonColor,
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Container(
+          child: SizedBox(
             height: 42.0,
             child: Center(
               child: Text(
