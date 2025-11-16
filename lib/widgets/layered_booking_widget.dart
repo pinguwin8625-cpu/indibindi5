@@ -4,14 +4,21 @@ import '../widgets/booking_progress_bar.dart';
 import '../widgets/route_layer_widget.dart';
 import '../widgets/stops_layer_widget.dart';
 import '../widgets/booking_layer_widget.dart';
+import '../widgets/matching_rides_widget.dart';
 import '../utils/booking_logic.dart';
+import '../l10n/app_localizations.dart';
 
-enum BookingLayer { routeSelection, stopsSelection, timeAndSeats }
+enum BookingLayer { routeSelection, stopsSelection, timeAndSeats, matchingRides }
 
 class LayeredBookingWidget extends StatefulWidget {
   final String userRole;
+  final VoidCallback? onBookingCompleted;
 
-  const LayeredBookingWidget({super.key, required this.userRole});
+  const LayeredBookingWidget({
+    super.key,
+    required this.userRole,
+    this.onBookingCompleted,
+  });
 
   @override
   State<LayeredBookingWidget> createState() => _LayeredBookingWidgetState();
@@ -43,6 +50,9 @@ class _LayeredBookingWidgetState extends State<LayeredBookingWidget> {
           currentLayer = BookingLayer.routeSelection;
           break;
         case BookingLayer.timeAndSeats:
+          currentLayer = BookingLayer.stopsSelection;
+          break;
+        case BookingLayer.matchingRides:
           currentLayer = BookingLayer.stopsSelection;
           break;
         case BookingLayer.routeSelection:
@@ -89,11 +99,23 @@ class _LayeredBookingWidgetState extends State<LayeredBookingWidget> {
   }
 
   Widget _buildCurrentLayer() {
-    switch (currentLayer) {
-      case BookingLayer.routeSelection:
-        return RouteLayerWidget(
-          key: ValueKey('route-layer'),
-          userRole: widget.userRole,
+    return AnimatedSwitcher(
+      duration: Duration(milliseconds: 300),
+      transitionBuilder: (Widget child, Animation<double> animation) {
+        return SlideTransition(
+          position: Tween<Offset>(
+            begin: Offset(1.0, 0.0),
+            end: Offset.zero,
+          ).animate(animation),
+          child: child,
+        );
+      },
+      child: () {
+        switch (currentLayer) {
+          case BookingLayer.routeSelection:
+            return RouteLayerWidget(
+              key: ValueKey('route-layer'),
+              userRole: widget.userRole,
           selectedRoute: selectedRoute,
           isBookingCompleted: isBookingCompleted,
           onRouteSelected: (route) {
@@ -110,9 +132,9 @@ class _LayeredBookingWidgetState extends State<LayeredBookingWidget> {
           },
         );
 
-      case BookingLayer.stopsSelection:
-        return StopsLayerWidget(
-          key: ValueKey('stops-layer'),
+          case BookingLayer.stopsSelection:
+            return StopsLayerWidget(
+              key: ValueKey('stops-layer'),
           userRole: widget.userRole,
           selectedRoute: selectedRoute!,
           originIndex: originIndex,
@@ -122,14 +144,33 @@ class _LayeredBookingWidgetState extends State<LayeredBookingWidget> {
           hasSelectedDateTime: hasSelectedDateTime,
           isBookingCompleted: isBookingCompleted,
           onStopsAndTimeSelected: (origin, destination, departure, arrival) {
+            print('🔥 LayeredBooking: onStopsAndTimeSelected called with:');
+            print('   Departure: $departure');
+            print('   Arrival: $arrival');
             setState(() {
               originIndex = origin;
               destinationIndex = destination;
               departureTime = departure;
               arrivalTime = arrival;
               hasSelectedDateTime = true;
+              
+              // For drivers, initialize all 4 seats as available
+              final l10n = AppLocalizations.of(context)!;
+              if (widget.userRole == l10n.driver) {
+                selectedSeats = [0, 1, 2, 3];
+              }
             });
-            _navigateToLayer(BookingLayer.timeAndSeats);
+            print('🔥 LayeredBooking: After setState, departureTime=$departureTime, arrivalTime=$arrivalTime');
+            
+            // Check user role to determine next layer
+            final l10n = AppLocalizations.of(context)!;
+            if (widget.userRole == l10n.rider) {
+              // Riders see matching rides
+              _navigateToLayer(BookingLayer.matchingRides);
+            } else {
+              // Drivers go to booking/seats layer
+              _navigateToLayer(BookingLayer.timeAndSeats);
+            }
           },
           onOriginSelected: (origin) {
             setState(() {
@@ -146,18 +187,35 @@ class _LayeredBookingWidgetState extends State<LayeredBookingWidget> {
             });
           },
           onTimeSelected: (departure, arrival) {
+            print('🕐 LayeredBooking: onTimeSelected called with:');
+            print('   Departure: $departure');
+            print('   Arrival: $arrival');
             setState(() {
               departureTime = departure;
               arrivalTime = arrival;
               hasSelectedDateTime = true;
             });
+            print('🕐 LayeredBooking: State updated, departureTime=$departureTime, arrivalTime=$arrivalTime');
           },
           onBack: _goBack,
         );
+        
+          case BookingLayer.matchingRides:
+            return MatchingRidesWidget(
+              key: ValueKey('matching-rides-layer'),
+              selectedRoute: selectedRoute!,
+              originIndex: originIndex!,
+              destinationIndex: destinationIndex!,
+              departureTime: departureTime!,
+              onBack: _goBack,
+            );
 
-      case BookingLayer.timeAndSeats:
-        return BookingLayerWidget(
-          key: ValueKey('booking-layer'),
+          case BookingLayer.timeAndSeats:
+            print('📦 LayeredBooking: Building BookingLayerWidget with:');
+            print('   departureTime: $departureTime');
+            print('   arrivalTime: $arrivalTime');
+            return BookingLayerWidget(
+              key: ValueKey('booking-layer'),
           userRole: widget.userRole,
           selectedRoute: selectedRoute!,
           originIndex: originIndex!,
@@ -183,9 +241,17 @@ class _LayeredBookingWidgetState extends State<LayeredBookingWidget> {
             setState(() {
               isBookingCompleted = true;
             });
+            // Switch to My Bookings tab after a short delay
+            Future.delayed(Duration(milliseconds: 500), () {
+              if (mounted && widget.onBookingCompleted != null) {
+                widget.onBookingCompleted!();
+              }
+            });
           },
           onBack: _goBack,
         );
-    }
+        }
+      }(),
+    );
   }
 }

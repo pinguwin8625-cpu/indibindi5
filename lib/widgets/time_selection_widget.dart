@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/routes.dart';
 import '../utils/date_time_helpers.dart';
 import '../utils/constants.dart';
+import '../l10n/app_localizations.dart';
 
 class TimeSelectionWidget extends StatefulWidget {
   final RouteInfo selectedRoute;
@@ -46,10 +47,8 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
     // Initialize arrival time based on departure time
     arrivalTime = calculateArrivalTime(selectedDate, widget.selectedRoute, widget.originIndex, widget.destinationIndex);
 
-    // Notify parent of initial times
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _notifyTimesChanged();
-    });
+    // DON'T notify parent of initial times - only notify when user actually selects a time
+    // This prevents overwriting the user's selected date with today's date
   }
 
   @override
@@ -63,6 +62,8 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -72,7 +73,7 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
         GestureDetector(
           onTap: () => _showDepartureTimePicker(),
           child: _buildTimeBox(
-            hasUserSelectedDateTime ? formatRelativeDay(selectedDate, DateTime.now()) : 'Pick up time',
+            hasUserSelectedDateTime ? formatRelativeDay(selectedDate, DateTime.now()) : l10n.pickUpTime,
             hasUserSelectedDateTime ? formatTimeHHmm(selectedDate) : null,
             Colors.green, // Green color for pickup
           ),
@@ -89,7 +90,7 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
             child: _buildTimeBox(
               (widget.destinationIndex != null && hasUserSelectedDateTime)
                   ? formatRelativeDay(arrivalTime, DateTime.now())
-                  : 'Drop off time',
+                  : l10n.dropOffTime,
               (widget.destinationIndex != null && hasUserSelectedDateTime) ? formatTimeHHmm(arrivalTime) : null,
               Colors.red, // Red color for drop-off
             ),
@@ -125,7 +126,7 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
                     Text(
                       mainText,
                       style: TextStyle(
-                        fontSize: 11.7, // 13 * 0.9 = slightly smaller for button style
+                        fontSize: 12,
                         color: color,
                         fontWeight: FontWeight.bold,
                       ),
@@ -141,7 +142,7 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
                     Text(
                       timeText,
                       style: TextStyle(
-                        fontSize: 11.7, // 13 * 0.9 = slightly smaller for button style
+                        fontSize: 12,
                         color: color,
                         fontWeight: FontWeight.bold,
                       ),
@@ -150,7 +151,7 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
                     Text(
                       mainText,
                       style: TextStyle(
-                        fontSize: 11.7, // 13 * 0.9 = slightly smaller for button style
+                        fontSize: 12,
                         color: color,
                         fontWeight: FontWeight.normal,
                       ),
@@ -166,13 +167,18 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
 
   Future<void> _showDepartureTimePicker() async {
     isEditingArrival = false;
+    print('🚀 Opening departure time picker...');
+    print('   Current selectedDate: $selectedDate');
+    final earliestTime = _findEarliestValidDepartureTime(selectedDate);
+    print('   Earliest valid time: $earliestTime');
+    final l10n = AppLocalizations.of(context)!;
     await showModalBottomSheet(
       context: context,
       builder: (context) => _buildTimePicker(
-        'Pick-up Time',
+        l10n.pickUpTime,
         Colors.green,
         Icons.location_on,
-        _findEarliestValidDepartureTime(selectedDate),
+        earliestTime,
         (tempPickedDate) {
           setState(() {
             hasUserSelectedDateTime = true;
@@ -185,10 +191,11 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
               widget.destinationIndex,
             );
           });
-          // Schedule callback after build is complete
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            _notifyTimesChanged();
-          });
+          
+          // IMPORTANT: Notify parent of new times FIRST before calling onDateTimeSelected
+          // This ensures the parent has the correct times before triggering navigation
+          _notifyTimesChanged();
+          
           // Only call onDateTimeSelected when user actually picks time AND both stops are selected
           // AND we're not in the middle of automatic recalculation
           if (widget.destinationIndex != null && !_isAutomaticRecalculation) {
@@ -199,16 +206,18 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
             print('🕐 Time picker: Automatic recalculation, NOT calling onDateTimeSelected');
           }
         },
+        l10n,
       ),
     );
   }
 
   Future<void> _showArrivalTimePicker() async {
     isEditingArrival = true;
+    final l10n = AppLocalizations.of(context)!;
     await showModalBottomSheet(
       context: context,
       builder: (context) => _buildTimePicker(
-        'Drop-off Time',
+        l10n.dropOffTime,
         Colors.red,
         Icons.flag,
         _findEarliestValidArrivalTime(arrivalTime),
@@ -230,10 +239,11 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
             }
             _validateAndAdjustTime();
           });
-          // Schedule callback after build is complete
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            _notifyTimesChanged();
-          });
+          
+          // IMPORTANT: Notify parent of new times FIRST before calling onDateTimeSelected
+          // This ensures the parent has the correct times before triggering navigation
+          _notifyTimesChanged();
+          
           // Only call onDateTimeSelected when user actually picks time AND both stops are selected
           // AND we're not in the middle of automatic recalculation
           if (widget.destinationIndex != null && !_isAutomaticRecalculation) {
@@ -244,14 +254,27 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
             print('🕐 Time picker: Automatic recalculation, NOT calling onDateTimeSelected');
           }
         },
+        l10n,
       ),
     );
     isEditingArrival = false;
   }
 
-  Widget _buildTimePicker(String title, Color color, IconData icon, DateTime initialTime, Function(DateTime) onDone) {
+  Widget _buildTimePicker(String title, Color color, IconData icon, DateTime initialTime, Function(DateTime) onDone, AppLocalizations l10n) {
+    print('🎯 TimePicker: _buildTimePicker called with initialTime: $initialTime');
+    print('   initialTime date: ${initialTime.day}/${initialTime.month}/${initialTime.year}');
+    
     DateTime tempPickedDate = initialTime;
 
+    // Calculate the day index (0 = today, 1 = tomorrow, etc.)
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final targetDay = DateTime(initialTime.year, initialTime.month, initialTime.day);
+    final dayIndex = targetDay.difference(today).inDays;
+    
+    print('   Calculated dayIndex: $dayIndex');
+    
+    final dayController = FixedExtentScrollController(initialItem: dayIndex >= 0 && dayIndex < 5 ? dayIndex : 0);
     final hourController = FixedExtentScrollController(initialItem: tempPickedDate.hour);
     final minuteController = FixedExtentScrollController(initialItem: (tempPickedDate.minute / 5).round());
 
@@ -275,7 +298,7 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
                   children: [
                     TextButton(
                       onPressed: () => Navigator.pop(context),
-                      child: Text('Cancel', style: TextStyle(color: color)),
+                      child: Text(l10n.cancel, style: TextStyle(color: color)),
                     ),
                     Row(
                       children: [
@@ -289,10 +312,13 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
                     ),
                     TextButton(
                       onPressed: () {
+                        print('⏰ TimePicker: Done pressed with tempPickedDate: $tempPickedDate');
+                        print('   Date: ${tempPickedDate.day}/${tempPickedDate.month}/${tempPickedDate.year}');
+                        print('   Time: ${tempPickedDate.hour}:${tempPickedDate.minute}');
                         onDone(tempPickedDate);
                         Navigator.pop(context);
                       },
-                      child: Text('Done', style: TextStyle(color: color)),
+                      child: Text(l10n.done, style: TextStyle(color: color)),
                     ),
                   ],
                 ),
@@ -305,9 +331,11 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
                     // Day wheel
                     Expanded(
                       flex: 2,
-                      child: _buildDayWheel(color, (index) {
+                      child: _buildDayWheel(color, dayController, (index) {
+                        print('📅 TimePicker: Day wheel changed to index $index');
                         setModalState(() {
                           final date = DateTime.now().add(Duration(days: index));
+                          print('   Calculated date: ${date.day}/${date.month}/${date.year}');
                           tempPickedDate = DateTime(
                             date.year,
                             date.month,
@@ -315,8 +343,9 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
                             tempPickedDate.hour,
                             tempPickedDate.minute,
                           );
+                          print('   Updated tempPickedDate: $tempPickedDate');
                         });
-                      }),
+                      }, l10n),
                     ),
 
                     // Hour wheel
@@ -348,7 +377,7 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
     );
   }
 
-  Widget _buildDayWheel(Color color, Function(int) onChanged) {
+  Widget _buildDayWheel(Color color, FixedExtentScrollController controller, Function(int) onChanged, AppLocalizations l10n) {
     return ListWheelScrollView(
       itemExtent: 50,
       diameterRatio: 1.2,
@@ -356,32 +385,32 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
       useMagnifier: true,
       squeeze: 0.8,
       physics: FixedExtentScrollPhysics(),
-      controller: FixedExtentScrollController(initialItem: 0),
+      controller: controller,
       onSelectedItemChanged: onChanged,
       children: List.generate(5, (index) {
         final date = DateTime.now().add(Duration(days: index));
         String label;
         final day = date.day.toString().padLeft(2, '0');
         final month = [
-          'Jan',
-          'Feb',
-          'Mar',
-          'Apr',
-          'May',
-          'Jun',
-          'Jul',
-          'Aug',
-          'Sep',
-          'Oct',
-          'Nov',
-          'Dec',
+          l10n.jan,
+          l10n.feb,
+          l10n.mar,
+          l10n.apr,
+          l10n.may,
+          l10n.jun,
+          l10n.jul,
+          l10n.aug,
+          l10n.sep,
+          l10n.oct,
+          l10n.nov,
+          l10n.dec,
         ][date.month - 1];
-        final weekday = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][date.weekday - 1];
+        final weekday = [l10n.mon, l10n.tue, l10n.wed, l10n.thu, l10n.fri, l10n.sat, l10n.sun][date.weekday - 1];
 
         if (index == 0) {
-          label = "Today";
+          label = l10n.today;
         } else if (index == 1) {
-          label = "Tomorrow";
+          label = l10n.tomorrow;
         } else {
           label = '$day $month $weekday';
         }
@@ -577,6 +606,12 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _notifyTimesChanged();
         _isAutomaticRecalculation = false; // Done with automatic update
+        
+        // If user had already selected time before destination was set, notify parent
+        if (hasUserSelectedDateTime) {
+          widget.onDateTimeSelected(true);
+          print('🕐 Time picker: Destination set after time selection, calling onDateTimeSelected(true)');
+        }
       });
     }
   }

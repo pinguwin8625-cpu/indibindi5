@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
+import '../l10n/app_localizations.dart';
+import '../services/auth_service.dart';
 
 enum SeatStatus { available, occupied, driver }
 
@@ -94,23 +97,38 @@ class CarSeatLayout extends StatefulWidget {
 }
 
 class _CarSeatLayoutState extends State<CarSeatLayout> {
-  // Car layout: 4 passenger seats (excluding driver) - Total 5 seats
+  // Car layout: 4 rider seats (excluding driver) - Total 5 seats
   // Rotated 90°, car faces right:
   // Front: [Driver]    Back: [Seat2]
   //        [Seat1]           [Seat3]
   //                          [Seat4]
 
   List<SeatStatus> seatStatuses = [
-    SeatStatus.available, // Seat 1 (front passenger)
+    SeatStatus.available, // Seat 1 (front rider)
     SeatStatus.available, // Seat 2 (back left)
     SeatStatus.available, // Seat 3 (back center)
     SeatStatus.available, // Seat 4 (back right)
   ];
 
   List<int> selectedSeats = [];
+  
+  @override
+  void initState() {
+    super.initState();
+    // For drivers, all 4 passenger seats are available by default
+    if (widget.userRole.toLowerCase() == 'driver') {
+      selectedSeats = [0, 1, 2, 3];
+      // Notify parent widget
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        widget.onSeatsSelected(selectedSeats);
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    
     return Align(
       alignment: Alignment.center,
       child: Container(
@@ -158,7 +176,7 @@ class _CarSeatLayoutState extends State<CarSeatLayout> {
                                         onTap: widget.isDisabled ? null : () => _toggleSeat(1),
                                       ),
                                       SizedBox(height: 4),
-                                      _buildSeatLabel('Passenger-1', '4.6'),
+                                      _buildSeatLabel('${l10n.passenger}-2'),
                                     ],
                                   ),
                                   SizedBox(height: 5), // 5px spacing between seats
@@ -171,7 +189,7 @@ class _CarSeatLayoutState extends State<CarSeatLayout> {
                                         onTap: widget.isDisabled ? null : () => _toggleSeat(2),
                                       ),
                                       SizedBox(height: 4),
-                                      _buildSeatLabel('Passenger-2', '4.9'),
+                                      _buildSeatLabel('${l10n.passenger}-3'),
                                     ],
                                   ),
                                   SizedBox(height: 5), // 5px spacing between seats
@@ -184,15 +202,15 @@ class _CarSeatLayoutState extends State<CarSeatLayout> {
                                         onTap: widget.isDisabled ? null : () => _toggleSeat(3),
                                       ),
                                       SizedBox(height: 4),
-                                      _buildSeatLabel('Passenger-3', '4.7'),
+                                      _buildSeatLabel('${l10n.passenger}-4'),
                                     ],
                                   ),
                                 ],
                               ),
 
-                              // RIGHT COLUMN - Front seats (driver and front passenger) - moved 20px left
+                              // RIGHT COLUMN - Front seats (driver and front rider) - moved further left
                               Padding(
-                                padding: EdgeInsets.only(right: 20), // Move frontcar seats 20px left
+                                padding: EdgeInsets.only(right: 40), // Move front seats 40px left (was 20px)
                                 child: Column(
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceEvenly,
@@ -206,11 +224,11 @@ class _CarSeatLayoutState extends State<CarSeatLayout> {
                                         onTap: null,
                                       ),
                                       SizedBox(height: 4),
-                                      _buildSeatLabel('Driver', '4.8'),
+                                      _buildDriverLabel(),
                                     ],
                                   ),
 
-                                  // Front passenger seat with label
+                                  // Front rider seat with label
                                   Column(
                                     children: [
                                       _buildSeat(
@@ -219,7 +237,7 @@ class _CarSeatLayoutState extends State<CarSeatLayout> {
                                         onTap: widget.isDisabled ? null : () => _toggleSeat(0),
                                       ),
                                       SizedBox(height: 4),
-                                      _buildSeatLabel('Passenger-4', '4.5'),
+                                      _buildSeatLabel('${l10n.passenger}-1'),
                                     ],
                                   ),
                                 ],
@@ -234,7 +252,7 @@ class _CarSeatLayoutState extends State<CarSeatLayout> {
 
                   // Steering wheel positioned to the right of driver seat
                   Positioned(
-                    right: 28, // Moved 5px right (from 33 to 28)
+                    right: 8, // Moved further right to align with seats moved left (was 28)
                     top: 90, // Vertically centered with the driver seat
                     child: Transform(
                       alignment: Alignment.center,
@@ -259,7 +277,7 @@ class _CarSeatLayoutState extends State<CarSeatLayout> {
 
                   // 30px horizontal line to the right of steering wheel
                   Positioned(
-                    right: 11, // Moved 2px more right (from 13 to 11)
+                    right: -9, // Adjusted to align with new steering wheel position (was 11)
                     top: 109, // Vertically center with wheel (90 + 20 - 1 = 109)
                     child: Container(
                       width: 25,
@@ -318,8 +336,8 @@ class _CarSeatLayoutState extends State<CarSeatLayout> {
                 : Icon(Icons.person, size: 40, color: Colors.grey[700]),
           ),
 
-          // Dynamic bullet point for non-driver seats
-          if (status != SeatStatus.driver)
+          // Dynamic bullet point for drivers only (not on driver's own seat)
+          if (status != SeatStatus.driver && widget.userRole.toLowerCase() == 'driver')
             Positioned(
               left: 2,
               top: 2,
@@ -327,28 +345,11 @@ class _CarSeatLayoutState extends State<CarSeatLayout> {
                 width: 24,
                 height: 24,
                 decoration: BoxDecoration(
-                  color: status == SeatStatus.available 
-                      ? Colors.red // Red background when available (minus sign)
-                      : Color(0xFF00C853), // Standard green background when occupied (plus sign)
+                  color: _getSeatIconColor(status),
                   shape: BoxShape.circle,
                 ),
                 child: Center(
-                  child: status == SeatStatus.available
-                      ? Container(
-                          // Minus sign for available seats
-                          width: 12,
-                          height: 3,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        )
-                      : Icon(
-                          // Plus sign for occupied seats
-                          Icons.add,
-                          color: Colors.white,
-                          size: 16,
-                        ),
+                  child: _getSeatIcon(status),
                 ),
               ),
             ),
@@ -358,82 +359,151 @@ class _CarSeatLayoutState extends State<CarSeatLayout> {
   }
 
   Widget _buildDriverProfilePhoto() {
+    final currentUser = AuthService.currentUser;
+    
+    // Check if user has a local profile photo
+    if (currentUser?.profilePhotoUrl != null && currentUser!.profilePhotoUrl!.isNotEmpty) {
+      final photoFile = File(currentUser.profilePhotoUrl!);
+      if (photoFile.existsSync()) {
+        return Container(
+          width: 76,
+          height: 76,
+          margin: EdgeInsets.all(2),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Image.file(
+            photoFile,
+            fit: BoxFit.cover,
+          ),
+        );
+      }
+    }
+    
+    // Default placeholder icon
     return Container(
-      width: 76, // 84 - 4px for border (2px each side) - 4px padding = 76px
+      width: 76,
       height: 76,
-      margin: EdgeInsets.all(2), // 2px margin to account for border
+      margin: EdgeInsets.all(2),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(
-          16, // Adjusted to match seat's inner radius (20-4 for border/margin)
-        ), // Rounded square to match seat shape
-        color: Color(0xFFBDBDBD), // Solid grey to indicate not available
+        borderRadius: BorderRadius.circular(16),
+        color: Color(0xFFBDBDBD),
       ),
-      clipBehavior: Clip.antiAlias,
-      child: Image.network(
-        'https://randomuser.me/api/portraits/men/1.jpg',
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) =>
-            Container(color: Color(0xFFBDBDBD)),
+      child: Icon(
+        Icons.person,
+        size: 40,
+        color: Colors.grey[700],
       ),
     );
   }
 
   void _toggleSeat(int seatIndex) {
     setState(() {
-      // Both drivers and riders can toggle seats between available/occupied
-      if (seatStatuses[seatIndex] == SeatStatus.available) {
-        seatStatuses[seatIndex] = SeatStatus.occupied;
-        if (!selectedSeats.contains(seatIndex)) {
+      if (widget.userRole.toLowerCase() == 'driver') {
+        // Drivers can only remove seats from availability
+        if (selectedSeats.contains(seatIndex)) {
+          selectedSeats.remove(seatIndex);
+          seatStatuses[seatIndex] = SeatStatus.occupied;
+        } else {
+          // Add back to available
           selectedSeats.add(seatIndex);
+          seatStatuses[seatIndex] = SeatStatus.available;
         }
-      } else if (seatStatuses[seatIndex] == SeatStatus.occupied) {
-        seatStatuses[seatIndex] = SeatStatus.available;
-        selectedSeats.remove(seatIndex);
+      } else {
+        // Riders can add seats to their selection
+        if (seatStatuses[seatIndex] == SeatStatus.available) {
+          seatStatuses[seatIndex] = SeatStatus.occupied;
+          if (!selectedSeats.contains(seatIndex)) {
+            selectedSeats.add(seatIndex);
+          }
+        } else if (seatStatuses[seatIndex] == SeatStatus.occupied) {
+          seatStatuses[seatIndex] = SeatStatus.available;
+          selectedSeats.remove(seatIndex);
+        }
       }
 
       widget.onSeatsSelected(selectedSeats);
     });
   }
+  
+  Color _getSeatIconColor(SeatStatus status) {
+    if (widget.userRole.toLowerCase() == 'driver') {
+      // For drivers: available seats show minus (red), occupied seats show plus (green)
+      return status == SeatStatus.available 
+          ? Colors.red 
+          : Color(0xFF00C853);
+    } else {
+      // For riders: available seats show plus (green), occupied seats show minus (red)
+      return status == SeatStatus.available 
+          ? Color(0xFF00C853)
+          : Colors.red;
+    }
+  }
+  
+  Widget _getSeatIcon(SeatStatus status) {
+    bool showMinus;
+    if (widget.userRole.toLowerCase() == 'driver') {
+      // For drivers: available seats show minus (to remove), occupied seats show plus (to add back)
+      showMinus = status == SeatStatus.available;
+    } else {
+      // For riders: occupied seats show minus (to deselect), available seats show plus (to select)
+      showMinus = status == SeatStatus.occupied;
+    }
+    
+    if (showMinus) {
+      return Container(
+        // Minus sign
+        width: 12,
+        height: 3,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(2),
+        ),
+      );
+    } else {
+      return Icon(
+        // Plus sign
+        Icons.add,
+        color: Colors.white,
+        size: 16,
+      );
+    }
+  }
 
-  Widget _buildSeatLabel(String name, String rating) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: Theme.of(context).scaffoldBackgroundColor,
-        borderRadius: BorderRadius.circular(3),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha((0.06 * 255).round()),
-            blurRadius: 1,
-            offset: Offset(0, 1),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Text(
-            name,
-            style: TextStyle(
-              color: Color(0xFF2E2E2E),
-              fontWeight: FontWeight.w600,
-              fontSize: 12,
-            ),
-          ),
-          SizedBox(width: 6),
-          Icon(Icons.star, color: Colors.amber, size: 11),
-          SizedBox(width: 2),
-          Text(
-            rating,
-            style: TextStyle(
-              color: Color(0xFF2E2E2E),
-              fontWeight: FontWeight.w500,
-              fontSize: 12,
-            ),
-          ),
-        ],
+  Widget _buildSeatLabel(String name) {
+    return Text(
+      name,
+      style: TextStyle(
+        color: Color(0xFF2E2E2E),
+        fontWeight: FontWeight.w600,
+        fontSize: 12,
       ),
     );
+  }
+
+  Widget _buildDriverLabel() {
+    final currentUser = AuthService.currentUser;
+    final l10n = AppLocalizations.of(context)!;
+    
+    // If driver is the current user, show their name with last initial
+    if (widget.userRole.toLowerCase() == l10n.driver.toLowerCase() && currentUser != null) {
+      String displayName = currentUser.name;
+      if (currentUser.surname.isNotEmpty) {
+        displayName = '${currentUser.name} ${currentUser.surname[0]}.';
+      }
+      
+      return Text(
+        displayName,
+        style: TextStyle(
+          color: Color(0xFF2E2E2E),
+          fontWeight: FontWeight.w600,
+          fontSize: 12,
+        ),
+      );
+    }
+    
+    // Default label for non-current-user drivers
+    return _buildSeatLabel(l10n.driver);
   }
 }

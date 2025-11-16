@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/routes.dart';
+import '../l10n/app_localizations.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class RouteSelectionWidget extends StatelessWidget {
   final RouteInfo? selectedRoute;
@@ -93,11 +95,41 @@ class RouteSelectionWidget extends StatelessWidget {
           }).toList(),
         ),
 
+        // Suggestion link for new route
+        Padding(
+          padding: EdgeInsets.only(bottom: 12),
+          child: InkWell(
+            onTap: () => _launchURL('https://forms.gle/yourformlink'),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                Icon(Icons.add_circle_outline, size: 16, color: Colors.blue[700]),
+                SizedBox(width: 8),
+                Text(
+                  AppLocalizations.of(context)!.suggestRoute,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.blue[700],
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+
         // Show selected route details if needed
         if (selectedRoute != null && hasSelectedDateTime)
           Padding(padding: const EdgeInsets.only(top: 16.0), child: _buildRouteDetailsLayout()),
       ],
     );
+  }
+
+  Future<void> _launchURL(String url) async {
+    final Uri uri = Uri.parse(url);
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      throw Exception('Could not launch $url');
+    }
   }
 
   String _getFormattedRouteName(String routeName) {

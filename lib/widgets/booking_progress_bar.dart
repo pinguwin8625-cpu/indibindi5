@@ -23,22 +23,24 @@ class BookingProgressBar extends StatelessWidget {
           48, // Match Routes dropdown total height (16px container padding + ~32px DropdownButton)
       child: Stack(
         children: [
-          // Origin marker (start point - Google Maps style pin marker)
+          // Origin marker (start point - location pin icon)
           Positioned(
             left: 0,
             top: 14, // Centered: (48 - 20) / 2 = 14
-            child: CustomPaint(
-              size: Size(16, 20),
-              painter: GoogleMapsOriginPinPainter(),
+            child: Icon(
+              Icons.location_on,
+              color: Colors.green,
+              size: 20,
             ),
           ),
-          // Destination marker (end point - Google Maps style pin marker)
+          // Destination marker (end point - flag icon)
           Positioned(
             right: 0,
             top: 14, // Centered: (48 - 20) / 2 = 14
-            child: CustomPaint(
-              size: Size(16, 20),
-              painter: GoogleMapsDestinationPinPainter(),
+            child: Icon(
+              Icons.flag,
+              color: Colors.red,
+              size: 20,
             ),
           ),
           // Background track (full width)

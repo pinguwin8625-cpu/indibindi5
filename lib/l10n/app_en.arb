@@ -1,0 +1,676 @@
+{
+  "@@locale": "en",
+  
+  "appTitle": "IndiBindi",
+  "@appTitle": {
+    "description": "Application title"
+  },
+
+  "home": "Search",
+  "@home": {
+    "description": "Home tab label"
+  },
+
+  "myBookings": "My Bookings",
+  "@myBookings": {
+    "description": "My Bookings tab label"
+  },
+
+  "inbox": "Inbox",
+  "@inbox": {
+    "description": "Inbox tab label"
+  },
+
+  "account": "Account",
+  "@account": {
+    "description": "Account tab label"
+  },
+
+  "uploadPhoto": "Upload Photo",
+  "@uploadPhoto": {
+    "description": "Upload profile photo button"
+  },
+
+  "changePhoto": "Change Photo",
+  "@changePhoto": {
+    "description": "Change profile photo button"
+  },
+
+  "camera": "Camera",
+  "@camera": {
+    "description": "Camera option"
+  },
+
+  "gallery": "Gallery",
+  "@gallery": {
+    "description": "Gallery option"
+  },
+
+  "takePhoto": "Take Photo",
+  "@takePhoto": {
+    "description": "Take photo with camera"
+  },
+
+  "chooseFromGallery": "Choose from Gallery",
+  "@chooseFromGallery": {
+    "description": "Choose from gallery"
+  },
+
+  "removePhoto": "Remove Photo",
+  "@removePhoto": {
+    "description": "Remove profile photo"
+  },
+
+  "selectRoute": "Choose a route to get started",
+  "@selectRoute": {
+    "description": "Prompt to choose a route"
+  },
+
+  "driver": "Driver",
+  "@driver": {
+    "description": "Driver role label"
+  },
+
+  "rider": "Rider",
+  "@rider": {
+    "description": "Rider role label"
+  },
+
+  "origin": "Origin",
+  "@origin": {
+    "description": "Starting point label"
+  },
+
+  "destination": "Destination",
+  "@destination": {
+    "description": "Ending point label"
+  },
+
+  "selectOrigin": "Choose Origin",
+  "@selectOrigin": {
+    "description": "Prompt to choose origin"
+  },
+
+  "selectDestination": "Choose Destination",
+  "@selectDestination": {
+    "description": "Prompt to choose destination"
+  },
+
+  "departureTime": "Departure Time",
+  "@departureTime": {
+    "description": "Departure time label"
+  },
+
+  "arrivalTime": "Arrival Time",
+  "@arrivalTime": {
+    "description": "Arrival time label"
+  },
+
+  "selectTime": "Choose Time",
+  "@selectTime": {
+    "description": "Button to choose time"
+  },
+
+  "seats": "Seats",
+  "@seats": {
+    "description": "Seats label"
+  },
+
+  "selectSeats": "Choose Seats",
+  "@selectSeats": {
+    "description": "Prompt to choose seats"
+  },
+
+  "chooseYourRoute": "Choose Your Route",
+  "@chooseYourRoute": {
+    "description": "Title for route selection"
+  },
+
+  "chooseYourSeats": "Choose your seats",
+  "@chooseYourSeats": {
+    "description": "Title for seat selection"
+  },
+
+  "availableSeats": "Available Seats",
+  "@availableSeats": {
+    "description": "Title for driver's available seats"
+  },
+
+  "chooseYourSeat": "Choose Your Seat",
+  "@chooseYourSeat": {
+    "description": "Title for rider's seat selection"
+  },
+
+  "selectYourSeat": "Select your seat",
+  "@selectYourSeat": {
+    "description": "Instruction for rider to select a seat"
+  },
+
+  "seatsAvailable": "{count} seat(s) available",
+  "@seatsAvailable": {
+    "description": "Number of seats available for driver",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+
+  "seatsSelected": "{count} seat(s) selected",
+  "@seatsSelected": {
+    "description": "Number of seats selected by rider",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+
+  "chooseYourStops": "Choose Your Stops",
+  "@chooseYourStops": {
+    "description": "Title for stops selection"
+  },
+
+  "pickUpTime": "Pick-up Time",
+  "@pickUpTime": {
+    "description": "Departure/pick-up time label"
+  },
+
+  "dropOffTime": "Drop-off Time",
+  "@dropOffTime": {
+    "description": "Arrival/drop-off time label"
+  },
+
+  "today": "Today",
+  "@today": {
+    "description": "Today label"
+  },
+
+  "tomorrow": "Tomorrow",
+  "@tomorrow": {
+    "description": "Tomorrow label"
+  },
+
+  "done": "Done",
+  "@done": {
+    "description": "Done button"
+  },
+
+  "cancel": "Cancel",
+
+  "mon": "Mon",
+  "tue": "Tue",
+  "wed": "Wed",
+  "thu": "Thu",
+  "fri": "Fri",
+  "sat": "Sat",
+  "sun": "Sun",
+
+  "jan": "Jan",
+  "feb": "Feb",
+  "mar": "Mar",
+  "apr": "Apr",
+  "may": "May",
+  "jun": "Jun",
+  "jul": "Jul",
+  "aug": "Aug",
+  "sep": "Sep",
+  "oct": "Oct",
+  "nov": "Nov",
+  "dec": "Dec",
+
+  "confirmBooking": "Confirm Booking",
+  "@confirmBooking": {
+    "description": "Confirm booking button"
+  },
+
+  "bookingConfirmed": "Booking Confirmed!",
+  "@bookingConfirmed": {
+    "description": "Booking confirmation message"
+  },
+
+  "back": "Back",
+  "@back": {
+    "description": "Back button"
+  },
+
+  "next": "Next",
+  "@next": {
+    "description": "Next button"
+  },
+
+  "save": "Save",
+  "@save": {
+    "description": "Save button"
+  },
+
+  "saved": "Saved",
+  "@saved": {
+    "description": "Saved status"
+  },
+
+  "personalInformation": "Personal Information",
+  "@personalInformation": {
+    "description": "Personal Information screen title"
+  },
+
+  "name": "Name",
+  "@name": {
+    "description": "Name field label"
+  },
+
+  "surname": "Surname",
+  "@surname": {
+    "description": "Surname field label"
+  },
+
+  "phoneNumber": "Mobile Phone Number",
+  "@phoneNumber": {
+    "description": "Mobile phone number field label"
+  },
+
+  "email": "Email Address",
+  "@email": {
+    "description": "Email field label"
+  },
+
+  "enterName": "Enter your name",
+  "@enterName": {
+    "description": "Name field hint"
+  },
+
+  "enterSurname": "Enter your surname",
+  "@enterSurname": {
+    "description": "Surname field hint"
+  },
+
+  "enterPhone": "Enter phone number",
+  "@enterPhone": {
+    "description": "Phone field hint"
+  },
+
+  "enterEmail": "Enter your email",
+  "@enterEmail": {
+    "description": "Email field hint"
+  },
+
+  "pleaseEnterName": "Please enter your name",
+  "@pleaseEnterName": {
+    "description": "Name validation error"
+  },
+
+  "pleaseEnterSurname": "Please enter your surname",
+  "@pleaseEnterSurname": {
+    "description": "Surname validation error"
+  },
+
+  "pleaseEnterPhone": "Please enter phone number",
+  "@pleaseEnterPhone": {
+    "description": "Phone validation error"
+  },
+
+  "pleaseEnterValidEmail": "Please enter a valid email",
+  "@pleaseEnterValidEmail": {
+    "description": "Email validation error"
+  },
+
+  "informationSaved": "Information saved successfully!",
+  "@informationSaved": {
+    "description": "Success message after saving"
+  },
+
+  "vehicleInformation": "Vehicle Information",
+  "@vehicleInformation": {
+    "description": "Vehicle Information screen title"
+  },
+
+  "brand": "Brand",
+  "@brand": {
+    "description": "Vehicle brand label"
+  },
+
+  "model": "Model",
+  "@model": {
+    "description": "Vehicle model label"
+  },
+
+  "color": "Color",
+  "@color": {
+    "description": "Vehicle color label"
+  },
+
+  "licensePlate": "License Plate",
+  "@licensePlate": {
+    "description": "License plate label"
+  },
+
+  "selectBrand": "Select brand",
+  "@selectBrand": {
+    "description": "Brand dropdown hint"
+  },
+
+  "selectModel": "Select model",
+  "@selectModel": {
+    "description": "Model dropdown hint"
+  },
+
+  "selectColor": "Select color",
+  "@selectColor": {
+    "description": "Color dropdown hint"
+  },
+
+  "selectBrandFirst": "Select a brand first",
+  "@selectBrandFirst": {
+    "description": "Model dropdown disabled hint"
+  },
+
+  "enterLicensePlate": "Enter license plate",
+  "@enterLicensePlate": {
+    "description": "License plate field hint"
+  },
+
+  "examplePlate": "Example: {plate}",
+  "@examplePlate": {
+    "description": "License plate example",
+    "placeholders": {
+      "plate": {
+        "type": "String"
+      }
+    }
+  },
+
+  "pleaseSelectBrand": "Please select a brand",
+  "@pleaseSelectBrand": {
+    "description": "Brand validation error"
+  },
+
+  "pleaseEnterPlate": "Please enter license plate",
+  "@pleaseEnterPlate": {
+    "description": "Plate validation error"
+  },
+
+  "vehicleSaved": "Vehicle information saved successfully!",
+  "@vehicleSaved": {
+    "description": "Success message after saving vehicle"
+  },
+
+  "settings": "Settings",
+  "@settings": {
+    "description": "Settings screen title"
+  },
+
+  "notifications": "Notifications",
+  "@notifications": {
+    "description": "Notifications section header"
+  },
+
+  "pushNotifications": "Push Notifications",
+  "@pushNotifications": {
+    "description": "Push notifications setting"
+  },
+
+  "pushNotificationsDesc": "Receive notifications about ride updates",
+  "@pushNotificationsDesc": {
+    "description": "Push notifications description"
+  },
+
+  "location": "Location",
+  "@location": {
+    "description": "Location section header"
+  },
+
+  "locationServices": "Location Services",
+  "@locationServices": {
+    "description": "Location services setting"
+  },
+
+  "locationServicesDesc": "Allow app to access your location",
+  "@locationServicesDesc": {
+    "description": "Location services description"
+  },
+
+  "appearance": "Appearance",
+  "@appearance": {
+    "description": "Appearance section header"
+  },
+
+  "darkMode": "Dark Mode",
+  "@darkMode": {
+    "description": "Dark mode setting"
+  },
+
+  "darkModeDesc": "Use dark theme",
+  "@darkModeDesc": {
+    "description": "Dark mode description"
+  },
+
+  "language": "Language",
+  "@language": {
+    "description": "Language section header and setting"
+  },
+
+  "selectLanguage": "Select Language",
+  "@selectLanguage": {
+    "description": "Language selector title"
+  },
+
+  "languageChanged": "Language changed to {language}",
+  "@languageChanged": {
+    "description": "Language change confirmation",
+    "placeholders": {
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+
+  "privacy": "Privacy",
+  "@privacy": {
+    "description": "Privacy section header"
+  },
+
+  "privacyPolicy": "Privacy Policy",
+  "@privacyPolicy": {
+    "description": "Privacy policy menu item"
+  },
+
+  "termsOfService": "Terms of Service",
+  "@termsOfService": {
+    "description": "Terms of service menu item"
+  },
+
+  "data": "Data",
+  "@data": {
+    "description": "Data section header"
+  },
+
+  "downloadMyData": "Download My Data",
+  "@downloadMyData": {
+    "description": "Download data menu item"
+  },
+
+  "clearCache": "Clear Cache",
+  "@clearCache": {
+    "description": "Clear cache menu item"
+  },
+
+  "clearCacheTitle": "Clear Cache",
+  "@clearCacheTitle": {
+    "description": "Clear cache dialog title"
+  },
+
+  "clearCacheMessage": "Are you sure you want to clear all cached data? This action cannot be undone.",
+  "@clearCacheMessage": {
+    "description": "Clear cache dialog message"
+  },
+
+  "cacheCleared": "Cache cleared successfully",
+  "@cacheCleared": {
+    "description": "Cache cleared confirmation"
+  },
+
+  "preparingData": "Preparing your data for download...",
+  "@preparingData": {
+    "description": "Download data message"
+  },
+
+  "version": "Version {version}",
+  "@version": {
+    "description": "App version display",
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+
+  "rideHistory": "Ride History",
+  "@rideHistory": {
+    "description": "Ride history menu item"
+  },
+
+  "help": "Help",
+  "@help": {
+    "description": "Help menu item"
+  },
+
+  "faq": "FAQ",
+  "@faq": {
+    "description": "Frequently Asked Questions"
+  },
+
+  "support": "Support",
+  "@support": {
+    "description": "Support menu item"
+  },
+
+  "helpAndSupport": "Help & Support",
+  "@helpAndSupport": {
+    "description": "Help and support menu item"
+  },
+
+  "about": "About",
+  "@about": {
+    "description": "About menu item"
+  },
+
+  "logout": "Logout",
+  "@logout": {
+    "description": "Logout menu item"
+  },
+
+  "deleteAccount": "Delete Account",
+  "@deleteAccount": {
+    "description": "Delete account menu item"
+  },
+
+  "white": "White",
+  "black": "Black",
+  "silver": "Silver",
+  "gray": "Gray",
+  "red": "Red",
+  "blue": "Blue",
+  "green": "Green",
+  "yellow": "Yellow",
+  "orange": "Orange",
+  "brown": "Brown",
+  "beige": "Beige",
+  "gold": "Gold",
+  "purple": "Purple",
+  "pink": "Pink",
+  "turquoise": "Turquoise",
+  "bronze": "Bronze",
+  "maroon": "Maroon",
+  "navyBlue": "Navy Blue",
+  "other": "Other",
+
+  "noBookingsYet": "No bookings yet.",
+  "@noBookingsYet": {
+    "description": "Message shown when user has no bookings"
+  },
+
+  "passenger": "Rider",
+  "@passenger": {
+    "description": "Rider label for seat occupants"
+  },
+
+  "bookingCompleted": "Booking Completed",
+  "@bookingCompleted": {
+    "description": "Button text when booking is completed"
+  },
+
+  "completeBooking": "Complete Booking",
+  "@completeBooking": {
+    "description": "Button text to complete a booking"
+  },
+
+  "noAvailableSeats": "No Available Seats",
+  "@noAvailableSeats": {
+    "description": "Message when no seats are available"
+  },
+
+  "whenDoYouWantToTravel": "When do you want to travel?",
+  "@whenDoYouWantToTravel": {
+    "description": "Question about travel time"
+  },
+
+  "matchingRides": "Matching Rides",
+  "@matchingRides": {
+    "description": "Title for matching rides list"
+  },
+
+  "withDriver": "With",
+  "@withDriver": {
+    "description": "Preposition for showing driver name"
+  },
+
+  "atTime": "at",
+  "@atTime": {
+    "description": "Preposition for showing time"
+  },
+
+  "upcoming": "Upcoming",
+  "@upcoming": {
+    "description": "Upcoming bookings section title"
+  },
+
+  "ongoing": "Ongoing",
+  "@ongoing": {
+    "description": "Ongoing rides section title"
+  },
+
+  "archive": "Archive",
+  "@archive": {
+    "description": "Archive section title for old bookings"
+  },
+
+  "unarchive": "Unarchive",
+  "@unarchive": {
+    "description": "Unarchive button text"
+  },
+
+  "canceledRides": "Canceled",
+  "@canceledRides": {
+    "description": "Canceled section title"
+  },
+
+  "completed": "Completed",
+  "@completed": {
+    "description": "Completed status label"
+  },
+
+  "canceled": "Canceled",
+  "@canceled": {
+    "description": "Canceled status label"
+  },
+
+  "suggestRoute": "Suggest a new route",
+  "@suggestRoute": {
+    "description": "Link text to suggest a new route"
+  },
+
+  "suggestStop": "Suggest a new stop",
+  "@suggestStop": {
+    "description": "Link text to suggest a new stop"
+  }
+}

@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import '../models/routes.dart';
-import '../widgets/car_seat_layout.dart';
+import '../models/booking.dart';
+import '../services/booking_storage.dart';
+import '../services/auth_service.dart';
+import '../widgets/seat_planning_section_widget.dart';
+import '../widgets/scroll_indicator.dart';
+import '../widgets/booking_progress_bar.dart';
+import '../l10n/app_localizations.dart';
 
 class RiderSeatSelectionScreen extends StatefulWidget {
   final RideInfo ride;
@@ -14,168 +20,130 @@ class RiderSeatSelectionScreen extends StatefulWidget {
 
 class _RiderSeatSelectionScreenState extends State<RiderSeatSelectionScreen> {
   List<int> selectedSeats = [];
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Select Your Seats',
+          'Book a Ride',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.red,
         iconTheme: IconThemeData(color: Colors.white),
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Ride info card
-              Card(
-                child: Padding(
+      body: Column(
+        children: [
+          // Progress bar at the top - same as driver's
+          BookingProgressBar(
+            currentStep: 4, // Final step - seat selection
+            totalSteps: 4,
+          ),
+
+          // Content
+          Expanded(
+            child: Column(
+              children: [
+                // Header with back button - same as driver's
+                Container(
                   padding: EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Row(
                     children: [
-                      Text(
-                        'Ride Details',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF2E2E2E),
+                      IconButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        icon: Icon(Icons.arrow_back_ios, color: Color(0xFF8E8E8E), size: 20),
+                        style: IconButton.styleFrom(backgroundColor: Colors.transparent, padding: EdgeInsets.all(8)),
+                      ),
+                      SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              l10n.chooseYourSeat,
+                              style: TextStyle(
+                                fontSize: 28,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF2E2E2E),
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            // Seat count subtitle
+                            Text(
+                              l10n.seatsSelected(selectedSeats.length),
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w400,
+                                color: Color(0xFF8E8E8E),
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                      SizedBox(height: 12),
-                      Row(
-                        children: [
-                          CircleAvatar(
-                            radius: 24,
-                            backgroundImage: NetworkImage(
-                              widget.ride.driverPhoto,
-                            ),
-                            backgroundColor: Colors.grey[300],
-                          ),
-                          SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  widget.ride.driverName,
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF2E2E2E),
-                                  ),
-                                ),
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.star,
-                                      color: Colors.amber,
-                                      size: 16,
-                                    ),
-                                    SizedBox(width: 4),
-                                    Text(
-                                      widget.ride.driverRating.toString(),
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: Color(0xFF2E2E2E),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                          Text(
-                            widget.ride.price,
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF2E2E2E),
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.access_time,
-                            size: 16,
-                            color: Color(0xFF2E2E2E),
-                          ),
-                          SizedBox(width: 8),
-                          Text(
-                            _formatDateTime(widget.ride.departureTime),
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Color(0xFF2E2E2E),
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Icon(Icons.route, size: 16, color: Color(0xFF2E2E2E)),
-                          SizedBox(width: 8),
-                          Text(
-                            '${widget.ride.route.stops[widget.ride.originIndex].name} → ${widget.ride.route.stops[widget.ride.destinationIndex].name}',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Color(0xFF2E2E2E),
-                            ),
-                          ),
-                        ],
                       ),
                     ],
                   ),
                 ),
-              ),
+                
+                // Scrollable content
+                Expanded(
+                  child: ScrollIndicator(
+                    scrollController: _scrollController,
+                    child: SingleChildScrollView(
+                      controller: _scrollController,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Car seat layout - same as driver's
+                            SeatPlanningSectionWidget(
+                        userRole: 'Rider',
+                        selectedSeats: selectedSeats,
+                        onSeatsSelected: (seats) {
+                          setState(() {
+                            selectedSeats = seats;
+                          });
+                        },
+                        isDisabled: false,
+                            ),
 
-              SizedBox(height: 24),
-
-              // Seat selection
-              Text(
-                'Choose Your Seats',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF2E2E2E),
+                            SizedBox(height: 24),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-              Text(
-                '${widget.ride.availableSeats} seats available',
-                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-              ),
-
-              SizedBox(height: 16),
-
-              // Car seat layout
-              Container(
-                padding: EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.grey[50],
-                  borderRadius: BorderRadius.circular(12),
+              ],
+            ),
+          ),
+          
+          // Fixed booking button at bottom - same as driver's
+          Container(
+            padding: EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 8,
+                  offset: Offset(0, -2),
                 ),
-                child: CarSeatLayout(
-                  userRole: 'Rider',
-                  onSeatsSelected: (seats) {
-                    setState(() {
-                      selectedSeats = seats;
-                    });
-                  },
-                ),
-              ),
-
-              SizedBox(height: 24),
-
-              // Confirm booking button
-              SizedBox(
+              ],
+            ),
+            child: SafeArea(
+              top: false,
+              child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: selectedSeats.isNotEmpty
@@ -202,9 +170,9 @@ class _RiderSeatSelectionScreenState extends State<RiderSeatSelectionScreen> {
                   ),
                 ),
               ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -242,6 +210,68 @@ class _RiderSeatSelectionScreenState extends State<RiderSeatSelectionScreen> {
   }
 
   void _confirmBooking() {
+    final currentUser = AuthService.currentUser;
+    if (currentUser == null) return;
+    
+    final bookingStorage = BookingStorage();
+    final l10n = AppLocalizations.of(context)!;
+    
+    // Find the driver's booking
+    final driverBooking = bookingStorage.getAllBookings().firstWhere(
+      (b) => b.id == widget.ride.id,
+      orElse: () => throw Exception('Driver booking not found'),
+    );
+    
+    // Create rider name (first name + last initial)
+    String riderName = currentUser.name;
+    if (currentUser.surname.isNotEmpty) {
+      riderName = '${currentUser.name} ${currentUser.surname[0]}.';
+    }
+    
+    // Create rider's own booking
+    final riderBooking = Booking(
+      id: '${widget.ride.id}_rider_${currentUser.id}',
+      userId: currentUser.id,
+      route: widget.ride.route,
+      originIndex: widget.ride.originIndex,
+      destinationIndex: widget.ride.destinationIndex,
+      selectedSeats: selectedSeats,
+      departureTime: widget.ride.departureTime,
+      arrivalTime: widget.ride.departureTime.add(Duration(hours: 1)), // Estimate
+      bookingDate: DateTime.now(),
+      userRole: l10n.rider,
+      driverName: widget.ride.driverName,
+      driverRating: widget.ride.driverRating,
+    );
+    
+    // Add rider's booking
+    bookingStorage.addBooking(riderBooking);
+    
+    // Update driver's booking with rider info
+    final updatedRiders = List<RiderInfo>.from(driverBooking.riders ?? []);
+    for (final seatIndex in selectedSeats) {
+      updatedRiders.add(RiderInfo(
+        name: riderName,
+        rating: currentUser.rating,
+        seatIndex: seatIndex,
+      ));
+    }
+    
+    // Remove these seats from driver's available seats
+    final updatedDriverSeats = List<int>.from(driverBooking.selectedSeats)
+      ..removeWhere((seat) => selectedSeats.contains(seat));
+    
+    final updatedDriverBooking = driverBooking.copyWith(
+      selectedSeats: updatedDriverSeats,
+      riders: updatedRiders,
+    );
+    
+    bookingStorage.updateBooking(updatedDriverBooking);
+    
+    print('✅ Rider booking created and driver booking updated');
+    print('   Rider: $riderName, Seats: $selectedSeats');
+    print('   Driver available seats now: $updatedDriverSeats');
+    
     // Show confirmation dialog
     showDialog(
       context: context,

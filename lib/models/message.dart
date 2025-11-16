@@ -1,0 +1,127 @@
+class Message {
+  final String id;
+  final String conversationId; // Links to a specific booking
+  final String senderId;
+  final String senderName;
+  final String receiverId;
+  final String receiverName;
+  final String content;
+  final DateTime timestamp;
+  final bool isRead;
+
+  Message({
+    required this.id,
+    required this.conversationId,
+    required this.senderId,
+    required this.senderName,
+    required this.receiverId,
+    required this.receiverName,
+    required this.content,
+    required this.timestamp,
+    this.isRead = false,
+  });
+
+  Message copyWith({
+    String? id,
+    String? conversationId,
+    String? senderId,
+    String? senderName,
+    String? receiverId,
+    String? receiverName,
+    String? content,
+    DateTime? timestamp,
+    bool? isRead,
+  }) {
+    return Message(
+      id: id ?? this.id,
+      conversationId: conversationId ?? this.conversationId,
+      senderId: senderId ?? this.senderId,
+      senderName: senderName ?? this.senderName,
+      receiverId: receiverId ?? this.receiverId,
+      receiverName: receiverName ?? this.receiverName,
+      content: content ?? this.content,
+      timestamp: timestamp ?? this.timestamp,
+      isRead: isRead ?? this.isRead,
+    );
+  }
+}
+
+class Conversation {
+  final String id; // Same as booking ID
+  final String bookingId;
+  final String driverId;
+  final String driverName;
+  final String riderId;
+  final String riderName;
+  final String routeName;
+  final DateTime arrivalTime;
+  final List<Message> messages;
+
+  Conversation({
+    required this.id,
+    required this.bookingId,
+    required this.driverId,
+    required this.driverName,
+    required this.riderId,
+    required this.riderName,
+    required this.routeName,
+    required this.arrivalTime,
+    this.messages = const [],
+  });
+
+  // Check if messaging is still allowed (within 24 hours after arrival)
+  bool get isMessagingAllowed {
+    final now = DateTime.now();
+    final cutoffTime = arrivalTime.add(Duration(hours: 24));
+    return now.isBefore(cutoffTime);
+  }
+
+  // Get the other user's name based on current user
+  String getOtherUserName(String currentUserId) {
+    return currentUserId == driverId ? riderName : driverName;
+  }
+
+  // Get the other user's ID based on current user
+  String getOtherUserId(String currentUserId) {
+    return currentUserId == driverId ? riderId : driverId;
+  }
+
+  // Get unread message count for a specific user
+  int getUnreadCount(String userId) {
+    return messages.where((m) => m.receiverId == userId && !m.isRead).length;
+  }
+
+  // Get last message
+  Message? get lastMessage {
+    try {
+      if (messages.isEmpty) return null;
+      return messages.reduce((a, b) => a.timestamp.isAfter(b.timestamp) ? a : b);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Conversation copyWith({
+    String? id,
+    String? bookingId,
+    String? driverId,
+    String? driverName,
+    String? riderId,
+    String? riderName,
+    String? routeName,
+    DateTime? arrivalTime,
+    List<Message>? messages,
+  }) {
+    return Conversation(
+      id: id ?? this.id,
+      bookingId: bookingId ?? this.bookingId,
+      driverId: driverId ?? this.driverId,
+      driverName: driverName ?? this.driverName,
+      riderId: riderId ?? this.riderId,
+      riderName: riderName ?? this.riderName,
+      routeName: routeName ?? this.routeName,
+      arrivalTime: arrivalTime ?? this.arrivalTime,
+      messages: messages ?? this.messages,
+    );
+  }
+}

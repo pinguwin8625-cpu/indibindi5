@@ -1,0 +1,1146 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:intl/intl.dart' as intl;
+
+import 'app_localizations_ar.dart';
+import 'app_localizations_de.dart';
+import 'app_localizations_en.dart';
+import 'app_localizations_es.dart';
+import 'app_localizations_fr.dart';
+import 'app_localizations_it.dart';
+import 'app_localizations_ja.dart';
+import 'app_localizations_ko.dart';
+import 'app_localizations_pt.dart';
+import 'app_localizations_ru.dart';
+import 'app_localizations_tr.dart';
+import 'app_localizations_zh.dart';
+
+// ignore_for_file: type=lint
+
+/// Callers can lookup localized strings with an instance of AppLocalizations
+/// returned by `AppLocalizations.of(context)`.
+///
+/// Applications need to include `AppLocalizations.delegate()` in their app's
+/// `localizationDelegates` list, and the locales they support in the app's
+/// `supportedLocales` list. For example:
+///
+/// ```dart
+/// import 'l10n/app_localizations.dart';
+///
+/// return MaterialApp(
+///   localizationsDelegates: AppLocalizations.localizationsDelegates,
+///   supportedLocales: AppLocalizations.supportedLocales,
+///   home: MyApplicationHome(),
+/// );
+/// ```
+///
+/// ## Update pubspec.yaml
+///
+/// Please make sure to update your pubspec.yaml to include the following
+/// packages:
+///
+/// ```yaml
+/// dependencies:
+///   # Internationalization support.
+///   flutter_localizations:
+///     sdk: flutter
+///   intl: any # Use the pinned version from flutter_localizations
+///
+///   # Rest of dependencies
+/// ```
+///
+/// ## iOS Applications
+///
+/// iOS applications define key application metadata, including supported
+/// locales, in an Info.plist file that is built into the application bundle.
+/// To configure the locales supported by your app, you’ll need to edit this
+/// file.
+///
+/// First, open your project’s ios/Runner.xcworkspace Xcode workspace file.
+/// Then, in the Project Navigator, open the Info.plist file under the Runner
+/// project’s Runner folder.
+///
+/// Next, select the Information Property List item, select Add Item from the
+/// Editor menu, then select Localizations from the pop-up menu.
+///
+/// Select and expand the newly-created Localizations item then, for each
+/// locale your application supports, add a new item and select the locale
+/// you wish to add from the pop-up menu in the Value field. This list should
+/// be consistent with the languages listed in the AppLocalizations.supportedLocales
+/// property.
+abstract class AppLocalizations {
+  AppLocalizations(String locale)
+    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+
+  final String localeName;
+
+  static AppLocalizations? of(BuildContext context) {
+    return Localizations.of<AppLocalizations>(context, AppLocalizations);
+  }
+
+  static const LocalizationsDelegate<AppLocalizations> delegate =
+      _AppLocalizationsDelegate();
+
+  /// A list of this localizations delegate along with the default localizations
+  /// delegates.
+  ///
+  /// Returns a list of localizations delegates containing this delegate along with
+  /// GlobalMaterialLocalizations.delegate, GlobalCupertinoLocalizations.delegate,
+  /// and GlobalWidgetsLocalizations.delegate.
+  ///
+  /// Additional delegates can be added by appending to this list in
+  /// MaterialApp. This list does not have to be used at all if a custom list
+  /// of delegates is preferred or required.
+  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
+      <LocalizationsDelegate<dynamic>>[
+        delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ];
+
+  /// A list of this localizations delegate's supported locales.
+  static const List<Locale> supportedLocales = <Locale>[
+    Locale('ar'),
+    Locale('de'),
+    Locale('en'),
+    Locale('es'),
+    Locale('fr'),
+    Locale('it'),
+    Locale('ja'),
+    Locale('ko'),
+    Locale('pt'),
+    Locale('ru'),
+    Locale('tr'),
+    Locale('zh'),
+  ];
+
+  /// Application title
+  ///
+  /// In en, this message translates to:
+  /// **'IndiBindi'**
+  String get appTitle;
+
+  /// Home tab label
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get home;
+
+  /// My Bookings tab label
+  ///
+  /// In en, this message translates to:
+  /// **'My Bookings'**
+  String get myBookings;
+
+  /// Inbox tab label
+  ///
+  /// In en, this message translates to:
+  /// **'Inbox'**
+  String get inbox;
+
+  /// Account tab label
+  ///
+  /// In en, this message translates to:
+  /// **'Account'**
+  String get account;
+
+  /// Upload profile photo button
+  ///
+  /// In en, this message translates to:
+  /// **'Upload Photo'**
+  String get uploadPhoto;
+
+  /// Change profile photo button
+  ///
+  /// In en, this message translates to:
+  /// **'Change Photo'**
+  String get changePhoto;
+
+  /// Camera option
+  ///
+  /// In en, this message translates to:
+  /// **'Camera'**
+  String get camera;
+
+  /// Gallery option
+  ///
+  /// In en, this message translates to:
+  /// **'Gallery'**
+  String get gallery;
+
+  /// Take photo with camera
+  ///
+  /// In en, this message translates to:
+  /// **'Take Photo'**
+  String get takePhoto;
+
+  /// Choose from gallery
+  ///
+  /// In en, this message translates to:
+  /// **'Choose from Gallery'**
+  String get chooseFromGallery;
+
+  /// Remove profile photo
+  ///
+  /// In en, this message translates to:
+  /// **'Remove Photo'**
+  String get removePhoto;
+
+  /// Prompt to choose a route
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a route to get started'**
+  String get selectRoute;
+
+  /// Driver role label
+  ///
+  /// In en, this message translates to:
+  /// **'Driver'**
+  String get driver;
+
+  /// Rider role label
+  ///
+  /// In en, this message translates to:
+  /// **'Rider'**
+  String get rider;
+
+  /// Starting point label
+  ///
+  /// In en, this message translates to:
+  /// **'Origin'**
+  String get origin;
+
+  /// Ending point label
+  ///
+  /// In en, this message translates to:
+  /// **'Destination'**
+  String get destination;
+
+  /// Prompt to choose origin
+  ///
+  /// In en, this message translates to:
+  /// **'Choose Origin'**
+  String get selectOrigin;
+
+  /// Prompt to choose destination
+  ///
+  /// In en, this message translates to:
+  /// **'Choose Destination'**
+  String get selectDestination;
+
+  /// Departure time label
+  ///
+  /// In en, this message translates to:
+  /// **'Departure Time'**
+  String get departureTime;
+
+  /// Arrival time label
+  ///
+  /// In en, this message translates to:
+  /// **'Arrival Time'**
+  String get arrivalTime;
+
+  /// Button to choose time
+  ///
+  /// In en, this message translates to:
+  /// **'Choose Time'**
+  String get selectTime;
+
+  /// Seats label
+  ///
+  /// In en, this message translates to:
+  /// **'Seats'**
+  String get seats;
+
+  /// Prompt to choose seats
+  ///
+  /// In en, this message translates to:
+  /// **'Choose Seats'**
+  String get selectSeats;
+
+  /// Title for route selection
+  ///
+  /// In en, this message translates to:
+  /// **'Choose Your Route'**
+  String get chooseYourRoute;
+
+  /// Title for seat selection
+  ///
+  /// In en, this message translates to:
+  /// **'Choose your seats'**
+  String get chooseYourSeats;
+
+  /// Title for driver's available seats
+  ///
+  /// In en, this message translates to:
+  /// **'Available Seats'**
+  String get availableSeats;
+
+  /// Title for rider's seat selection
+  ///
+  /// In en, this message translates to:
+  /// **'Choose Your Seat'**
+  String get chooseYourSeat;
+
+  /// Instruction for rider to select a seat
+  ///
+  /// In en, this message translates to:
+  /// **'Select your seat'**
+  String get selectYourSeat;
+
+  /// Number of seats available for driver
+  ///
+  /// In en, this message translates to:
+  /// **'{count} seat(s) available'**
+  String seatsAvailable(int count);
+
+  /// Number of seats selected by rider
+  ///
+  /// In en, this message translates to:
+  /// **'{count} seat(s) selected'**
+  String seatsSelected(int count);
+
+  /// Title for stops selection
+  ///
+  /// In en, this message translates to:
+  /// **'Choose Your Stops'**
+  String get chooseYourStops;
+
+  /// Departure/pick-up time label
+  ///
+  /// In en, this message translates to:
+  /// **'Pick-up Time'**
+  String get pickUpTime;
+
+  /// Arrival/drop-off time label
+  ///
+  /// In en, this message translates to:
+  /// **'Drop-off Time'**
+  String get dropOffTime;
+
+  /// Today label
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get today;
+
+  /// Tomorrow label
+  ///
+  /// In en, this message translates to:
+  /// **'Tomorrow'**
+  String get tomorrow;
+
+  /// Done button
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get done;
+
+  /// No description provided for @cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get cancel;
+
+  /// No description provided for @mon.
+  ///
+  /// In en, this message translates to:
+  /// **'Mon'**
+  String get mon;
+
+  /// No description provided for @tue.
+  ///
+  /// In en, this message translates to:
+  /// **'Tue'**
+  String get tue;
+
+  /// No description provided for @wed.
+  ///
+  /// In en, this message translates to:
+  /// **'Wed'**
+  String get wed;
+
+  /// No description provided for @thu.
+  ///
+  /// In en, this message translates to:
+  /// **'Thu'**
+  String get thu;
+
+  /// No description provided for @fri.
+  ///
+  /// In en, this message translates to:
+  /// **'Fri'**
+  String get fri;
+
+  /// No description provided for @sat.
+  ///
+  /// In en, this message translates to:
+  /// **'Sat'**
+  String get sat;
+
+  /// No description provided for @sun.
+  ///
+  /// In en, this message translates to:
+  /// **'Sun'**
+  String get sun;
+
+  /// No description provided for @jan.
+  ///
+  /// In en, this message translates to:
+  /// **'Jan'**
+  String get jan;
+
+  /// No description provided for @feb.
+  ///
+  /// In en, this message translates to:
+  /// **'Feb'**
+  String get feb;
+
+  /// No description provided for @mar.
+  ///
+  /// In en, this message translates to:
+  /// **'Mar'**
+  String get mar;
+
+  /// No description provided for @apr.
+  ///
+  /// In en, this message translates to:
+  /// **'Apr'**
+  String get apr;
+
+  /// No description provided for @may.
+  ///
+  /// In en, this message translates to:
+  /// **'May'**
+  String get may;
+
+  /// No description provided for @jun.
+  ///
+  /// In en, this message translates to:
+  /// **'Jun'**
+  String get jun;
+
+  /// No description provided for @jul.
+  ///
+  /// In en, this message translates to:
+  /// **'Jul'**
+  String get jul;
+
+  /// No description provided for @aug.
+  ///
+  /// In en, this message translates to:
+  /// **'Aug'**
+  String get aug;
+
+  /// No description provided for @sep.
+  ///
+  /// In en, this message translates to:
+  /// **'Sep'**
+  String get sep;
+
+  /// No description provided for @oct.
+  ///
+  /// In en, this message translates to:
+  /// **'Oct'**
+  String get oct;
+
+  /// No description provided for @nov.
+  ///
+  /// In en, this message translates to:
+  /// **'Nov'**
+  String get nov;
+
+  /// No description provided for @dec.
+  ///
+  /// In en, this message translates to:
+  /// **'Dec'**
+  String get dec;
+
+  /// Confirm booking button
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Booking'**
+  String get confirmBooking;
+
+  /// Booking confirmation message
+  ///
+  /// In en, this message translates to:
+  /// **'Booking Confirmed!'**
+  String get bookingConfirmed;
+
+  /// Back button
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get back;
+
+  /// Next button
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get next;
+
+  /// Save button
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get save;
+
+  /// Saved status
+  ///
+  /// In en, this message translates to:
+  /// **'Saved'**
+  String get saved;
+
+  /// Personal Information screen title
+  ///
+  /// In en, this message translates to:
+  /// **'Personal Information'**
+  String get personalInformation;
+
+  /// Name field label
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get name;
+
+  /// Surname field label
+  ///
+  /// In en, this message translates to:
+  /// **'Surname'**
+  String get surname;
+
+  /// Mobile phone number field label
+  ///
+  /// In en, this message translates to:
+  /// **'Mobile Phone Number'**
+  String get phoneNumber;
+
+  /// Email field label
+  ///
+  /// In en, this message translates to:
+  /// **'Email Address'**
+  String get email;
+
+  /// Name field hint
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your name'**
+  String get enterName;
+
+  /// Surname field hint
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your surname'**
+  String get enterSurname;
+
+  /// Phone field hint
+  ///
+  /// In en, this message translates to:
+  /// **'Enter phone number'**
+  String get enterPhone;
+
+  /// Email field hint
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your email'**
+  String get enterEmail;
+
+  /// Name validation error
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter your name'**
+  String get pleaseEnterName;
+
+  /// Surname validation error
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter your surname'**
+  String get pleaseEnterSurname;
+
+  /// Phone validation error
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter phone number'**
+  String get pleaseEnterPhone;
+
+  /// Email validation error
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid email'**
+  String get pleaseEnterValidEmail;
+
+  /// Success message after saving
+  ///
+  /// In en, this message translates to:
+  /// **'Information saved successfully!'**
+  String get informationSaved;
+
+  /// Vehicle Information screen title
+  ///
+  /// In en, this message translates to:
+  /// **'Vehicle Information'**
+  String get vehicleInformation;
+
+  /// Vehicle brand label
+  ///
+  /// In en, this message translates to:
+  /// **'Brand'**
+  String get brand;
+
+  /// Vehicle model label
+  ///
+  /// In en, this message translates to:
+  /// **'Model'**
+  String get model;
+
+  /// Vehicle color label
+  ///
+  /// In en, this message translates to:
+  /// **'Color'**
+  String get color;
+
+  /// License plate label
+  ///
+  /// In en, this message translates to:
+  /// **'License Plate'**
+  String get licensePlate;
+
+  /// Brand dropdown hint
+  ///
+  /// In en, this message translates to:
+  /// **'Select brand'**
+  String get selectBrand;
+
+  /// Model dropdown hint
+  ///
+  /// In en, this message translates to:
+  /// **'Select model'**
+  String get selectModel;
+
+  /// Color dropdown hint
+  ///
+  /// In en, this message translates to:
+  /// **'Select color'**
+  String get selectColor;
+
+  /// Model dropdown disabled hint
+  ///
+  /// In en, this message translates to:
+  /// **'Select a brand first'**
+  String get selectBrandFirst;
+
+  /// License plate field hint
+  ///
+  /// In en, this message translates to:
+  /// **'Enter license plate'**
+  String get enterLicensePlate;
+
+  /// License plate example
+  ///
+  /// In en, this message translates to:
+  /// **'Example: {plate}'**
+  String examplePlate(String plate);
+
+  /// Brand validation error
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a brand'**
+  String get pleaseSelectBrand;
+
+  /// Plate validation error
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter license plate'**
+  String get pleaseEnterPlate;
+
+  /// Success message after saving vehicle
+  ///
+  /// In en, this message translates to:
+  /// **'Vehicle information saved successfully!'**
+  String get vehicleSaved;
+
+  /// Settings screen title
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get settings;
+
+  /// Notifications section header
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get notifications;
+
+  /// Push notifications setting
+  ///
+  /// In en, this message translates to:
+  /// **'Push Notifications'**
+  String get pushNotifications;
+
+  /// Push notifications description
+  ///
+  /// In en, this message translates to:
+  /// **'Receive notifications about ride updates'**
+  String get pushNotificationsDesc;
+
+  /// Location section header
+  ///
+  /// In en, this message translates to:
+  /// **'Location'**
+  String get location;
+
+  /// Location services setting
+  ///
+  /// In en, this message translates to:
+  /// **'Location Services'**
+  String get locationServices;
+
+  /// Location services description
+  ///
+  /// In en, this message translates to:
+  /// **'Allow app to access your location'**
+  String get locationServicesDesc;
+
+  /// Appearance section header
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance'**
+  String get appearance;
+
+  /// Dark mode setting
+  ///
+  /// In en, this message translates to:
+  /// **'Dark Mode'**
+  String get darkMode;
+
+  /// Dark mode description
+  ///
+  /// In en, this message translates to:
+  /// **'Use dark theme'**
+  String get darkModeDesc;
+
+  /// Language section header and setting
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get language;
+
+  /// Language selector title
+  ///
+  /// In en, this message translates to:
+  /// **'Select Language'**
+  String get selectLanguage;
+
+  /// Language change confirmation
+  ///
+  /// In en, this message translates to:
+  /// **'Language changed to {language}'**
+  String languageChanged(String language);
+
+  /// Privacy section header
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy'**
+  String get privacy;
+
+  /// Privacy policy menu item
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy Policy'**
+  String get privacyPolicy;
+
+  /// Terms of service menu item
+  ///
+  /// In en, this message translates to:
+  /// **'Terms of Service'**
+  String get termsOfService;
+
+  /// Data section header
+  ///
+  /// In en, this message translates to:
+  /// **'Data'**
+  String get data;
+
+  /// Download data menu item
+  ///
+  /// In en, this message translates to:
+  /// **'Download My Data'**
+  String get downloadMyData;
+
+  /// Clear cache menu item
+  ///
+  /// In en, this message translates to:
+  /// **'Clear Cache'**
+  String get clearCache;
+
+  /// Clear cache dialog title
+  ///
+  /// In en, this message translates to:
+  /// **'Clear Cache'**
+  String get clearCacheTitle;
+
+  /// Clear cache dialog message
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to clear all cached data? This action cannot be undone.'**
+  String get clearCacheMessage;
+
+  /// Cache cleared confirmation
+  ///
+  /// In en, this message translates to:
+  /// **'Cache cleared successfully'**
+  String get cacheCleared;
+
+  /// Download data message
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing your data for download...'**
+  String get preparingData;
+
+  /// App version display
+  ///
+  /// In en, this message translates to:
+  /// **'Version {version}'**
+  String version(String version);
+
+  /// Ride history menu item
+  ///
+  /// In en, this message translates to:
+  /// **'Ride History'**
+  String get rideHistory;
+
+  /// Help menu item
+  ///
+  /// In en, this message translates to:
+  /// **'Help'**
+  String get help;
+
+  /// Frequently Asked Questions
+  ///
+  /// In en, this message translates to:
+  /// **'FAQ'**
+  String get faq;
+
+  /// Support menu item
+  ///
+  /// In en, this message translates to:
+  /// **'Support'**
+  String get support;
+
+  /// Help and support menu item
+  ///
+  /// In en, this message translates to:
+  /// **'Help & Support'**
+  String get helpAndSupport;
+
+  /// About menu item
+  ///
+  /// In en, this message translates to:
+  /// **'About'**
+  String get about;
+
+  /// Logout menu item
+  ///
+  /// In en, this message translates to:
+  /// **'Logout'**
+  String get logout;
+
+  /// Delete account menu item
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Account'**
+  String get deleteAccount;
+
+  /// No description provided for @white.
+  ///
+  /// In en, this message translates to:
+  /// **'White'**
+  String get white;
+
+  /// No description provided for @black.
+  ///
+  /// In en, this message translates to:
+  /// **'Black'**
+  String get black;
+
+  /// No description provided for @silver.
+  ///
+  /// In en, this message translates to:
+  /// **'Silver'**
+  String get silver;
+
+  /// No description provided for @gray.
+  ///
+  /// In en, this message translates to:
+  /// **'Gray'**
+  String get gray;
+
+  /// No description provided for @red.
+  ///
+  /// In en, this message translates to:
+  /// **'Red'**
+  String get red;
+
+  /// No description provided for @blue.
+  ///
+  /// In en, this message translates to:
+  /// **'Blue'**
+  String get blue;
+
+  /// No description provided for @green.
+  ///
+  /// In en, this message translates to:
+  /// **'Green'**
+  String get green;
+
+  /// No description provided for @yellow.
+  ///
+  /// In en, this message translates to:
+  /// **'Yellow'**
+  String get yellow;
+
+  /// No description provided for @orange.
+  ///
+  /// In en, this message translates to:
+  /// **'Orange'**
+  String get orange;
+
+  /// No description provided for @brown.
+  ///
+  /// In en, this message translates to:
+  /// **'Brown'**
+  String get brown;
+
+  /// No description provided for @beige.
+  ///
+  /// In en, this message translates to:
+  /// **'Beige'**
+  String get beige;
+
+  /// No description provided for @gold.
+  ///
+  /// In en, this message translates to:
+  /// **'Gold'**
+  String get gold;
+
+  /// No description provided for @purple.
+  ///
+  /// In en, this message translates to:
+  /// **'Purple'**
+  String get purple;
+
+  /// No description provided for @pink.
+  ///
+  /// In en, this message translates to:
+  /// **'Pink'**
+  String get pink;
+
+  /// No description provided for @turquoise.
+  ///
+  /// In en, this message translates to:
+  /// **'Turquoise'**
+  String get turquoise;
+
+  /// No description provided for @bronze.
+  ///
+  /// In en, this message translates to:
+  /// **'Bronze'**
+  String get bronze;
+
+  /// No description provided for @maroon.
+  ///
+  /// In en, this message translates to:
+  /// **'Maroon'**
+  String get maroon;
+
+  /// No description provided for @navyBlue.
+  ///
+  /// In en, this message translates to:
+  /// **'Navy Blue'**
+  String get navyBlue;
+
+  /// No description provided for @other.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get other;
+
+  /// Message shown when user has no bookings
+  ///
+  /// In en, this message translates to:
+  /// **'No bookings yet.'**
+  String get noBookingsYet;
+
+  /// Rider label for seat occupants
+  ///
+  /// In en, this message translates to:
+  /// **'Rider'**
+  String get passenger;
+
+  /// Button text when booking is completed
+  ///
+  /// In en, this message translates to:
+  /// **'Booking Completed'**
+  String get bookingCompleted;
+
+  /// Button text to complete a booking
+  ///
+  /// In en, this message translates to:
+  /// **'Complete Booking'**
+  String get completeBooking;
+
+  /// Message when no seats are available
+  ///
+  /// In en, this message translates to:
+  /// **'No Available Seats'**
+  String get noAvailableSeats;
+
+  /// Question about travel time
+  ///
+  /// In en, this message translates to:
+  /// **'When do you want to travel?'**
+  String get whenDoYouWantToTravel;
+
+  /// Title for matching rides list
+  ///
+  /// In en, this message translates to:
+  /// **'Matching Rides'**
+  String get matchingRides;
+
+  /// Preposition for showing driver name
+  ///
+  /// In en, this message translates to:
+  /// **'With'**
+  String get withDriver;
+
+  /// Preposition for showing time
+  ///
+  /// In en, this message translates to:
+  /// **'at'**
+  String get atTime;
+
+  /// Upcoming bookings section title
+  ///
+  /// In en, this message translates to:
+  /// **'Upcoming'**
+  String get upcoming;
+
+  /// Ongoing rides section title
+  ///
+  /// In en, this message translates to:
+  /// **'Ongoing'**
+  String get ongoing;
+
+  /// Archive section title for old bookings
+  ///
+  /// In en, this message translates to:
+  /// **'Archive'**
+  String get archive;
+
+  /// Unarchive button text
+  ///
+  /// In en, this message translates to:
+  /// **'Unarchive'**
+  String get unarchive;
+
+  /// Canceled section title
+  ///
+  /// In en, this message translates to:
+  /// **'Canceled'**
+  String get canceledRides;
+
+  /// Completed status label
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get completed;
+
+  /// Canceled status label
+  ///
+  /// In en, this message translates to:
+  /// **'Canceled'**
+  String get canceled;
+
+  /// Link text to suggest a new route
+  ///
+  /// In en, this message translates to:
+  /// **'Suggest a new route'**
+  String get suggestRoute;
+
+  /// Link text to suggest a new stop
+  ///
+  /// In en, this message translates to:
+  /// **'Suggest a new stop'**
+  String get suggestStop;
+}
+
+class _AppLocalizationsDelegate
+    extends LocalizationsDelegate<AppLocalizations> {
+  const _AppLocalizationsDelegate();
+
+  @override
+  Future<AppLocalizations> load(Locale locale) {
+    return SynchronousFuture<AppLocalizations>(lookupAppLocalizations(locale));
+  }
+
+  @override
+  bool isSupported(Locale locale) => <String>[
+    'ar',
+    'de',
+    'en',
+    'es',
+    'fr',
+    'it',
+    'ja',
+    'ko',
+    'pt',
+    'ru',
+    'tr',
+    'zh',
+  ].contains(locale.languageCode);
+
+  @override
+  bool shouldReload(_AppLocalizationsDelegate old) => false;
+}
+
+AppLocalizations lookupAppLocalizations(Locale locale) {
+  // Lookup logic when only language code is specified.
+  switch (locale.languageCode) {
+    case 'ar':
+      return AppLocalizationsAr();
+    case 'de':
+      return AppLocalizationsDe();
+    case 'en':
+      return AppLocalizationsEn();
+    case 'es':
+      return AppLocalizationsEs();
+    case 'fr':
+      return AppLocalizationsFr();
+    case 'it':
+      return AppLocalizationsIt();
+    case 'ja':
+      return AppLocalizationsJa();
+    case 'ko':
+      return AppLocalizationsKo();
+    case 'pt':
+      return AppLocalizationsPt();
+    case 'ru':
+      return AppLocalizationsRu();
+    case 'tr':
+      return AppLocalizationsTr();
+    case 'zh':
+      return AppLocalizationsZh();
+  }
+
+  throw FlutterError(
+    'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
+    'an issue with the localizations generation tool. Please file an issue '
+    'on GitHub with a reproducible sample app and the gen-l10n configuration '
+    'that was used.',
+  );
+}

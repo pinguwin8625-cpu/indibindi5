@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/routes.dart';
 import '../screens/route_line_with_stops.dart';
+import '../l10n/app_localizations.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class StopsSectionWidget extends StatefulWidget {
   final bool hideUnusedStops;
@@ -82,8 +84,38 @@ class _StopsSectionWidgetState extends State<StopsSectionWidget> {
             ],
           ),
         ),
+        
+        // Suggestion link for new stop
+        Padding(
+          padding: EdgeInsets.only(top: 16, bottom: 8),
+          child: InkWell(
+            onTap: () => _launchURL('https://forms.gle/yourstopformlink'),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                Icon(Icons.add_location_outlined, size: 16, color: Colors.blue[700]),
+                SizedBox(width: 8),
+                Text(
+                  AppLocalizations.of(context)!.suggestStop,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.blue[700],
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ],
     );
+  }
+
+  Future<void> _launchURL(String url) async {
+    final Uri uri = Uri.parse(url);
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      throw Exception('Could not launch $url');
+    }
   }
 
   // Helper to build stop row for visible stops
@@ -118,6 +150,7 @@ class _StopsSectionWidgetState extends State<StopsSectionWidget> {
                   print('🎯 StopsSection: Setting origin to $i');
                   widget.onOriginChanged(i);
                   widget.onDestinationChanged(null);
+                  widget.onResetDateTime();
                 }
               } else if (widget.destinationIndex == null &&
                   i != widget.originIndex &&
@@ -125,16 +158,18 @@ class _StopsSectionWidgetState extends State<StopsSectionWidget> {
                 if (!isFirst) {
                   print('🎯 StopsSection: Setting destination to $i');
                   widget.onDestinationChanged(i);
+                  // Don't reset date/time here - user may have already selected time
                 }
               } else if (i == widget.originIndex) {
                 print('🎯 StopsSection: Clearing origin (was $i)');
                 widget.onOriginChanged(null);
                 widget.onDestinationChanged(null);
+                widget.onResetDateTime();
               } else if (i == widget.destinationIndex) {
                 print('🎯 StopsSection: Clearing destination (was $i)');
                 widget.onDestinationChanged(null);
+                widget.onResetDateTime();
               }
-              widget.onResetDateTime();
             },
       child: Container(
         height: 42.0,
@@ -158,7 +193,7 @@ class _StopsSectionWidgetState extends State<StopsSectionWidget> {
               child: Text(
                 widget.selectedRoute.stops[i].name,
                 style: TextStyle(
-                  fontSize: 13,
+                  fontSize: 14,
                   color: isGreyed
                       ? Colors.grey
                       : Color(0xFF2E2E2E), // Use same dark color for all stops

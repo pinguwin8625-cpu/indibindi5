@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import '../models/routes.dart';
 import '../widgets/stops_section_widget.dart';
 import '../widgets/time_selection_widget.dart';
+import '../widgets/scroll_indicator.dart';
+import '../widgets/booking_summary_bar.dart';
 import '../utils/booking_logic.dart';
+import '../l10n/app_localizations.dart';
 
 class StopsLayerWidget extends StatefulWidget {
   final String userRole;
@@ -46,6 +49,7 @@ class _StopsLayerWidgetState extends State<StopsLayerWidget> {
   DateTime? localDepartureTime;
   DateTime? localArrivalTime;
   bool localHasSelectedDateTime = false;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -57,6 +61,12 @@ class _StopsLayerWidgetState extends State<StopsLayerWidget> {
     localHasSelectedDateTime = widget.hasSelectedDateTime;
   }
 
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
   void _checkAndNavigate() {
     // Auto-navigate when both stops and time are selected
     // Only navigate if user has actually interacted with time selection
@@ -66,6 +76,10 @@ class _StopsLayerWidgetState extends State<StopsLayerWidget> {
         localDepartureTime != null &&
         localArrivalTime != null &&
         !widget.isBookingCompleted) {
+      print('✅ StopsLayer: _checkAndNavigate - calling callbacks with:');
+      print('   localDepartureTime: $localDepartureTime');
+      print('   localArrivalTime: $localArrivalTime');
+      
       // Trigger individual callbacks to ensure progress bar sync
       widget.onOriginSelected?.call(localOriginIndex);
       widget.onDestinationSelected?.call(localDestinationIndex);
@@ -86,34 +100,30 @@ class _StopsLayerWidgetState extends State<StopsLayerWidget> {
     );
 
     bool canProceed = localOriginIndex != null && localDestinationIndex != null && localHasSelectedDateTime;
+    final l10n = AppLocalizations.of(context)!;
 
     return Column(
       children: [
-        // Header with back button
+        // Summary bar showing selected route with back button
+        BookingSummaryBar(
+          selectedRoute: widget.selectedRoute,
+          onBack: widget.isBookingCompleted ? null : widget.onBack,
+        ),
+        
+        // Header with title only
         Container(
-          padding: EdgeInsets.all(16),
+          padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
           child: Row(
             children: [
-              IconButton(
-                onPressed: widget.onBack,
-                icon: Icon(Icons.arrow_back_ios, color: Color(0xFF8E8E8E), size: 20),
-                style: IconButton.styleFrom(backgroundColor: Colors.transparent, padding: EdgeInsets.all(8)),
-              ),
-              SizedBox(width: 16),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Pick Your Stops',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  l10n.chooseYourStops,
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black,
+                    letterSpacing: 0.5,
+                  ),
                 ),
               ),
             ],
@@ -122,8 +132,11 @@ class _StopsLayerWidgetState extends State<StopsLayerWidget> {
 
         // Content
         Expanded(
-          child: SingleChildScrollView(
-            child: Padding(
+          child: ScrollIndicator(
+            scrollController: _scrollController,
+            child: SingleChildScrollView(
+              controller: _scrollController,
+              child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -198,12 +211,16 @@ class _StopsLayerWidgetState extends State<StopsLayerWidget> {
                                   }
                                 },
                                 onTimesChanged: (departure, arrival) {
+                                  print('🕐 StopsLayer: onTimesChanged called with:');
+                                  print('   departure: $departure');
+                                  print('   arrival: $arrival');
                                   setState(() {
                                     localDepartureTime = departure;
                                     localArrivalTime = arrival;
                                     // Don't set localHasSelectedDateTime here
                                     // Only set it when user actually interacts
                                   });
+                                  print('🕐 StopsLayer: After setState, localDepartureTime=$localDepartureTime, localArrivalTime=$localArrivalTime');
 
                                   // Don't call onTimeSelected for automatic time calculations
                                   // This callback should only be triggered by actual user time selection
@@ -213,19 +230,14 @@ class _StopsLayerWidgetState extends State<StopsLayerWidget> {
                                   // Don't auto-navigate on initial time setup
                                 },
                               )
-                            : Container(
-                                padding: EdgeInsets.all(16),
-                                child: Text(
-                                  'Select origin stop first',
-                                  style: TextStyle(color: Colors.grey, fontSize: 14),
-                                ),
-                              ),
+                            : Container(),
                       ),
                     ],
                   ),
                 ],
               ),
             ),
+          ),
           ),
         ),
 
