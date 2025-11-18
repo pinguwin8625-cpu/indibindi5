@@ -99,8 +99,8 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                 Expanded(
                   child: TabBarView(
                     children: [
-                      _buildBookingsList(l10n.driver),
-                      _buildBookingsList(l10n.rider),
+                      _buildBookingsList('driver'),
+                      _buildBookingsList('rider'),
                     ],
                   ),
                 ),

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/routes.dart';
 import '../services/booking_storage.dart';
-import '../screens/rider_seat_selection_screen.dart';
 import '../widgets/booking_summary_bar.dart';
+import '../widgets/matching_rides_card.dart';
 import '../l10n/app_localizations.dart';
 
 class MatchingRidesWidget extends StatelessWidget {
@@ -14,7 +14,7 @@ class MatchingRidesWidget extends StatelessWidget {
   final String? riderTimeChoice; // 'departure' or 'arrival'
   final VoidCallback onBack;
 
-  MatchingRidesWidget({
+  const MatchingRidesWidget({
     super.key,
     required this.selectedRoute,
     required this.originIndex,
@@ -156,8 +156,6 @@ class MatchingRidesWidget extends StatelessWidget {
       return [];
     }
   }
-
-  @override
   Widget build(BuildContext context) {
     print('🏗️ MatchingRides: Starting build');
     final l10n = AppLocalizations.of(context)!;
@@ -259,44 +257,16 @@ class MatchingRidesWidget extends StatelessWidget {
                   ),
                 )
               : ListView.builder(
+                  padding: EdgeInsets.symmetric(horizontal: 16),
                   itemCount: matchingRides.length,
                   itemBuilder: (context, index) {
                     final ride = matchingRides[index];
-                    return Card(
-                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundImage: NetworkImage(ride.driverPhoto),
-                        ),
-                        title: Text('${ride.route.stops[ride.originIndex].name} → ${ride.route.stops[ride.destinationIndex].name}'),
-                        subtitle: Text('${l10n.withDriver} ${ride.driverName} ${l10n.atTime} ${_formatTime(ride.departureTime)}'),
-                        trailing: Text(
-                          ride.price,
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                        ),
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => RiderSeatSelectionScreen(ride: ride),
-                            ),
-                          );
-                        },
-                      ),
-                    );
+                    return MatchingRideCard(ride: ride);
                   },
                 ),
         ),
       ],
-      ),
+    ),
     );
-  }
-
-  String _formatTime(DateTime time) {
-    String hour = time.hour > 12 ? '${time.hour - 12}' : '${time.hour}';
-    if (time.hour == 0) hour = '12';
-    String minute = time.minute.toString().padLeft(2, '0');
-    String period = time.hour >= 12 ? 'PM' : 'AM';
-    return '$hour:$minute $period';
   }
 }

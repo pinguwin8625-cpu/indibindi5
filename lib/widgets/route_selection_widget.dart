@@ -38,7 +38,14 @@ class RouteSelectionWidget extends StatelessWidget {
             return Container(
               margin: EdgeInsets.only(bottom: 12),
               child: InkWell(
-                onTap: isDisabled ? null : () => onRouteChanged(route),
+                onTap: isDisabled ? null : () {
+                  // Toggle: unselect if already selected, select if not
+                  if (isSelected) {
+                    onRouteChanged(null);
+                  } else {
+                    onRouteChanged(route);
+                  }
+                },
                 child: Container(
                   padding: EdgeInsets.all(16),
                   decoration: BoxDecoration(

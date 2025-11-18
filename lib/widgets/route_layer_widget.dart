@@ -11,7 +11,7 @@ class RouteLayerWidget extends StatefulWidget {
   final String userRole;
   final RouteInfo? selectedRoute;
   final bool isBookingCompleted;
-  final Function(RouteInfo) onRouteSelected;
+  final Function(RouteInfo?) onRouteSelected;
 
   const RouteLayerWidget({
     super.key,
@@ -109,8 +109,12 @@ class _RouteLayerWidgetState extends State<RouteLayerWidget> {
               arrivalTime: null,
               isDisabled: widget.isBookingCompleted,
               onRouteChanged: (route) {
+                // Handle both selection and deselection
                 if (route != null) {
                   _handleRouteSelection(route);
+                } else {
+                  // Deselect route
+                  widget.onRouteSelected(null);
                 }
               },
             ),

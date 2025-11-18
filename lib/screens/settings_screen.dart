@@ -176,7 +176,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
     
     if (confirmed) {
-      ScaffoldMessenger.of(this.context).showSnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.cacheCleared)),
       );
     }

@@ -461,6 +461,9 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
     FixedExtentScrollController minuteController,
     Function(DateTime) onValidTimeChanged,
   ) {
+    // Pre-calculate validity for all hours to avoid expensive recalculations during scroll
+    final validHours = <int, bool>{};
+    
     return ListWheelScrollView(
       itemExtent: 50,
       diameterRatio: 1.2,
@@ -500,20 +503,22 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
         onValidTimeChanged(validTime);
       },
       children: List.generate(24, (index) {
-        final testTime = DateTime(
-          tempPickedDate.year,
-          tempPickedDate.month,
-          tempPickedDate.day,
-          index,
-          tempPickedDate.minute,
-        );
-
-        final isValid = isEditingArrival ? _isValidArrivalTime(testTime) : _isValidDepartureTime(testTime);
+        // Only validate if not already cached
+        if (!validHours.containsKey(index)) {
+          final testTime = DateTime(
+            tempPickedDate.year,
+            tempPickedDate.month,
+            tempPickedDate.day,
+            index,
+            tempPickedDate.minute,
+          );
+          validHours[index] = isEditingArrival ? _isValidArrivalTime(testTime) : _isValidDepartureTime(testTime);
+        }
 
         return Center(
           child: Text(
             index.toString().padLeft(2, '0'),
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: isValid ? color : Colors.grey[300]),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: validHours[index]! ? color : Colors.grey[300]),
           ),
         );
       }),
@@ -527,6 +532,9 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
     FixedExtentScrollController minuteController,
     Function(DateTime) onValidTimeChanged,
   ) {
+    // Pre-calculate validity for all minutes to avoid expensive recalculations during scroll
+    final validMinutes = <int, bool>{};
+    
     return ListWheelScrollView(
       itemExtent: 50,
       diameterRatio: 1.2,
@@ -580,20 +588,23 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
       },
       children: List.generate(12, (index) {
         final minuteValue = index * 5;
-        final testTime = DateTime(
-          tempPickedDate.year,
-          tempPickedDate.month,
-          tempPickedDate.day,
-          tempPickedDate.hour,
-          minuteValue,
-        );
-
-        final isValid = isEditingArrival ? _isValidArrivalTime(testTime) : _isValidDepartureTime(testTime);
+        
+        // Only validate if not already cached
+        if (!validMinutes.containsKey(index)) {
+          final testTime = DateTime(
+            tempPickedDate.year,
+            tempPickedDate.month,
+            tempPickedDate.day,
+            tempPickedDate.hour,
+            minuteValue,
+          );
+          validMinutes[index] = isEditingArrival ? _isValidArrivalTime(testTime) : _isValidDepartureTime(testTime);
+        }
 
         return Center(
           child: Text(
             minuteValue.toString().padLeft(2, '0'),
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: isValid ? color : Colors.grey[300]),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: validMinutes[index]! ? color : Colors.grey[300]),
           ),
         );
       }),

@@ -256,10 +256,13 @@ class _LayeredBookingWidgetState extends State<LayeredBookingWidget> {
               destinationIndex = null;
               hasSelectedDateTime = false;
             });
-            // Show green selection for 250ms before navigating
-            Future.delayed(Duration(milliseconds: 250), () {
-              _navigateToLayer(BookingLayer.stopsSelection);
-            });
+            // Only navigate if a route was selected (not deselected)
+            if (route != null) {
+              // Show green selection for 250ms before navigating
+              Future.delayed(Duration(milliseconds: 250), () {
+                _navigateToLayer(BookingLayer.stopsSelection);
+              });
+            }
           },
         );
 
