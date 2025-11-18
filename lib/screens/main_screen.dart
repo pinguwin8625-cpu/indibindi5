@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'home_screen.dart';
+import 'search_screen.dart';
 import 'my_bookings_screen.dart';
 import 'inbox_screen.dart';
 import 'account_screen.dart';
@@ -13,7 +13,7 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  int _currentIndex = 0; // Start at Home screen (index 0)
+  int _currentIndex = 0; // Start at Search screen (index 0)
 
   void _switchToBookings() {
     setState(() {
@@ -21,8 +21,8 @@ class _MainScreenState extends State<MainScreen> {
     });
   }
 
-  List<Widget> get _screens => [
-    HomeScreen(onBookingCompleted: _switchToBookings),
+  late final List<Widget> _screens = [
+    SearchScreen(onBookingCompleted: _switchToBookings),
     MyBookingsScreen(),
     InboxScreen(),
     AccountScreen(),

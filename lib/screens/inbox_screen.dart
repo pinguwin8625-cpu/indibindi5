@@ -4,6 +4,7 @@ import '../services/auth_service.dart';
 import '../models/message.dart';
 import '../widgets/language_selector.dart';
 import '../l10n/app_localizations.dart';
+import '../utils/dialog_helper.dart';
 import 'chat_screen.dart';
 import '../utils/date_time_helpers.dart';
 
@@ -29,12 +30,36 @@ class _InboxScreenState extends State<InboxScreen> {
       final currentUser = AuthService.currentUser;
       if (currentUser == null) return;
 
+      // Show dialog to choose between suggestion or complaint
+      final String? selectedType = await DialogHelper.showChoiceDialog<String>(
+        context: context,
+        title: 'Contact Support',
+        content: 'What would you like to share with us?',
+        showCancelButton: false,
+        choices: [
+          DialogChoice(
+            label: 'Suggestion',
+            value: 'Suggestion',
+            color: Colors.green,
+          ),
+          DialogChoice(
+            label: 'Complaint',
+            value: 'Complaint',
+            color: Colors.red,
+          ),
+        ],
+      );
+
+      // If user dismissed dialog, return
+      if (selectedType == null) return;
+
       final messagingService = MessagingService();
       
-      // Use the existing createSupportConversation method which handles everything
+      // Create NEW support conversation with unique reference number
       final supportConversation = messagingService.createSupportConversation(
         currentUser.id,
         currentUser.fullName,
+        selectedType,
       );
 
       // Navigate to chat screen
@@ -43,7 +68,8 @@ class _InboxScreenState extends State<InboxScreen> {
         MaterialPageRoute(
           builder: (context) => ChatScreen(
             conversation: supportConversation,
-            createConversationOnFirstMessage: false, // Already added by createSupportConversation
+            createConversationOnFirstMessage: true, // Add to inbox on first message
+            initialMessagePrefix: null, // Type is already in subject line
           ),
         ),
       );

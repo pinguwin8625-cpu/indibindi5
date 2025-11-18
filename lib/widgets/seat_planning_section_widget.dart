@@ -28,7 +28,7 @@ class SeatPlanningSectionWidget extends StatelessWidget {
     
     // Get current user info if they are the driver
     final currentUser = AuthService.currentUser;
-    if (currentUser != null && userRole.toLowerCase() == l10n.driver.toLowerCase()) {
+    if (currentUser != null && userRole.toLowerCase() == 'driver') {
       driverDisplayName = currentUser.name;
       if (currentUser.surname.isNotEmpty) {
         driverDisplayName = '${currentUser.name} ${currentUser.surname[0]}.';
@@ -140,9 +140,9 @@ class SeatPlanningSectionWidget extends StatelessWidget {
     bool isDriver = false,
     required String passengerName,
   }) {
-    final l10n = AppLocalizations.of(context)!;
     Color backgroundColor;
     Color borderColor;
+    bool isAvailable = false;
 
     if (isDriver) {
       // Driver seat is always red/occupied
@@ -150,8 +150,7 @@ class SeatPlanningSectionWidget extends StatelessWidget {
       borderColor = Color(0xFFDD2C00);
     } else {
       // For passenger seats, the meaning of isSelected depends on the booking role
-      bool isAvailable;
-      if (userRole.toLowerCase() == l10n.driver.toLowerCase()) {
+      if (userRole.toLowerCase() == 'driver') {
         // For driver bookings: seats in selectedSeats list are AVAILABLE (driver offering these seats)
         isAvailable = isSelected;
       } else {
@@ -183,10 +182,47 @@ class SeatPlanningSectionWidget extends StatelessWidget {
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: borderColor, width: 2),
         ),
-        child: Center(
-          child: isDriver
-              ? _buildDriverPhoto(context)
-              : Icon(Icons.person, size: 28, color: Colors.grey[700]),
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Center(
+              child: isDriver
+                  ? _buildDriverPhoto(context)
+                  : Icon(Icons.person, size: 28, color: Colors.grey[700]),
+            ),
+            // Show +/- icon for clickable seats
+            if (isClickable && seatIndex != null)
+              Positioned(
+                left: -9,
+                top: -9,
+                child: Container(
+                  width: 18,
+                  height: 18,
+                  decoration: BoxDecoration(
+                    color: isAvailable ? Colors.red : Color(0xFF00C853),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: isAvailable
+                        ? Container(
+                            // Minus sign
+                            width: 9,
+                            height: 2,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          )
+                        : Icon(
+                            // Plus sign
+                            Icons.add,
+                            color: Colors.white,
+                            size: 12,
+                          ),
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );
@@ -194,24 +230,47 @@ class SeatPlanningSectionWidget extends StatelessWidget {
 
   Widget _buildDriverPhoto(BuildContext context) {
     final currentUser = AuthService.currentUser;
-    final l10n = AppLocalizations.of(context)!;
 
     // Check if current user is the driver and has a profile photo
     if (currentUser != null &&
-        userRole.toLowerCase() == l10n.driver.toLowerCase()) {
+        userRole.toLowerCase() == 'driver') {
       if (currentUser.profilePhotoUrl != null &&
           currentUser.profilePhotoUrl!.isNotEmpty) {
-        final photoFile = File(currentUser.profilePhotoUrl!);
-        if (photoFile.existsSync()) {
+        // Check if it's an asset or file path
+        if (currentUser.profilePhotoUrl!.startsWith('assets/')) {
           return ClipRRect(
             borderRadius: BorderRadius.circular(12),
-            child: Image.file(
-              photoFile,
+            child: Image.asset(
+              currentUser.profilePhotoUrl!,
               width: 54,
               height: 54,
               fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  width: 54,
+                  height: 54,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(Icons.person, size: 28, color: Colors.grey[700]),
+                );
+              },
             ),
           );
+        } else {
+          final photoFile = File(currentUser.profilePhotoUrl!);
+          if (photoFile.existsSync()) {
+            return ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.file(
+                photoFile,
+                width: 54,
+                height: 54,
+                fit: BoxFit.cover,
+              ),
+            );
+          }
         }
       }
     }

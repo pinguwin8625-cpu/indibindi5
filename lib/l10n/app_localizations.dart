@@ -292,6 +292,12 @@ abstract class AppLocalizations {
   /// **'Select your seat'**
   String get selectYourSeat;
 
+  /// Word for available (used in brackets)
+  ///
+  /// In en, this message translates to:
+  /// **'available'**
+  String get available;
+
   /// Number of seats available for driver
   ///
   /// In en, this message translates to:

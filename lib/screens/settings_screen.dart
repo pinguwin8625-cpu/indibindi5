@@ -1,6 +1,7 @@
 import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import '../l10n/app_localizations.dart';
+import '../utils/dialog_helper.dart';
 import '../widgets/scroll_indicator.dart';
 import '../widgets/language_selector.dart';
 
@@ -163,34 +164,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
   
-  void _showClearCacheDialog() {
+  Future<void> _showClearCacheDialog() async {
     final l10n = AppLocalizations.of(context)!;
-    showDialog(
+    final confirmed = await DialogHelper.showConfirmDialog(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text(l10n.clearCacheTitle),
-          content: Text(l10n.clearCacheMessage),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(l10n.cancel),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(this.context).showSnackBar(
-                  SnackBar(content: Text(l10n.cacheCleared)),
-                );
-              },
-              child: Text(
-                l10n.clearCache,
-                style: TextStyle(color: Colors.red),
-              ),
-            ),
-          ],
-        );
-      },
+      title: l10n.clearCacheTitle,
+      content: l10n.clearCacheMessage,
+      cancelText: l10n.cancel,
+      confirmText: l10n.clearCache,
+      isDangerous: true,
     );
+    
+    if (confirmed) {
+      ScaffoldMessenger.of(this.context).showSnackBar(
+        SnackBar(content: Text(l10n.cacheCleared)),
+      );
+    }
   }
 }

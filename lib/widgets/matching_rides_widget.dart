@@ -10,27 +10,34 @@ class MatchingRidesWidget extends StatelessWidget {
   final int originIndex;
   final int destinationIndex;
   final DateTime departureTime;
+  final DateTime? arrivalTime; // For riders who chose arrival
+  final String? riderTimeChoice; // 'departure' or 'arrival'
   final VoidCallback onBack;
 
-  const MatchingRidesWidget({
+  MatchingRidesWidget({
     super.key,
     required this.selectedRoute,
     required this.originIndex,
     required this.destinationIndex,
     required this.departureTime,
+    this.arrivalTime,
+    this.riderTimeChoice,
     required this.onBack,
   });
 
   List<RideInfo> _getMatchingRides(BuildContext context) {
-    final bookingStorage = BookingStorage();
-    final allBookings = bookingStorage.getAllBookings();
-    final l10n = AppLocalizations.of(context)!;
-    
-    print('🔍 Total bookings: ${allBookings.length}');
-    print('🔍 Looking for route: ${selectedRoute.name}');
-    print('🔍 Origin index: $originIndex, Destination index: $destinationIndex');
-    print('🔍 Departure time: $departureTime');
-    print('🔍 Driver role string: ${l10n.driver}');
+    try {
+      final bookingStorage = BookingStorage();
+      final allBookings = bookingStorage.getAllBookings();
+      final l10n = AppLocalizations.of(context)!;
+      
+      print('🔍 Total bookings: ${allBookings.length}');
+      print('🔍 Looking for route: ${selectedRoute.name}');
+      print('🔍 Origin index: $originIndex, Destination index: $destinationIndex');
+      print('🔍 Departure time: $departureTime');
+      print('🔍 Rider time choice: $riderTimeChoice');
+      print('🔍 Arrival time: $arrivalTime');
+      print('🔍 Driver role string: ${l10n.driver}');
     
     // Filter for driver bookings that match rider's criteria
     // Riders can see listings that COVER their trip even if driver goes further
@@ -42,9 +49,10 @@ class MatchingRidesWidget extends StatelessWidget {
       print('    - Canceled: ${booking.isCanceled}, Archived: ${booking.isArchived}');
       print('    - Upcoming: ${booking.isUpcoming}');
       
-      // Must be a driver booking (compare with localized string)
-      if (booking.userRole != l10n.driver) {
-        print('    ❌ Not a driver (expected: ${l10n.driver}, got: ${booking.userRole})');
+      // Must be a driver booking
+      // userRole is stored as 'driver' or 'rider' in English (not localized)
+      if (booking.userRole.toLowerCase() != 'driver') {
+        print('    ❌ Not a driver booking (role: ${booking.userRole})');
         return false;
       }
       
@@ -80,6 +88,37 @@ class MatchingRidesWidget extends StatelessWidget {
         return false;
       }
       
+      // Time filtering based on rider's choice - calculate times at RIDER'S stops
+      if (riderTimeChoice == 'departure') {
+        // Rider chose departure time - match rides departing at or after rider's departure time
+        // Calculate when the driver arrives at the rider's ORIGIN stop
+        int minutesToRiderOrigin = 0;
+        for (int i = booking.originIndex + 1; i <= originIndex; i++) {
+          minutesToRiderOrigin += booking.route.stops[i].durationFromPrevious;
+        }
+        final driverArrivalAtRiderOrigin = booking.departureTime.add(Duration(minutes: minutesToRiderOrigin));
+        
+        if (driverArrivalAtRiderOrigin.isBefore(departureTime)) {
+          print('    ❌ Driver arrives at rider\'s origin (stop $originIndex) before rider\'s preferred departure time');
+          print('       Driver time at stop $originIndex: $driverArrivalAtRiderOrigin, Rider wants: $departureTime');
+          return false;
+        }
+      } else if (riderTimeChoice == 'arrival' && arrivalTime != null) {
+        // Rider chose arrival time - match rides arriving at or before rider's arrival time
+        // Calculate when the driver arrives at the rider's DESTINATION stop
+        int minutesToRiderDestination = 0;
+        for (int i = booking.originIndex + 1; i <= destinationIndex; i++) {
+          minutesToRiderDestination += booking.route.stops[i].durationFromPrevious;
+        }
+        final driverArrivalAtRiderDestination = booking.departureTime.add(Duration(minutes: minutesToRiderDestination));
+        
+        if (driverArrivalAtRiderDestination.isAfter(arrivalTime!)) {
+          print('    ❌ Driver arrives at rider\'s destination (stop $destinationIndex) after rider\'s preferred arrival time');
+          print('       Driver time at stop $destinationIndex: $driverArrivalAtRiderDestination, Rider wants: $arrivalTime');
+          return false;
+        }
+      }
+      
       print('    ✅ MATCH!');
       return true;
     }).toList()
@@ -104,43 +143,92 @@ class MatchingRidesWidget extends StatelessWidget {
         driverRating: booking.driverRating ?? 4.5,
         price: '\$${(10 + (destinationIndex - originIndex) * 5)}.00',
         departureTime: booking.departureTime,
+        arrivalTime: booking.arrivalTime,
         route: booking.route,
         originIndex: originIndex,
         destinationIndex: destinationIndex,
         availableSeats: availableSeats,
       );
     }).toList();
+    } catch (e, stackTrace) {
+      print('❌ Error in _getMatchingRides: $e');
+      print('Stack trace: $stackTrace');
+      return [];
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    print('🏗️ MatchingRides: Starting build');
     final l10n = AppLocalizations.of(context)!;
+    
+    print('🔍 MatchingRides: Calling _getMatchingRides');
     final matchingRides = _getMatchingRides(context);
+    print('🔍 MatchingRides: Got ${matchingRides.length} matching rides');
+    
+    // Determine which times to display based on rider's choice
+    DateTime displayDepartureTime;
+    DateTime displayArrivalTime;
+    
+    print('🕐 MatchingRides: Calculating display times, riderTimeChoice=$riderTimeChoice');
+    if (riderTimeChoice == 'arrival' && arrivalTime != null) {
+      // Rider chose arrival time - use it directly and calculate departure
+      displayArrivalTime = arrivalTime!;
+      // Calculate departure time by subtracting route duration
+      int totalMinutes = 0;
+      for (int i = originIndex + 1; i <= destinationIndex; i++) {
+        totalMinutes += selectedRoute.stops[i].durationFromPrevious;
+      }
+      displayDepartureTime = arrivalTime!.subtract(Duration(minutes: totalMinutes));
+    } else {
+      // Rider chose departure time (or default) - use it and calculate arrival
+      displayDepartureTime = departureTime;
+      int totalMinutes = 0;
+      for (int i = originIndex + 1; i <= destinationIndex; i++) {
+        totalMinutes += selectedRoute.stops[i].durationFromPrevious;
+      }
+      displayArrivalTime = departureTime.add(Duration(minutes: totalMinutes));
+    }
 
-    return Column(
-      children: [
-        // Summary bar showing route, stops, and time with back button
-        BookingSummaryBar(
-          selectedRoute: selectedRoute,
-          originIndex: originIndex,
-          destinationIndex: destinationIndex,
-          departureTime: departureTime,
-          onBack: onBack,
-        ),
-        
-        Container(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-          child: Row(
-            children: [
-              Text(
-                l10n.matchingRides,
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.w600, color: Colors.black),
-              ),
-            ],
+    print('🕐 MatchingRides: Display times calculated - departure: $displayDepartureTime, arrival: $displayArrivalTime');
+    print('🏗️ MatchingRides: Building UI');
+
+    return SafeArea(
+      child: Column(
+        children: [
+          // Summary bar showing route, stops, and time with back button
+          BookingSummaryBar(
+            selectedRoute: selectedRoute,
+            originIndex: originIndex,
+            destinationIndex: destinationIndex,
+            departureTime: displayDepartureTime,
+            arrivalTime: displayArrivalTime,
+            userRole: 'rider',
+            riderTimeChoice: riderTimeChoice,
+            onBack: () {
+              print('🔙 MatchingRides: Back button pressed in BookingSummaryBar');
+              print('🔙 MatchingRides: Calling onBack()');
+              onBack();
+              print('🔙 MatchingRides: onBack() returned');
+            },
           ),
-        ),
-        Expanded(
-          child: matchingRides.isEmpty
+          
+          // Header
+          Container(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: Row(
+              children: [
+                Text(
+                  l10n.matchingRides,
+                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.w600, color: Colors.black),
+                ),
+              ],
+            ),
+          ),
+          
+          // Scrollable content area
+          Expanded(
+            child: matchingRides.isEmpty
               ? Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -200,6 +288,7 @@ class MatchingRidesWidget extends StatelessWidget {
                 ),
         ),
       ],
+      ),
     );
   }
 

@@ -11,6 +11,8 @@ class TimeSelectionWidget extends StatefulWidget {
   final int? destinationIndex;
   final Function(bool) onDateTimeSelected;
   final Function(DateTime departure, DateTime arrival)? onTimesChanged;
+  final Function(String?)? onRiderTimeChoiceChanged; // 'departure' or 'arrival' for riders
+  final String userRole; // 'driver' or 'rider'
 
   const TimeSelectionWidget({
     super.key,
@@ -19,6 +21,8 @@ class TimeSelectionWidget extends StatefulWidget {
     this.destinationIndex,
     required this.onDateTimeSelected,
     this.onTimesChanged,
+    this.onRiderTimeChoiceChanged,
+    required this.userRole,
   });
 
   @override
@@ -31,6 +35,7 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
   bool isEditingArrival = false; // Flag to track if we're editing arrival or departure time
   bool hasUserSelectedDateTime = false; // Track if user has explicitly selected date/time
   bool _isAutomaticRecalculation = false; // Track automatic vs user-driven time updates
+  String? riderTimeChoice; // For riders: 'departure' or 'arrival' - tracks which time they chose
 
   @override
   void initState() {
@@ -169,6 +174,7 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
     isEditingArrival = false;
     print('🚀 Opening departure time picker...');
     print('   Current selectedDate: $selectedDate');
+    print('   User role: ${widget.userRole}');
     final earliestTime = _findEarliestValidDepartureTime(selectedDate);
     print('   Earliest valid time: $earliestTime');
     final l10n = AppLocalizations.of(context)!;
@@ -184,12 +190,23 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
             hasUserSelectedDateTime = true;
             selectedDate = tempPickedDate;
             _validateAndAdjustTime();
-            arrivalTime = calculateArrivalTime(
-              selectedDate,
-              widget.selectedRoute,
-              widget.originIndex,
-              widget.destinationIndex,
-            );
+            
+            // Auto-calculate arrival time ONLY for drivers
+            if (widget.userRole.toLowerCase() == 'driver') {
+              arrivalTime = calculateArrivalTime(
+                selectedDate,
+                widget.selectedRoute,
+                widget.originIndex,
+                widget.destinationIndex,
+              );
+              print('🚗 Driver: Auto-calculated arrival time: $arrivalTime');
+            } else {
+              // For riders: mark that they chose departure time
+              riderTimeChoice = 'departure';
+              arrivalTime = selectedDate; // Set to same as departure to avoid null issues
+              print('🧑 Rider: Chose DEPARTURE time, riderTimeChoice=$riderTimeChoice');
+              widget.onRiderTimeChoiceChanged?.call(riderTimeChoice);
+            }
           });
           
           // IMPORTANT: Notify parent of new times FIRST before calling onDateTimeSelected
@@ -213,6 +230,8 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
 
   Future<void> _showArrivalTimePicker() async {
     isEditingArrival = true;
+    print('🚀 Opening arrival time picker...');
+    print('   User role: ${widget.userRole}');
     final l10n = AppLocalizations.of(context)!;
     await showModalBottomSheet(
       context: context,
@@ -228,14 +247,24 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
           setState(() {
             hasUserSelectedDateTime = true;
             arrivalTime = tempPickedDate;
-            selectedDate = calculateDepartureTime(
-              tempPickedDate,
-              widget.selectedRoute,
-              widget.originIndex,
-              widget.destinationIndex,
-            );
-            if (kDebugMode) {
-              debugPrint('Calculated departure time: $selectedDate');
+            
+            // Auto-calculate departure time ONLY for drivers
+            if (widget.userRole.toLowerCase() == 'driver') {
+              selectedDate = calculateDepartureTime(
+                tempPickedDate,
+                widget.selectedRoute,
+                widget.originIndex,
+                widget.destinationIndex,
+              );
+              if (kDebugMode) {
+                debugPrint('🚗 Driver: Calculated departure time: $selectedDate');
+              }
+            } else {
+              // For riders: mark that they chose arrival time
+              riderTimeChoice = 'arrival';
+              selectedDate = tempPickedDate; // Set to same as arrival to avoid null issues
+              print('🧑 Rider: Chose ARRIVAL time, riderTimeChoice=$riderTimeChoice');
+              widget.onRiderTimeChoiceChanged?.call(riderTimeChoice);
             }
             _validateAndAdjustTime();
           });
@@ -589,6 +618,12 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
   }
 
   void _recalculateArrivalTime() {
+    // Only auto-recalculate for drivers
+    if (widget.userRole.toLowerCase() != 'driver') {
+      print('🧑 Rider: Skipping auto-recalculation of arrival time');
+      return;
+    }
+    
     if (widget.destinationIndex != null) {
       if (kDebugMode) {
         debugPrint('Recalculating arrival time: origin=${widget.originIndex}, dest=${widget.destinationIndex}');

@@ -120,6 +120,8 @@ class _BookingButtonWidgetState extends State<BookingButtonWidget> {
     // Prepare driver info if user is driver (compare with localized string)
     String? driverName;
     double? driverRating;
+    List<RiderInfo>? riders;
+    List<int> finalSelectedSeats = widget.selectedSeats;
     
     if (widget.userRole.toLowerCase() == l10n.driver.toLowerCase() && currentUser != null) {
       driverName = currentUser.name;
@@ -128,8 +130,36 @@ class _BookingButtonWidgetState extends State<BookingButtonWidget> {
       }
       driverRating = currentUser.rating;
       print('🚗 Driver booking - Name: $driverName, Rating: $driverRating');
+      
+      // Add test riders for driver bookings (for testing purposes)
+      // These will be replaced when real riders book seats
+      riders = [
+        RiderInfo(
+          name: 'Elena G.', 
+          rating: 4.7, 
+          seatIndex: 1,
+          profilePhotoUrl: 'assets/images/profile_elena.jpeg',
+        ),
+        RiderInfo(
+          name: 'Yuki T.', 
+          rating: 4.5, 
+          seatIndex: 2,
+          profilePhotoUrl: 'assets/images/profile_yuki.jpeg',
+        ),
+      ];
+      print('👥 Added ${riders.length} test riders');
+      for (var rider in riders) {
+        print('   - ${rider.name}, photo: ${rider.profilePhotoUrl}');
+      }
+      
+      // Remove occupied seats from selectedSeats
+      // Riders occupy seats 1 and 2, so only seats 0 and 3 remain available
+      final occupiedSeats = riders.map((r) => r.seatIndex).toList();
+      finalSelectedSeats = widget.selectedSeats.where((seat) => !occupiedSeats.contains(seat)).toList();
+      print('🎫 Original seats: ${widget.selectedSeats}, Occupied: $occupiedSeats, Available: $finalSelectedSeats');
     } else {
       print('🚗 Rider booking - userRole: ${widget.userRole}');
+      riders = [];
     }
 
     // Create and save the booking
@@ -139,14 +169,14 @@ class _BookingButtonWidgetState extends State<BookingButtonWidget> {
       route: widget.selectedRoute!,
       originIndex: widget.originIndex!,
       destinationIndex: widget.destinationIndex!,
-      selectedSeats: widget.selectedSeats,
+      selectedSeats: finalSelectedSeats,
       departureTime: widget.departureTime!,
       arrivalTime: widget.arrivalTime!,
       bookingDate: DateTime.now(),
       userRole: widget.userRole,
       driverName: driverName,
       driverRating: driverRating,
-      riders: [], // Start with no riders for driver bookings
+      riders: riders,
     );
 
     print('💾 Saving booking - ID: ${booking.id}, userRole: ${booking.userRole}, driverName: ${booking.driverName}, driverRating: ${booking.driverRating}');

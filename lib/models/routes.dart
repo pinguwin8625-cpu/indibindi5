@@ -655,6 +655,7 @@ class RideInfo {
   final String driverPhoto;
   final double driverRating;
   final DateTime departureTime;
+  final DateTime arrivalTime;
   final int originIndex;
   final int destinationIndex;
   final int availableSeats;
@@ -667,6 +668,7 @@ class RideInfo {
     required this.driverPhoto,
     required this.driverRating,
     required this.departureTime,
+    required this.arrivalTime,
     required this.originIndex,
     required this.destinationIndex,
     required this.availableSeats,

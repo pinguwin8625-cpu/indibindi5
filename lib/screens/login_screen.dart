@@ -4,6 +4,7 @@ import '../services/auth_service.dart';
 import '../widgets/scroll_indicator.dart';
 import '../widgets/language_selector.dart';
 import '../utils/phone_formatter.dart';
+import '../utils/dialog_helper.dart';
 import 'main_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -380,26 +381,18 @@ class _LoginScreenState extends State<LoginScreen> {
     
     // Show success dialog
     if (mounted) {
-      showDialog(
+      await DialogHelper.showInfoDialog(
         context: context,
-        builder: (context) => AlertDialog(
-          title: Text('Account Created'),
-          content: Text('Your account has been created successfully. Please sign in.'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                setState(() {
-                  _isSignUp = false;
-                  _passwordController.text = '';
-                  _confirmPasswordController.text = '';
-                });
-              },
-              child: Text('Sign In', style: TextStyle(color: Color(0xFFDD2C00))),
-            ),
-          ],
-        ),
+        title: 'Account Created',
+        content: 'Your account has been created successfully. Please sign in.',
+        okText: 'Sign In',
       );
+      
+      setState(() {
+        _isSignUp = false;
+        _passwordController.text = '';
+        _confirmPasswordController.text = '';
+      });
     }
   }
 

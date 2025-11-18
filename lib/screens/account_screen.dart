@@ -8,6 +8,7 @@ import 'login_screen.dart';
 import 'admin_panel_screen.dart';
 import '../l10n/app_localizations.dart';
 import '../services/auth_service.dart';
+import '../utils/dialog_helper.dart';
 import '../models/user.dart';
 import '../widgets/scroll_indicator.dart';
 import '../widgets/language_selector.dart';
@@ -29,14 +30,35 @@ class _AccountScreenState extends State<AccountScreen> {
   }
   
   Widget _buildProfilePhoto(User? user) {
-    // Check if user has a local profile photo
+    // Check if user has a profile photo
     if (user?.profilePhotoUrl != null && user!.profilePhotoUrl!.isNotEmpty) {
-      final photoFile = File(user.profilePhotoUrl!);
-      if (photoFile.existsSync()) {
-        return Image.file(
-          photoFile,
+      // Check if it's an asset path or file path
+      if (user.profilePhotoUrl!.startsWith('assets/')) {
+        // Asset image - use error builder in case asset doesn't exist
+        return Image.asset(
+          user.profilePhotoUrl!,
           fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            // Fallback to placeholder if asset not found
+            return Container(
+              color: Theme.of(context).primaryColor.withOpacity(0.1),
+              child: Icon(
+                Icons.person,
+                size: 50,
+                color: Theme.of(context).primaryColor,
+              ),
+            );
+          },
         );
+      } else {
+        // Local file
+        final photoFile = File(user.profilePhotoUrl!);
+        if (photoFile.existsSync()) {
+          return Image.file(
+            photoFile,
+            fit: BoxFit.cover,
+          );
+        }
       }
     }
     
@@ -211,35 +233,25 @@ class _AccountScreenState extends State<AccountScreen> {
               icon: Icons.logout,
               title: l10n.logout,
               titleColor: Colors.red,
-              onTap: () {
+              onTap: () async {
+                final l10n = AppLocalizations.of(context)!;
                 // Show confirmation dialog
-                showDialog(
+                final confirmed = await DialogHelper.showConfirmDialog(
                   context: context,
-                  builder: (ctx) => AlertDialog(
-                    title: Text(l10n.logout),
-                    content: Text('Are you sure you want to logout?'),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(ctx),
-                        child: Text(l10n.cancel),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          AuthService.logout();
-                          Navigator.pop(ctx); // Close dialog
-                          Navigator.of(context).pushAndRemoveUntil(
-                            MaterialPageRoute(builder: (_) => LoginScreen()),
-                            (route) => false,
-                          );
-                        },
-                        child: Text(
-                          l10n.logout,
-                          style: TextStyle(color: Colors.red),
-                        ),
-                      ),
-                    ],
-                  ),
+                  title: l10n.logout,
+                  content: 'Are you sure you want to logout?',
+                  cancelText: l10n.cancel,
+                  confirmText: l10n.logout,
+                  isDangerous: true,
                 );
+                
+                if (confirmed) {
+                  AuthService.logout();
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (_) => LoginScreen()),
+                    (route) => false,
+                  );
+                }
               },
             ),
             _buildProfileOption(

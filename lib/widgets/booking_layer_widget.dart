@@ -65,6 +65,8 @@ class _BookingLayerWidgetState extends State<BookingLayerWidget> {
           destinationIndex: widget.destinationIndex,
           departureTime: widget.departureTime,
           arrivalTime: widget.arrivalTime,
+          userRole: widget.userRole,
+          riderTimeChoice: null, // Drivers always show both times
           onBack: widget.isBookingCompleted ? null : widget.onBack,
         ),
         
@@ -91,7 +93,7 @@ class _BookingLayerWidgetState extends State<BookingLayerWidget> {
                             ),
                             SizedBox(width: 8),
                             Text(
-                              '[${widget.selectedSeats.length} available]',
+                              '[${widget.selectedSeats.length} ${l10n.available}]',
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w600,
@@ -153,6 +155,7 @@ class _BookingLayerWidgetState extends State<BookingLayerWidget> {
                             SizedBox(height: 16),
 
                             TimeSelectionWidget(
+                              userRole: widget.userRole,
                               selectedRoute: widget.selectedRoute,
                               originIndex: widget.originIndex,
                               destinationIndex: widget.destinationIndex,

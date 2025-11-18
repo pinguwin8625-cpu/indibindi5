@@ -6,6 +6,7 @@ import '../services/auth_service.dart';
 import '../widgets/seat_planning_section_widget.dart';
 import '../widgets/scroll_indicator.dart';
 import '../widgets/booking_progress_bar.dart';
+import '../utils/dialog_helper.dart';
 import '../l10n/app_localizations.dart';
 
 class RiderSeatSelectionScreen extends StatefulWidget {
@@ -40,15 +41,16 @@ class _RiderSeatSelectionScreenState extends State<RiderSeatSelectionScreen> {
         ),
         backgroundColor: Colors.red,
         iconTheme: IconThemeData(color: Colors.white),
-      ),
-      body: Column(
-        children: [
-          // Progress bar at the top - same as driver's
-          BookingProgressBar(
+        bottom: PreferredSize(
+          preferredSize: Size.fromHeight(4),
+          child: BookingProgressBar(
             currentStep: 4, // Final step - seat selection
             totalSteps: 4,
           ),
-
+        ),
+      ),
+      body: Column(
+        children: [
           // Content
           Expanded(
             child: Column(
@@ -209,7 +211,7 @@ class _RiderSeatSelectionScreenState extends State<RiderSeatSelectionScreen> {
     return '$hour:$minute $period';
   }
 
-  void _confirmBooking() {
+  Future<void> _confirmBooking() async {
     final currentUser = AuthService.currentUser;
     if (currentUser == null) return;
     
@@ -273,25 +275,13 @@ class _RiderSeatSelectionScreenState extends State<RiderSeatSelectionScreen> {
     print('   Driver available seats now: $updatedDriverSeats');
     
     // Show confirmation dialog
-    showDialog(
+    await DialogHelper.showInfoDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Booking Confirmed!'),
-          content: Text(
-            'You have successfully booked ${selectedSeats.length} seat${selectedSeats.length > 1 ? 's' : ''} for the ride on ${_formatDateTime(widget.ride.departureTime)}.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Close dialog
-                Navigator.of(context).pop(); // Go back to ride list
-              },
-              child: Text('OK'),
-            ),
-          ],
-        );
-      },
+      title: 'Booking Confirmed!',
+      content: 'You have successfully booked ${selectedSeats.length} seat${selectedSeats.length > 1 ? 's' : ''} for the ride on ${_formatDateTime(widget.ride.departureTime)}.',
+      okText: 'OK',
     );
+    
+    Navigator.of(context).pop(); // Go back to ride list
   }
 }

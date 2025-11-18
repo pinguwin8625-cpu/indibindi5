@@ -5,6 +5,7 @@ import '../widgets/scroll_indicator.dart';
 import '../l10n/app_localizations.dart';
 import '../services/auth_service.dart';
 import '../screens/personal_information_screen.dart';
+import '../utils/dialog_helper.dart';
 
 class RouteLayerWidget extends StatefulWidget {
   final String userRole;
@@ -52,39 +53,25 @@ class _RouteLayerWidgetState extends State<RouteLayerWidget> {
     }
   }
 
-  void _showIncompleteProfileDialog() {
+  Future<void> _showIncompleteProfileDialog() async {
     final l10n = AppLocalizations.of(context)!;
     
-    showDialog(
+    final confirmed = await DialogHelper.showConfirmDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Incomplete Profile'),
-          content: Text('Please complete your personal information (name, surname, email, phone number) before booking a ride.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text(l10n.cancel),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => PersonalInformationScreen(),
-                  ),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Color(0xFFDD2C00),
-              ),
-              child: Text('Complete Profile', style: TextStyle(color: Colors.white)),
-            ),
-          ],
-        );
-      },
+      title: 'Incomplete Profile',
+      content: 'Please complete your personal information (name, surname, email, phone number) before booking a ride.',
+      cancelText: l10n.cancel,
+      confirmText: 'Complete Profile',
     );
+    
+    if (confirmed) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => PersonalInformationScreen(),
+        ),
+      );
+    }
   }
 
   @override

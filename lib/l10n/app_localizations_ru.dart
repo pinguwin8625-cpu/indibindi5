@@ -96,6 +96,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get selectYourSeat => 'Select your seat';
 
   @override
+  String get available => 'available';
+
+  @override
   String seatsAvailable(int count) {
     return '$count seat(s) available';
   }

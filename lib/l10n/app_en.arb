@@ -146,6 +146,11 @@
     "description": "Instruction for rider to select a seat"
   },
 
+  "available": "available",
+  "@available": {
+    "description": "Word for available (used in brackets)"
+  },
+
   "seatsAvailable": "{count} seat(s) available",
   "@seatsAvailable": {
     "description": "Number of seats available for driver",

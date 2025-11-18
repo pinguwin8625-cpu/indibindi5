@@ -10,6 +10,7 @@ class MessagingService {
 
   final ValueNotifier<List<Conversation>> conversations = ValueNotifier([]);
   int _messageIdCounter = 1;
+  int _supportTicketCounter = 1000; // Start support tickets from 1000
 
   // Note: Conversations are created manually when users click seat icons in My Bookings
   // No automatic initialization from bookings happens
@@ -52,8 +53,14 @@ class MessagingService {
     required String receiverName,
     required String content,
   }) {
-    final conversation = getConversation(conversationId);
-    if (conversation == null) return;
+    var conversation = getConversation(conversationId);
+    
+    // If conversation doesn't exist, it means it's being created with first message
+    // This shouldn't happen with current flow, but handle it gracefully
+    if (conversation == null) {
+      print('⚠️ Conversation $conversationId not found when sending message');
+      return;
+    }
 
     // Check if messaging is still allowed
     if (!conversation.isMessagingAllowed) {
@@ -80,6 +87,20 @@ class MessagingService {
     }).toList();
 
     conversations.value = updatedConversations;
+  }
+  
+  // Add conversation to the list (used when first message is sent)
+  void addConversation(Conversation conversation) {
+    // Check if conversation already exists
+    if (conversations.value.any((c) => c.id == conversation.id)) {
+      return;
+    }
+    
+    conversations.value = [...conversations.value, conversation];
+    
+    if (kDebugMode) {
+      print('💬 Added conversation ${conversation.id} to inbox');
+    }
   }
 
   // Mark messages as read
@@ -159,29 +180,32 @@ class MessagingService {
     }
   }
 
-  // Create or get support conversation with admin
-  Conversation createSupportConversation(String userId, String userName) {
-    // Check if support conversation already exists
-    final existingConversation = conversations.value.firstWhere(
-      (c) => c.id == 'support_$userId',
-      orElse: () => Conversation(
-        id: 'support_$userId',
-        bookingId: 'support',
-        driverId: 'admin', // Admin is always the receiver
-        driverName: 'Support',
-        riderId: userId,
-        riderName: userName,
-        routeName: 'Support Request',
-        arrivalTime: DateTime.now().add(Duration(days: 365)), // Never expires
-        messages: [],
-      ),
+  // Create a new support conversation with unique reference number
+  Conversation createSupportConversation(String userId, String userName, String type) {
+    // Generate unique reference number
+    final referenceNumber = 'REF${_supportTicketCounter++}';
+    final ticketId = 'support_${userId}_${DateTime.now().millisecondsSinceEpoch}';
+    
+    // Create conversation with subject line including type and reference
+    final conversation = Conversation(
+      id: ticketId,
+      bookingId: 'support',
+      driverId: 'admin', // Admin is always the receiver
+      driverName: 'Support',
+      riderId: userId,
+      riderName: userName,
+      routeName: '$type - $referenceNumber',
+      arrivalTime: DateTime.now().add(Duration(days: 365)), // Never expires
+      messages: [],
     );
 
-    // Add to conversations if it's new
-    if (!conversations.value.any((c) => c.id == 'support_$userId')) {
-      conversations.value = [...conversations.value, existingConversation];
+    // DON'T add to conversations list here - will be added when first message is sent
+    // This way empty conversations don't appear in inbox
+    
+    if (kDebugMode) {
+      print('💬 Created support ticket: $referenceNumber ($type)');
     }
-
-    return existingConversation;
+    
+    return conversation;
   }
 }

@@ -294,7 +294,7 @@ class _BookingsTab extends StatelessWidget {
         leading: CircleAvatar(
           backgroundColor: booking.isUpcoming ? Colors.green : Colors.grey,
           child: Icon(
-            booking.userRole == 'driver' ? Icons.directions_car : Icons.person,
+            booking.userRole.toLowerCase() == 'driver' ? Icons.directions_car : Icons.person,
             color: Colors.white,
           ),
         ),

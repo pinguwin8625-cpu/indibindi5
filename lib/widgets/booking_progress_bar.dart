@@ -15,10 +15,11 @@ class BookingProgressBar extends StatelessWidget {
     double progress = currentStep / totalSteps;
 
     return Container(
-      margin: EdgeInsets.symmetric(
-        horizontal: 16,
-        vertical: 8,
-      ), // Match dropdown margin
+      margin: EdgeInsets.only(
+        left: 16,
+        right: 16,
+        bottom: 8,
+      ), // No top margin - flush with top
       height:
           48, // Match Routes dropdown total height (16px container padding + ~32px DropdownButton)
       child: Stack(

@@ -23,6 +23,7 @@
   "availableSeats": "Müsait Koltuklar",
   "chooseYourSeat": "Koltuğunuzu Seçin",
   "selectYourSeat": "Koltuğunuzu seçin",
+  "available": "müsait",
   "seatsAvailable": "{count} koltuk müsait",
   "seatsSelected": "{count} koltuk seçildi",
   "chooseYourStops": "Duraklarınızı Seçin",

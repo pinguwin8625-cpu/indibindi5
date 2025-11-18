@@ -7,11 +7,13 @@ import '../utils/date_time_helpers.dart';
 class ChatScreen extends StatefulWidget {
   final Conversation conversation;
   final bool createConversationOnFirstMessage;
+  final String? initialMessagePrefix;
 
   const ChatScreen({
     super.key, 
     required this.conversation,
     this.createConversationOnFirstMessage = false,
+    this.initialMessagePrefix,
   });
 
   @override
@@ -60,13 +62,27 @@ class _ChatScreenState extends State<ChatScreen> {
     }
 
     try {
+      // Check if this is the first message
+      final isFirstMessage = widget.createConversationOnFirstMessage && 
+          _messagingService.getConversation(widget.conversation.id) == null;
+      
+      // If this is the first message, add conversation to inbox first
+      if (isFirstMessage) {
+        _messagingService.addConversation(widget.conversation);
+      }
+      
+      // Prepare message content with prefix if it's the first message
+      final messageContent = isFirstMessage && widget.initialMessagePrefix != null
+          ? '${widget.initialMessagePrefix}$content'
+          : content;
+      
       _messagingService.sendMessage(
         conversationId: widget.conversation.id,
         senderId: currentUser.id,
         senderName: currentUser.fullName,
         receiverId: widget.conversation.getOtherUserId(currentUser.id),
         receiverName: widget.conversation.getOtherUserName(currentUser.id),
-        content: content,
+        content: messageContent,
       );
 
       _messageController.clear();

@@ -35,7 +35,7 @@ class SeatAvailabilityInfoWidget extends StatelessWidget {
           children: [
             // Single line with standard font sizing
             Text(
-              userRole == 'Driver'
+              userRole.toLowerCase() == 'driver'
                   ? '${4 - selectedSeats.length} seats available for riders'
                   : '${4 - selectedSeats.length} seats available',
               style: TextStyle(

@@ -3,9 +3,12 @@ import 'dart:io';
 import '../services/booking_storage.dart';
 import '../services/auth_service.dart';
 import '../services/messaging_service.dart';
+import '../services/rating_service.dart';
 import '../models/booking.dart';
 import '../models/message.dart';
+import '../models/trip_rating.dart';
 import '../utils/date_time_helpers.dart';
+import '../utils/dialog_helper.dart';
 import '../l10n/app_localizations.dart';
 import '../widgets/scroll_indicator.dart';
 import '../widgets/language_selector.dart';
@@ -157,10 +160,12 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
         final l10n = AppLocalizations.of(context)!;
         final now = DateTime.now();
 
-        // Filter bookings based on user
+        // Filter bookings based on user and role
         final user = AuthService.currentUser;
         final userBookings = bookings
-            .where((b) => b.userId == user?.id)
+            .where((b) => 
+                b.userId == user?.id && 
+                b.userRole.toLowerCase() == userRole.toLowerCase())
             .toList();
 
         // Upcoming: departure time is in the future
@@ -422,66 +427,40 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
     );
   }
 
-  void _cancelBooking(Booking booking) {
-    showDialog(
+  Future<void> _cancelBooking(Booking booking) async {
+    final confirmed = await DialogHelper.showConfirmDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Cancel Booking'),
-          content: Text('Are you sure you want to cancel this booking?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text('No', style: TextStyle(color: Colors.grey)),
-            ),
-            TextButton(
-              onPressed: () {
-                BookingStorage().cancelBooking(booking.id);
-                Navigator.of(context).pop();
-              },
-              child: Text('Yes, Cancel', style: TextStyle(color: Colors.red)),
-            ),
-          ],
-        );
-      },
+      title: 'Cancel Booking',
+      content: 'Are you sure you want to cancel this booking?',
+      cancelText: 'No',
+      confirmText: 'Yes, Cancel',
+      isDangerous: true,
     );
+    
+    if (confirmed) {
+      BookingStorage().cancelBooking(booking.id);
+    }
   }
 
-  void _archiveBooking(Booking booking) {
+  Future<void> _archiveBooking(Booking booking) async {
     final isArchived = booking.isArchived == true;
-    showDialog(
+    final confirmed = await DialogHelper.showConfirmDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(isArchived ? 'Unarchive Booking' : 'Archive Booking'),
-          content: Text(
-            isArchived
-                ? 'Are you sure you want to unarchive this booking?'
-                : 'Are you sure you want to archive this booking?',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text('No', style: TextStyle(color: Colors.grey)),
-            ),
-            TextButton(
-              onPressed: () {
-                if (isArchived) {
-                  BookingStorage().unarchiveBooking(booking.id);
-                } else {
-                  BookingStorage().archiveBooking(booking.id);
-                }
-                Navigator.of(context).pop();
-              },
-              child: Text(
-                isArchived ? 'Yes, Unarchive' : 'Yes, Archive',
-                style: TextStyle(color: Colors.blue),
-              ),
-            ),
-          ],
-        );
-      },
+      title: isArchived ? 'Unarchive Booking' : 'Archive Booking',
+      content: isArchived
+          ? 'Are you sure you want to unarchive this booking?'
+          : 'Are you sure you want to archive this booking?',
+      cancelText: 'No',
+      confirmText: isArchived ? 'Yes, Unarchive' : 'Yes, Archive',
     );
+    
+    if (confirmed) {
+      if (isArchived) {
+        BookingStorage().unarchiveBooking(booking.id);
+      } else {
+        BookingStorage().archiveBooking(booking.id);
+      }
+    }
   }
 
   Widget _buildBookingCard(
@@ -679,6 +658,17 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
     // Make driver and all occupied seats clickable
     final isClickable = isDriver || isOccupied;
 
+    Widget seatContent;
+    if (isDriver) {
+      seatContent = _buildDriverPhoto(booking);
+    } else if (isOccupied && seatIndex != null) {
+      // Show rider photo if this seat is occupied
+      seatContent = _buildRiderPhoto(booking, seatIndex);
+    } else {
+      // Show generic person icon for available seats
+      seatContent = Icon(Icons.person, size: 28, color: Colors.grey[700]);
+    }
+
     return GestureDetector(
       onTap: isClickable
           ? () => _showUserCard(booking, isDriver, passengerName)
@@ -692,9 +682,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
           border: Border.all(color: borderColor, width: 2),
         ),
         child: Center(
-          child: isDriver
-              ? _buildDriverPhoto(booking)
-              : Icon(Icons.person, size: 28, color: Colors.grey[700]),
+          child: seatContent,
         ),
       ),
     );
@@ -709,17 +697,41 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
         booking.userRole.toLowerCase() == l10n.driver.toLowerCase()) {
       if (currentUser.profilePhotoUrl != null &&
           currentUser.profilePhotoUrl!.isNotEmpty) {
-        final photoFile = File(currentUser.profilePhotoUrl!);
-        if (photoFile.existsSync()) {
+        // Check if it's an asset or file path
+        if (currentUser.profilePhotoUrl!.startsWith('assets/')) {
           return ClipRRect(
             borderRadius: BorderRadius.circular(12),
-            child: Image.file(
-              photoFile,
+            child: Image.asset(
+              currentUser.profilePhotoUrl!,
               width: 54,
               height: 54,
               fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  width: 54,
+                  height: 54,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(Icons.person, size: 28, color: Colors.grey[700]),
+                );
+              },
             ),
           );
+        } else {
+          final photoFile = File(currentUser.profilePhotoUrl!);
+          if (photoFile.existsSync()) {
+            return ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.file(
+                photoFile,
+                width: 54,
+                height: 54,
+                fit: BoxFit.cover,
+              ),
+            );
+          }
         }
       }
     }
@@ -736,14 +748,126 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
     );
   }
 
+  Widget _buildRiderPhoto(Booking booking, int seatIndex) {
+    // Find the rider for this seat
+    if (booking.riders != null && booking.riders!.isNotEmpty) {
+      final rider = booking.riders!.firstWhere(
+        (r) => r.seatIndex == seatIndex,
+        orElse: () => RiderInfo(name: '', rating: 0.0, seatIndex: -1),
+      );
+
+      // Check if rider has a profile photo
+      if (rider.seatIndex != -1 && 
+          rider.profilePhotoUrl != null && 
+          rider.profilePhotoUrl!.isNotEmpty) {
+        // Check if it's an asset or file path
+        if (rider.profilePhotoUrl!.startsWith('assets/')) {
+          return ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Image.asset(
+              rider.profilePhotoUrl!,
+              width: 54,
+              height: 54,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Icon(Icons.person, size: 28, color: Colors.grey[700]);
+              },
+            ),
+          );
+        } else {
+          final photoFile = File(rider.profilePhotoUrl!);
+          if (photoFile.existsSync()) {
+            return ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.file(
+                photoFile,
+                width: 54,
+                height: 54,
+                fit: BoxFit.cover,
+              ),
+            );
+          }
+        }
+      }
+    }
+
+    // Default placeholder for riders without photos
+    return Icon(Icons.person, size: 28, color: Colors.grey[700]);
+  }
+
+  Widget _buildUserCardAvatar(String? profilePhotoUrl) {
+    print('🖼️ Building user card avatar with URL: $profilePhotoUrl');
+    
+    if (profilePhotoUrl != null && profilePhotoUrl.isNotEmpty) {
+      // Check if it's an asset image
+      if (profilePhotoUrl.startsWith('assets/')) {
+        print('🖼️ Loading asset image: $profilePhotoUrl');
+        return CircleAvatar(
+          radius: 40,
+          backgroundColor: Colors.grey[300],
+          child: ClipOval(
+            child: Image.asset(
+              profilePhotoUrl,
+              width: 80,
+              height: 80,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                print('❌ Error loading asset: $error');
+                return Icon(Icons.person, size: 40, color: Colors.grey[600]);
+              },
+            ),
+          ),
+        );
+      } else {
+        // Local file path
+        print('🖼️ Loading file image: $profilePhotoUrl');
+        final photoFile = File(profilePhotoUrl);
+        if (photoFile.existsSync()) {
+          return CircleAvatar(
+            radius: 40,
+            backgroundColor: Colors.grey[300],
+            child: ClipOval(
+              child: Image.file(
+                photoFile,
+                width: 80,
+                height: 80,
+                fit: BoxFit.cover,
+              ),
+            ),
+          );
+        } else {
+          print('❌ File does not exist: $profilePhotoUrl');
+        }
+      }
+    } else {
+      print('⚠️ No profile photo URL provided');
+    }
+
+    // Default placeholder
+    return CircleAvatar(
+      radius: 40,
+      backgroundColor: Colors.grey[300],
+      child: Icon(Icons.person, size: 40, color: Colors.grey[600]),
+    );
+  }
+
   void _showUserCard(Booking booking, bool isDriver, String otherUserName) {
     final currentUser = AuthService.currentUser;
     if (currentUser == null) return;
 
-    // Get rating for the user
+    print('👤 _showUserCard called: isDriver=$isDriver, name=$otherUserName');
+    print('   booking.riders: ${booking.riders?.map((r) => r.name).toList()}');
+
+    // Get rating and profile photo for the user
     double rating = 0.0;
+    String? profilePhotoUrl;
+    String? otherUserId;
+    
     if (isDriver && booking.driverRating != null) {
       rating = booking.driverRating!;
+      profilePhotoUrl = currentUser.profilePhotoUrl;
+      otherUserId = booking.userId;
+      print('   Driver - rating: $rating, photo: $profilePhotoUrl');
     } else if (!isDriver && booking.riders != null) {
       // Find rider by name
       final rider = booking.riders!.firstWhere(
@@ -751,117 +875,504 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
         orElse: () => RiderInfo(name: '', rating: 0.0, seatIndex: -1),
       );
       rating = rider.rating;
+      profilePhotoUrl = rider.profilePhotoUrl;
+      otherUserId = '${booking.id}_rider_${rider.seatIndex}';
+      print('   Rider - rating: $rating, photo: $profilePhotoUrl');
     }
+
+    // Check if trip is completed (past trip)
+    final isTripCompleted = booking.isPast;
+    
+    // Check if user has already rated this person for this trip
+    final hasAlreadyRated = otherUserId != null && 
+        RatingService().hasRated(booking.id, currentUser.id, otherUserId);
+    
+    // Initialize ratings for 5 categories (0 or 1 for each)
+    int polite = 0;
+    int clean = 0;
+    int communicative = 0;
+    int safe = 0;
+    int punctual = 0;
 
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Padding(
-            padding: EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // User avatar and name
-                CircleAvatar(
-                  radius: 40,
-                  backgroundColor: Colors.grey[300],
-                  child: Icon(Icons.person, size: 40, color: Colors.grey[600]),
-                ),
-                SizedBox(height: 16),
-                Text(
-                  otherUserName,
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF2E2E2E),
-                  ),
-                ),
-                SizedBox(height: 8),
-                Text(
-                  isDriver ? 'Driver' : 'Rider',
-                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                ),
-                SizedBox(height: 4),
-                // Rating display
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.star, color: Colors.amber, size: 20),
-                    SizedBox(width: 4),
-                    Text(
-                      rating.toStringAsFixed(1),
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF2E2E2E),
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 8),
-                Text(
-                  booking.route.name,
-                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                ),
-                SizedBox(height: 24),
+        return StatefulBuilder(
+          builder: (context, setState) {
+            double userRating = rating; // Initialize with current rating
+            // Calculate total stars (sum of all categories, max 5)
+            final totalStars = polite + clean + communicative + safe + punctual;
+            final canSubmit = totalStars > 0; // At least one star must be given
 
-                // Action buttons
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      _openMessaging(booking, isDriver, otherUserName, currentUser);
-                    },
-                    icon: Icon(Icons.chat_bubble_outline),
-                    label: Text('Message'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Color(0xFF2E2E2E),
-                      foregroundColor: Colors.white,
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+            return Dialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Padding(
+                padding: EdgeInsets.all(24),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // User avatar and name
+                      Center(child: _buildUserCardAvatar(profilePhotoUrl)),
+                      SizedBox(height: 16),
+                      Center(
+                        child: Text(
+                          otherUserName,
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF2E2E2E),
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                ),
-                SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      _showBlockDialog(otherUserName);
-                    },
-                    icon: Icon(Icons.block),
-                    label: Text('Block User'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.red,
-                      side: BorderSide(color: Colors.red),
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                      SizedBox(height: 8),
+                      // Show overall rating display only
+                      Center(
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.star, color: Colors.amber, size: 20),
+                            SizedBox(width: 4),
+                            Text(
+                              '${userRating.toStringAsFixed(1)} / 5.0',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
+                      SizedBox(height: 8),
+                      Center(
+                        child: Text(
+                          isDriver ? 'Driver' : 'Rider',
+                          style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                        ),
+                      ),
+                      
+                      // Show rating categories for completed trips
+                      if (isTripCompleted) ...[
+                        SizedBox(height: 24),
+                        Divider(),
+                        SizedBox(height: 16),
+                        
+                        // "Rate this trip" header at the top
+                        Center(
+                          child: Text(
+                            'Rate this trip',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF2E2E2E),
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 16),
+                        
+                        // Trip route summary (matching ride info card style)
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Origin
+                            Row(
+                              children: [
+                                Icon(Icons.location_on, color: Colors.green, size: 18),
+                                SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    booking.originName,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: Colors.black87,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                                Container(
+                                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.green.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    formatTimeHHmm(booking.departureTime),
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.green[700],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 6),
+                            // Destination
+                            Row(
+                              children: [
+                                Icon(Icons.flag, color: Colors.red, size: 18),
+                                SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    booking.destinationName,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: Colors.black87,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                                Container(
+                                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    formatTimeHHmm(booking.arrivalTime),
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.red[700],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 20),
+                        
+                        // Check if already rated
+                        if (hasAlreadyRated) ...[
+                          // Show "Already rated" message
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.green.shade50,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Row(
+                              children: [
+                                Icon(Icons.check_circle, color: Colors.green),
+                                SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    'You have already rated this trip',
+                                    style: TextStyle(
+                                      color: Colors.green,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ] else ...[
+                          // Show rating interface
+                        Center(
+                          child: Text(
+                            'Rate this trip',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF2E2E2E),
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        Center(
+                          child: Text(
+                            'Select categories that apply (max 5 stars total)',
+                            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                          ),
+                        ),
+                        SizedBox(height: 20),
+
+                        // Category 1: Polite
+                        _buildInlineRatingCategory(
+                          'Polite',
+                          Icons.sentiment_satisfied_alt,
+                          polite,
+                          (rating) => setState(() => polite = rating),
+                        ),
+                        SizedBox(height: 12),
+
+                        // Category 2: Clean
+                        _buildInlineRatingCategory(
+                          'Clean',
+                          Icons.cleaning_services,
+                          clean,
+                          (rating) => setState(() => clean = rating),
+                        ),
+                        SizedBox(height: 12),
+
+                        // Category 3: Communicative
+                        _buildInlineRatingCategory(
+                          'Communicative',
+                          Icons.chat_bubble_outline,
+                          communicative,
+                          (rating) => setState(() => communicative = rating),
+                        ),
+                        SizedBox(height: 12),
+
+                        // Category 4: Safe
+                        _buildInlineRatingCategory(
+                          'Safe',
+                          Icons.security,
+                          safe,
+                          (rating) => setState(() => safe = rating),
+                        ),
+                        SizedBox(height: 12),
+
+                        // Category 5: Punctual
+                        _buildInlineRatingCategory(
+                          'Punctual',
+                          Icons.schedule,
+                          punctual,
+                          (rating) => setState(() => punctual = rating),
+                        ),
+                        SizedBox(height: 20),
+
+                        // Overall rating display
+                        if (canSubmit) ...[
+                          Container(
+                            padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                            decoration: BoxDecoration(
+                              color: Colors.amber[50],
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.amber, width: 2),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                ...List.generate(totalStars, (index) => 
+                                  Icon(Icons.star, color: Colors.amber, size: 20)
+                                ),
+                                ...List.generate(5 - totalStars, (index) => 
+                                  Icon(Icons.star_border, color: Colors.amber, size: 20)
+                                ),
+                                SizedBox(width: 8),
+                                Text(
+                                  '$totalStars / 5 stars',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF2E2E2E),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          SizedBox(height: 16),
+                          // Submit button
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: () {
+                                _submitDetailedRating(
+                                  booking,
+                                  isDriver,
+                                  otherUserName,
+                                  polite,
+                                  clean,
+                                  communicative,
+                                  safe,
+                                  punctual,
+                                );
+                                Navigator.pop(context);
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.amber,
+                                foregroundColor: Colors.white,
+                                padding: EdgeInsets.symmetric(vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: Text('Submit Rating'),
+                            ),
+                          ),
+                        ] else ...[
+                          Container(
+                            padding: EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[100],
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.grey[300]!),
+                            ),
+                            child: Center(
+                              child: Text(
+                                'Tap stars to rate (give at least 1 star)',
+                                style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                              ),
+                            ),
+                          ),
+                        ],
+                        SizedBox(height: 16),
+                        ], // Close the else block for rating interface
+                      ] else ...[
+                        // Message for future trips
+                        SizedBox(height: 16),
+                        Container(
+                          padding: EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.blue[50],
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.blue),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.info_outline, color: Colors.blue, size: 20),
+                              SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'You can rate after the trip ends',
+                                  style: TextStyle(color: Colors.blue[900], fontSize: 12),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(height: 16),
+                      ],
+
+                      // Action buttons
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            _openMessaging(booking, isDriver, otherUserName, currentUser);
+                          },
+                          icon: Icon(Icons.chat_bubble_outline),
+                          label: Text('Message'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Color(0xFF2E2E2E),
+                            foregroundColor: Colors.white,
+                            padding: EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            _showBlockDialog(otherUserName);
+                          },
+                          icon: Icon(Icons.block),
+                          label: Text('Block User'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.red,
+                            side: BorderSide(color: Colors.red),
+                            padding: EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 12),
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.grey[600],
+                        ),
+                        child: Text('Close'),
+                      ),
+                    ],
                   ),
                 ),
-                SizedBox(height: 12),
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text('Cancel'),
-                  style: TextButton.styleFrom(
-                    foregroundColor: Colors.grey[600],
-                  ),
-                ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
+    );
+  }
+
+  Widget _buildInlineRatingCategory(
+    String title,
+    IconData icon,
+    int currentRating,
+    Function(int) onRatingChanged,
+  ) {
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: Color(0xFF2E2E2E)),
+        SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            title,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF2E2E2E),
+            ),
+          ),
+        ),
+        // Single star for this category
+        GestureDetector(
+          onTap: () => onRatingChanged(currentRating == 1 ? 0 : 1),
+          child: Icon(
+            currentRating == 1 ? Icons.star : Icons.star_border,
+            color: Colors.amber,
+            size: 32,
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _submitDetailedRating(
+    Booking booking,
+    bool isDriver,
+    String otherUserName,
+    int polite,
+    int clean,
+    int communicative,
+    int safe,
+    int punctual,
+  ) {
+    final currentUser = AuthService.currentUser;
+    if (currentUser == null) return;
+
+    // Generate IDs
+    final ratingId = '${booking.id}_${currentUser.id}_${DateTime.now().millisecondsSinceEpoch}';
+    final otherUserId = isDriver ? booking.userId : '${booking.id}_rider_$otherUserName';
+
+    // Create rating
+    final rating = TripRating(
+      id: ratingId,
+      bookingId: booking.id,
+      fromUserId: currentUser.id,
+      toUserId: otherUserId,
+      toUserName: otherUserName,
+      polite: polite,
+      clean: clean,
+      communicative: communicative,
+      safe: safe,
+      punctual: punctual,
+      ratedAt: DateTime.now(),
+    );
+
+    // Submit to service
+    RatingService().submitRating(rating);
+
+    // Show success message
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Rating submitted: ${rating.averageRating.toStringAsFixed(1)} stars for $otherUserName'),
+        backgroundColor: Colors.green,
+      ),
     );
   }
 
@@ -888,7 +1399,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
     // For drivers: create conversation with specific rider
     // For riders: create conversation with driver
     final conversationId = isCurrentUserDriver 
-        ? '${booking.id}_${otherUserName}' // Unique conversation per rider
+        ? '${booking.id}_$otherUserName' // Unique conversation per rider
         : booking.id; // Single conversation with driver
 
     var conversation = messagingService.getConversation(conversationId);
@@ -931,33 +1442,21 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
     );
   }
 
-  void _showBlockDialog(String userName) {
-    showDialog(
+  Future<void> _showBlockDialog(String userName) async {
+    final confirmed = await DialogHelper.showConfirmDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Block User'),
-          content: Text(
-            'Are you sure you want to block $userName? You will no longer be able to message each other.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('$userName has been blocked')),
-                );
-              },
-              child: Text('Block', style: TextStyle(color: Colors.red)),
-            ),
-          ],
-        );
-      },
+      title: 'Block User',
+      content: 'Are you sure you want to block $userName? You will no longer be able to message each other.',
+      cancelText: 'Cancel',
+      confirmText: 'Block',
+      isDangerous: true,
     );
+    
+    if (confirmed) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('$userName has been blocked')),
+      );
+    }
   }
 
   Widget _buildSeatLabel(String name, String rating) {

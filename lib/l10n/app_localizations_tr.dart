@@ -96,6 +96,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String get selectYourSeat => 'Koltuğunuzu seçin';
 
   @override
+  String get available => 'müsait';
+
+  @override
   String seatsAvailable(int count) {
     return '$count koltuk müsait';
   }

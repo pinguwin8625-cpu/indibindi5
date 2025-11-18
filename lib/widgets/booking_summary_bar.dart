@@ -11,6 +11,7 @@ class BookingSummaryBar extends StatelessWidget {
   final DateTime? arrivalTime;
   final List<int>? selectedSeats;
   final String? userRole;
+  final String? riderTimeChoice; // 'departure' or 'arrival' for riders
   final VoidCallback? onBack;
 
   const BookingSummaryBar({
@@ -22,11 +23,13 @@ class BookingSummaryBar extends StatelessWidget {
     this.arrivalTime,
     this.selectedSeats,
     this.userRole,
+    this.riderTimeChoice,
     this.onBack,
   });
 
   @override
   Widget build(BuildContext context) {
+    print('🏗️ BookingSummaryBar: Building with onBack=${onBack != null ? "NOT NULL" : "NULL"}');
     // Don't show if no data is selected
     if (selectedRoute == null && departureTime == null && selectedSeats == null) {
       return SizedBox.shrink();
@@ -57,19 +60,21 @@ class BookingSummaryBar extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Back button
-                if (onBack != null)
-                  IconButton(
-                    onPressed: onBack,
-                    icon: Icon(Icons.arrow_back_ios, color: Colors.red, size: 20),
-                    style: IconButton.styleFrom(
-                      backgroundColor: Colors.transparent,
-                      padding: EdgeInsets.zero,
-                      minimumSize: Size(24, 24),
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                if (onBack != null) ...[
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {
+                      print('🔙 BookingSummaryBar: GestureDetector tapped!');
+                      onBack!();
+                      print('🔙 BookingSummaryBar: onBack callback executed');
+                    },
+                    child: Padding(
+                      padding: EdgeInsets.all(8),
+                      child: Icon(Icons.arrow_back_ios, color: Colors.red, size: 20),
                     ),
                   ),
-                if (onBack != null)
                   SizedBox(width: 8),
+                ],
                 Expanded(
                   child: Text(
                     selectedRoute!.name,
@@ -78,6 +83,8 @@ class BookingSummaryBar extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                       color: Color(0xFF2E2E2E),
                     ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
                   ),
                 ),
                 if (departureTime != null) ...[
@@ -119,9 +126,13 @@ class BookingSummaryBar extends StatelessWidget {
                       color: Colors.black87,
                       fontWeight: FontWeight.w500,
                     ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
                   ),
                 ),
-                if (departureTime != null)
+                // Show departure time for drivers, or for riders who chose departure
+                if (departureTime != null && 
+                    (userRole?.toLowerCase() == 'driver' || riderTimeChoice == 'departure'))
                   Container(
                     padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
@@ -155,9 +166,13 @@ class BookingSummaryBar extends StatelessWidget {
                       color: Colors.black87,
                       fontWeight: FontWeight.w500,
                     ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
                   ),
                 ),
-                if (arrivalTime != null)
+                // Show arrival time for drivers, or for riders who chose arrival
+                if (arrivalTime != null && 
+                    (userRole?.toLowerCase() == 'driver' || riderTimeChoice == 'arrival'))
                   Container(
                     padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(

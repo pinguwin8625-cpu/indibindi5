@@ -13,11 +13,13 @@ enum BookingLayer { routeSelection, stopsSelection, timeAndSeats, matchingRides 
 class LayeredBookingWidget extends StatefulWidget {
   final String userRole;
   final VoidCallback? onBookingCompleted;
+  final TabController? tabController;
 
   const LayeredBookingWidget({
     super.key,
     required this.userRole,
     this.onBookingCompleted,
+    this.tabController,
   });
 
   @override
@@ -35,6 +37,7 @@ class _LayeredBookingWidgetState extends State<LayeredBookingWidget> {
   bool hasSelectedDateTime = false;
   DateTime? departureTime;
   DateTime? arrivalTime;
+  String? riderTimeChoice; // 'departure' or 'arrival' for riders
   bool isBookingCompleted = false;
 
   void _navigateToLayer(BookingLayer layer) {
@@ -44,26 +47,52 @@ class _LayeredBookingWidgetState extends State<LayeredBookingWidget> {
   }
 
   void _goBack() {
+    print('🔙 LayeredBooking: _goBack called, currentLayer: $currentLayer');
+    print('🔙 LayeredBooking: Stack trace: ${StackTrace.current}');
     setState(() {
       switch (currentLayer) {
         case BookingLayer.stopsSelection:
+          print('🔙 LayeredBooking: Was on stopsSelection, going to routeSelection');
+          // Clear stops data
+          originIndex = null;
+          destinationIndex = null;
+          departureTime = null;
+          arrivalTime = null;
+          selectedSeats = [];
+          hasSelectedDateTime = false;
           currentLayer = BookingLayer.routeSelection;
           break;
         case BookingLayer.timeAndSeats:
+          print('🔙 LayeredBooking: Was on timeAndSeats, going to stopsSelection');
+          // Clear time and seats data
+          departureTime = null;
+          arrivalTime = null;
+          selectedSeats = [];
+          hasSelectedDateTime = false;
           currentLayer = BookingLayer.stopsSelection;
           break;
         case BookingLayer.matchingRides:
+          print('🔙 LayeredBooking: Was on matchingRides, going to stopsSelection');
+          // Clear time data (but keep stops)
+          departureTime = null;
+          arrivalTime = null;
+          riderTimeChoice = null;
+          hasSelectedDateTime = false;
           currentLayer = BookingLayer.stopsSelection;
           break;
         case BookingLayer.routeSelection:
+          print('🔙 LayeredBooking: Already at routeSelection (first layer)');
           // Already at first layer
           break;
       }
     });
+    print('🔙 LayeredBooking: After _goBack, new currentLayer: $currentLayer');
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    
     return Column(
       children: [
         // Fixed progress bar at the top
@@ -77,6 +106,36 @@ class _LayeredBookingWidgetState extends State<LayeredBookingWidget> {
           ),
           totalSteps: 4,
         ),
+        
+        // Tab buttons below progress bar
+        if (widget.tabController != null)
+          Container(
+            padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _buildTabButton(
+                  context,
+                  label: l10n.driver,
+                  icon: Icons.directions_car,
+                  isSelected: widget.tabController!.index == 0,
+                  onTap: () {
+                    widget.tabController!.animateTo(0);
+                  },
+                ),
+                SizedBox(width: 20),
+                _buildTabButton(
+                  context,
+                  label: l10n.rider,
+                  icon: Icons.person,
+                  isSelected: widget.tabController!.index == 1,
+                  onTap: () {
+                    widget.tabController!.animateTo(1);
+                  },
+                ),
+              ],
+            ),
+          ),
 
         // Layer navigation
         Expanded(
@@ -95,6 +154,78 @@ class _LayeredBookingWidgetState extends State<LayeredBookingWidget> {
           ),
         ),
       ],
+    );
+  }
+  
+  Widget _buildTabButton(
+    BuildContext context, {
+    required String label,
+    required IconData icon,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    // Check if this is the driver button (car icon)
+    final bool isDriverButton = icon == Icons.directions_car;
+    
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected ? Color(0xFFDD2C00) : Colors.white,
+          borderRadius: BorderRadius.circular(30),
+          border: Border.all(
+            color: isSelected ? Color(0xFFDD2C00) : Colors.grey[300]!,
+            width: 2,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Driver icon with dot overlay, or regular icon
+            isDriverButton
+                ? SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: Stack(
+                      children: [
+                        Icon(
+                          Icons.directions_car,
+                          color: isSelected ? Colors.white : Color(0xFFDD2C00),
+                          size: 20,
+                        ),
+                        Positioned(
+                          top: 6,
+                          left: 10,
+                          child: Container(
+                            width: 3,
+                            height: 3,
+                            decoration: BoxDecoration(
+                              color: isSelected ? Colors.white : Color(0xFFDD2C00),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : Icon(
+                    icon,
+                    color: isSelected ? Colors.white : Color(0xFFDD2C00),
+                    size: 20,
+                  ),
+            SizedBox(width: 8),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? Colors.white : Color(0xFFDD2C00),
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -147,6 +278,8 @@ class _LayeredBookingWidgetState extends State<LayeredBookingWidget> {
             print('🔥 LayeredBooking: onStopsAndTimeSelected called with:');
             print('   Departure: $departure');
             print('   Arrival: $arrival');
+            print('🔥 Role check: widget.userRole="${widget.userRole}", comparing to "driver"');
+            
             setState(() {
               originIndex = origin;
               destinationIndex = destination;
@@ -155,16 +288,17 @@ class _LayeredBookingWidgetState extends State<LayeredBookingWidget> {
               hasSelectedDateTime = true;
               
               // For drivers, initialize all 4 seats as available
-              final l10n = AppLocalizations.of(context)!;
-              if (widget.userRole == l10n.driver) {
+              if (widget.userRole.toLowerCase() == 'driver') {
                 selectedSeats = [0, 1, 2, 3];
+                print('🚗 LayeredBooking: Initialized driver seats: $selectedSeats');
+              } else {
+                print('❌ Not a driver, userRole is: ${widget.userRole}');
               }
             });
-            print('🔥 LayeredBooking: After setState, departureTime=$departureTime, arrivalTime=$arrivalTime');
+            print('🔥 LayeredBooking: After setState, selectedSeats=$selectedSeats (length: ${selectedSeats.length}), departureTime=$departureTime, arrivalTime=$arrivalTime');
             
             // Check user role to determine next layer
-            final l10n = AppLocalizations.of(context)!;
-            if (widget.userRole == l10n.rider) {
+            if (widget.userRole.toLowerCase() == 'rider') {
               // Riders see matching rides
               _navigateToLayer(BookingLayer.matchingRides);
             } else {
@@ -197,6 +331,12 @@ class _LayeredBookingWidgetState extends State<LayeredBookingWidget> {
             });
             print('🕐 LayeredBooking: State updated, departureTime=$departureTime, arrivalTime=$arrivalTime');
           },
+          onRiderTimeChoiceChanged: (choice) {
+            setState(() {
+              riderTimeChoice = choice;
+            });
+            print('🧑 LayeredBooking: Rider time choice changed to: $choice');
+          },
           onBack: _goBack,
         );
         
@@ -207,6 +347,8 @@ class _LayeredBookingWidgetState extends State<LayeredBookingWidget> {
               originIndex: originIndex!,
               destinationIndex: destinationIndex!,
               departureTime: departureTime!,
+              arrivalTime: arrivalTime,
+              riderTimeChoice: riderTimeChoice,
               onBack: _goBack,
             );
 
@@ -214,6 +356,7 @@ class _LayeredBookingWidgetState extends State<LayeredBookingWidget> {
             print('📦 LayeredBooking: Building BookingLayerWidget with:');
             print('   departureTime: $departureTime');
             print('   arrivalTime: $arrivalTime');
+            print('   selectedSeats: $selectedSeats (length: ${selectedSeats.length})');
             return BookingLayerWidget(
               key: ValueKey('booking-layer'),
           userRole: widget.userRole,

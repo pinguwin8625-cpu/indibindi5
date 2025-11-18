@@ -3,6 +3,7 @@ import '../l10n/app_localizations.dart';
 import '../services/messaging_service.dart';
 import '../services/auth_service.dart';
 import '../widgets/scroll_indicator.dart';
+import '../utils/dialog_helper.dart';
 import 'chat_screen.dart';
 
 class HelpScreen extends StatefulWidget {
@@ -21,16 +22,46 @@ class _HelpScreenState extends State<HelpScreen> {
     super.dispose();
   }
 
-  void _openSupportChat(BuildContext context) {
+  Future<void> _openSupportChat(BuildContext context) async {
+    final currentUser = AuthService.currentUser;
+    if (currentUser == null) return;
+
+    // Show dialog to choose between suggestion or complaint
+    final String? selectedType = await DialogHelper.showChoiceDialog<String>(
+      context: context,
+      title: 'Contact Support',
+      content: 'What would you like to share with us?',
+      showCancelButton: false,
+      choices: [
+        DialogChoice(
+          label: 'Suggestion',
+          value: 'Suggestion',
+          color: Colors.green,
+        ),
+        DialogChoice(
+          label: 'Complaint',
+          value: 'Complaint',
+          color: Colors.red,
+        ),
+      ],
+    );
+    
+    if (selectedType != null) {
+      _openSupportChatWithType(context, selectedType);
+    }
+  }
+
+  void _openSupportChatWithType(BuildContext context, String type) {
     final currentUser = AuthService.currentUser;
     if (currentUser == null) return;
 
     final messagingService = MessagingService();
     
-    // Create support conversation (adds to service immediately)
+    // Create NEW support conversation with unique reference number
     final supportConversation = messagingService.createSupportConversation(
       currentUser.id,
       currentUser.fullName,
+      type,
     );
 
     // Navigate to chat screen
@@ -39,7 +70,8 @@ class _HelpScreenState extends State<HelpScreen> {
       MaterialPageRoute(
         builder: (context) => ChatScreen(
           conversation: supportConversation,
-          createConversationOnFirstMessage: false, // Already added
+          createConversationOnFirstMessage: true, // Add to inbox on first message
+          initialMessagePrefix: null, // Type is already in the subject line
         ),
       ),
     );
@@ -87,16 +119,6 @@ class _HelpScreenState extends State<HelpScreen> {
           ),
           SizedBox(height: 8),
           _buildHelpTile(
-            icon: Icons.info_outline,
-            title: l10n.about,
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(l10n.about)),
-              );
-            },
-          ),
-          SizedBox(height: 8),
-          _buildHelpTile(
             icon: Icons.privacy_tip_outlined,
             title: l10n.privacyPolicy,
             onTap: () {
@@ -122,6 +144,16 @@ class _HelpScreenState extends State<HelpScreen> {
             onTap: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text(l10n.preparingData)),
+              );
+            },
+          ),
+          SizedBox(height: 8),
+          _buildHelpTile(
+            icon: Icons.info_outline,
+            title: l10n.about,
+            onTap: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(l10n.about)),
               );
             },
           ),

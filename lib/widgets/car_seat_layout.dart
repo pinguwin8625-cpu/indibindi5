@@ -361,10 +361,10 @@ class _CarSeatLayoutState extends State<CarSeatLayout> {
   Widget _buildDriverProfilePhoto() {
     final currentUser = AuthService.currentUser;
     
-    // Check if user has a local profile photo
+    // Check if user has a profile photo
     if (currentUser?.profilePhotoUrl != null && currentUser!.profilePhotoUrl!.isNotEmpty) {
-      final photoFile = File(currentUser.profilePhotoUrl!);
-      if (photoFile.existsSync()) {
+      // Check if it's an asset or file path
+      if (currentUser.profilePhotoUrl!.startsWith('assets/')) {
         return Container(
           width: 76,
           height: 76,
@@ -373,11 +373,31 @@ class _CarSeatLayoutState extends State<CarSeatLayout> {
             borderRadius: BorderRadius.circular(16),
           ),
           clipBehavior: Clip.antiAlias,
-          child: Image.file(
-            photoFile,
+          child: Image.asset(
+            currentUser.profilePhotoUrl!,
             fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              return Icon(Icons.person, size: 40, color: Colors.grey[700]);
+            },
           ),
         );
+      } else {
+        final photoFile = File(currentUser.profilePhotoUrl!);
+        if (photoFile.existsSync()) {
+          return Container(
+            width: 76,
+            height: 76,
+            margin: EdgeInsets.all(2),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Image.file(
+              photoFile,
+              fit: BoxFit.cover,
+            ),
+          );
+        }
       }
     }
     

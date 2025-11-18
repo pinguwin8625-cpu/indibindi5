@@ -15,7 +15,23 @@ class ScrollIndicator extends StatefulWidget {
 }
 
 class _ScrollIndicatorState extends State<ScrollIndicator> {
-  bool _showIndicator = false; // Start hidden until we know there's scrollable content
+  bool _showIndicator = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Check scroll state after the first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkInitialScroll();
+    });
+  }
+
+  void _checkInitialScroll() {
+    final controller = widget.scrollController;
+    if (controller != null && controller.hasClients) {
+      _updateIndicatorVisibility(controller.position);
+    }
+  }
 
   void _updateIndicatorVisibility(ScrollMetrics metrics) {
     if (!mounted) return;

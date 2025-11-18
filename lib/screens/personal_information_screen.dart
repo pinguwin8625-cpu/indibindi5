@@ -39,13 +39,16 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
       _phoneController.text = user.phoneNumber;
       _emailController.text = user.email;
       
-      // Load profile photo if exists
+      // Load profile photo if exists (skip for asset paths - they're mock data)
       if (user.profilePhotoUrl != null && user.profilePhotoUrl!.isNotEmpty) {
-        final photoFile = File(user.profilePhotoUrl!);
-        if (photoFile.existsSync()) {
-          setState(() {
-            _profileImage = photoFile;
-          });
+        if (!user.profilePhotoUrl!.startsWith('assets/')) {
+          // Only load actual file paths, not assets
+          final photoFile = File(user.profilePhotoUrl!);
+          if (photoFile.existsSync()) {
+            setState(() {
+              _profileImage = photoFile;
+            });
+          }
         }
       }
       
@@ -494,14 +497,30 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
                                     _profileImage!,
                                     fit: BoxFit.cover,
                                   )
-                                : Container(
-                                    color: Theme.of(context).primaryColor.withOpacity(0.1),
-                                    child: Icon(
-                                      Icons.person,
-                                      size: 60,
-                                      color: Theme.of(context).primaryColor,
-                                    ),
-                                  ),
+                                : (AuthService.currentUser?.profilePhotoUrl != null &&
+                                    AuthService.currentUser!.profilePhotoUrl!.startsWith('assets/'))
+                                    ? Image.asset(
+                                        AuthService.currentUser!.profilePhotoUrl!,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (context, error, stackTrace) {
+                                          return Container(
+                                            color: Theme.of(context).primaryColor.withOpacity(0.1),
+                                            child: Icon(
+                                              Icons.person,
+                                              size: 60,
+                                              color: Theme.of(context).primaryColor,
+                                            ),
+                                          );
+                                        },
+                                      )
+                                    : Container(
+                                        color: Theme.of(context).primaryColor.withOpacity(0.1),
+                                        child: Icon(
+                                          Icons.person,
+                                          size: 60,
+                                          color: Theme.of(context).primaryColor,
+                                        ),
+                                      ),
                           ),
                         ),
                       ),

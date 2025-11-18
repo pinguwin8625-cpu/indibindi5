@@ -5,11 +5,13 @@ class RiderInfo {
   final String name;
   final double rating;
   final int seatIndex;
+  final String? profilePhotoUrl;
 
   RiderInfo({
     required this.name,
     required this.rating,
     required this.seatIndex,
+    this.profilePhotoUrl,
   });
 }
 

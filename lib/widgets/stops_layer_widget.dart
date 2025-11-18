@@ -20,6 +20,7 @@ class StopsLayerWidget extends StatefulWidget {
   final Function(int?)? onOriginSelected;
   final Function(int?)? onDestinationSelected;
   final Function(DateTime departure, DateTime arrival)? onTimeSelected;
+  final Function(String?)? onRiderTimeChoiceChanged;
   final VoidCallback onBack;
 
   const StopsLayerWidget({
@@ -36,6 +37,7 @@ class StopsLayerWidget extends StatefulWidget {
     this.onOriginSelected,
     this.onDestinationSelected,
     this.onTimeSelected,
+    this.onRiderTimeChoiceChanged,
     required this.onBack,
   });
 
@@ -49,6 +51,7 @@ class _StopsLayerWidgetState extends State<StopsLayerWidget> {
   DateTime? localDepartureTime;
   DateTime? localArrivalTime;
   bool localHasSelectedDateTime = false;
+  String? riderTimeChoice; // 'departure' or 'arrival' for riders
   final ScrollController _scrollController = ScrollController();
 
   @override
@@ -191,6 +194,7 @@ class _StopsLayerWidgetState extends State<StopsLayerWidget> {
                         flex: 2,
                         child: localOriginIndex != null
                             ? TimeSelectionWidget(
+                                userRole: widget.userRole,
                                 selectedRoute: widget.selectedRoute,
                                 originIndex: localOriginIndex!,
                                 destinationIndex: localDestinationIndex,
@@ -209,6 +213,14 @@ class _StopsLayerWidgetState extends State<StopsLayerWidget> {
                                     print('🕐 StopsLayer: User selected time, calling onTimeSelected');
                                     _checkAndNavigate();
                                   }
+                                },
+                                onRiderTimeChoiceChanged: (choice) {
+                                  setState(() {
+                                    riderTimeChoice = choice;
+                                  });
+                                  print('🧑 StopsLayer: Rider time choice changed to: $choice');
+                                  // Notify parent
+                                  widget.onRiderTimeChoiceChanged?.call(choice);
                                 },
                                 onTimesChanged: (departure, arrival) {
                                   print('🕐 StopsLayer: onTimesChanged called with:');
