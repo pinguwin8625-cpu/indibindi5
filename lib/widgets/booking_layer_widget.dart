@@ -4,7 +4,7 @@ import '../widgets/time_selection_widget.dart';
 import '../widgets/seat_planning_section_widget.dart';
 import '../widgets/booking_button_widget.dart';
 import '../widgets/scroll_indicator.dart';
-import '../widgets/booking_summary_bar.dart';
+import '../widgets/ride_details_bar.dart';
 import '../l10n/app_localizations.dart';
 
 class BookingLayerWidget extends StatefulWidget {
@@ -16,7 +16,7 @@ class BookingLayerWidget extends StatefulWidget {
   final bool hasSelectedDateTime;
   final DateTime? departureTime;
   final DateTime? arrivalTime;
-  final bool isBookingCompleted;
+  final bool isActionCompleted; // Can be either booking completed or ride posted
   final Function(List<int>) onSeatsSelected;
   final Function(DateTime departure, DateTime arrival) onTimeSelected;
   final VoidCallback onBookingCompleted;
@@ -32,7 +32,7 @@ class BookingLayerWidget extends StatefulWidget {
     required this.hasSelectedDateTime,
     required this.departureTime,
     required this.arrivalTime,
-    required this.isBookingCompleted,
+    required this.isActionCompleted,
     required this.onSeatsSelected,
     required this.onTimeSelected,
     required this.onBookingCompleted,
@@ -55,11 +55,11 @@ class _BookingLayerWidgetState extends State<BookingLayerWidget> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    
+
     return Column(
       children: [
         // Summary bar showing route, stops, and time with back button
-        BookingSummaryBar(
+        RideDetailsBar(
           selectedRoute: widget.selectedRoute,
           originIndex: widget.originIndex,
           destinationIndex: widget.destinationIndex,
@@ -67,12 +67,12 @@ class _BookingLayerWidgetState extends State<BookingLayerWidget> {
           arrivalTime: widget.arrivalTime,
           userRole: widget.userRole,
           riderTimeChoice: null, // Drivers always show both times
-          onBack: widget.isBookingCompleted ? null : widget.onBack,
+          onBack: widget.isActionCompleted ? null : widget.onBack,
         ),
-        
+
         // Header with title and seat count
         Container(
-          padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
+          padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
           child: Row(
             children: [
               Expanded(
@@ -80,50 +80,45 @@ class _BookingLayerWidgetState extends State<BookingLayerWidget> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     widget.userRole.toLowerCase() == 'driver'
-                      ? Row(
-                          children: [
-                            Text(
-                              l10n.availableSeats,
-                              style: TextStyle(
-                                fontSize: 28,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF2E2E2E),
-                                letterSpacing: 0.5,
+                        ? Row(
+                            children: [
+                              Text(
+                                l10n.availableSeats,
+                                style: TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF2E2E2E),
+                                  letterSpacing: 0.5,
+                                ),
                               ),
-                            ),
-                            SizedBox(width: 8),
-                            Text(
-                              '[${widget.selectedSeats.length} ${l10n.available}]',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFFDD2C00),
-                                letterSpacing: 0.3,
+                              SizedBox(width: 8),
+                              Text(
+                                '[${widget.selectedSeats.length} ${l10n.available}]',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFFDD2C00),
+                                  letterSpacing: 0.3,
+                                ),
                               ),
+                            ],
+                          )
+                        : Text(
+                            l10n.chooseYourSeat,
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF2E2E2E),
+                              letterSpacing: 0.5,
                             ),
-                          ],
-                        )
-                      : Text(
-                          l10n.chooseYourSeat,
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF2E2E2E),
-                            letterSpacing: 0.5,
                           ),
-                        ),
-                    if (widget.hasSelectedDateTime && widget.userRole.toLowerCase() != 'driver')
-                      SizedBox(height: 4),
+                    if (widget.hasSelectedDateTime && widget.userRole.toLowerCase() != 'driver') SizedBox(height: 4),
                     if (widget.hasSelectedDateTime && widget.userRole.toLowerCase() != 'driver')
                       Text(
                         widget.selectedSeats.isEmpty
                             ? l10n.selectYourSeat
                             : l10n.seatsSelected(widget.selectedSeats.length),
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Color(0xFF8E8E8E),
-                          fontWeight: FontWeight.w500,
-                        ),
+                        style: TextStyle(fontSize: 16, color: Color(0xFF8E8E8E), fontWeight: FontWeight.w500),
                       ),
                   ],
                 ),
@@ -150,7 +145,12 @@ class _BookingLayerWidgetState extends State<BookingLayerWidget> {
                           if (!widget.hasSelectedDateTime) ...[
                             Text(
                               l10n.whenDoYouWantToTravel,
-                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.black, height: 1.3),
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black,
+                                height: 1.3,
+                              ),
                             ),
                             SizedBox(height: 16),
 
@@ -174,7 +174,7 @@ class _BookingLayerWidgetState extends State<BookingLayerWidget> {
                             SeatPlanningSectionWidget(
                               userRole: widget.userRole,
                               selectedSeats: widget.selectedSeats,
-                              isDisabled: widget.isBookingCompleted,
+                              isDisabled: widget.isActionCompleted,
                               onSeatsSelected: widget.onSeatsSelected,
                             ),
 
@@ -186,7 +186,7 @@ class _BookingLayerWidgetState extends State<BookingLayerWidget> {
                   ),
                 ),
               ),
-              
+
               // Fixed booking button at bottom - same as rider's
               if (widget.hasSelectedDateTime)
                 BookingButtonWidget(
