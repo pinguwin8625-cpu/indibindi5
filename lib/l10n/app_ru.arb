@@ -3,7 +3,15 @@
   "appTitle": "IndiBindi",
   "home": "Главная",
   "myBookings": "Мои Бронирования",
+  "inbox": "Входящие",
   "account": "Аккаунт",
+  "uploadPhoto": "Загрузить Фото",
+  "changePhoto": "Изменить Фото",
+  "camera": "Камера",
+  "gallery": "Галерея",
+  "takePhoto": "Сделать Фото",
+  "chooseFromGallery": "Выбрать из Галереи",
+  "removePhoto": "Удалить Фото",
   "selectRoute": "Выберите маршрут для начала",
   "driver": "Водитель",
   "rider": "Пассажир",
@@ -143,5 +151,56 @@
   "completed": "Завершено",
   "canceled": "Отменено",
   "suggestRoute": "Предложить новый маршрут",
-  "suggestStop": "Предложить новую остановку"
+  "suggestStop": "Предложить новую остановку",
+  "areYouDriverOrRider": "Вы водитель или пассажир?",
+  "pickUpAndDropOff": "Выберите Точку Посадки",
+  "chooseDropOffPoint": "Выберите Точку Высадки",
+  "tapSeatsToChangeAvailability": "Нажмите на места, чтобы изменить доступность",
+  "setYourTime": "Установите Время",
+  "incompleteProfile": "Незавершенный Профиль",
+  "incompleteVehicleInfo": "Неполная Информация о Транспорте",
+  "completeProfile": "Заполнить Профиль",
+  "addVehicle": "Добавить Транспорт",
+  "completePersonalInfoForBooking": "Пожалуйста, заполните личную информацию (имя, фамилия, email, телефон) перед бронированием поездки.",
+  "completePersonalInfoForPosting": "Пожалуйста, заполните личную информацию (имя, фамилия, email, телефон) перед публикацией поездки.",
+  "completeVehicleInfoForPosting": "Пожалуйста, заполните информацию о транспорте (марка, модель, цвет, номер) перед публикацией поездки.",
+  "noMatchingRidesFound": "Подходящие поездки не найдены",
+  "tryAdjustingTimeOrRoute": "Попробуйте изменить время или маршрут",
+  "cannotBookOwnRide": "Вы не можете бронировать места в своей поездке",
+  "alreadyHaveRideScheduled": "У вас уже запланирована поездка на это время",
+  "book": "Забронировать",
+  "booked": "Забронировано",
+  "postRide": "Опубликовать Поездку",
+  "ridePosted": "Поездка Опубликована",
+  "thisIsYourRide": "Это ваша поездка - вы не можете её забронировать",
+  "available": "свободно",
+  "availableSeats": "{count} мест свободно",
+  "@availableSeats": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "seatsAvailable": "мест свободно",
+  "seatsSelected": "{count} мест выбрано",
+  "@seatsSelected": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "selectYourSeat": "Выберите место",
+  "chooseYourSeat": "Выберите ваше место",
+  "help": "Помощь",
+  "support": "Поддержка",
+  "faq": "ЧЗВ",
+  "clearMyBookings": "Очистить Мои Бронирования",
+  "noMessagesYet": "Сообщений пока нет",
+  "messagesWillAppear": "Сообщения появятся, когда вы забронируете поездку",
+  "startConversation": "Начните разговор!",
+  "pleaseLoginToViewMessages": "Войдите, чтобы просмотреть сообщения",
+  "bookARide": "Забронировать Поездку",
+  "cancelRide": "Отменить Поездку"
 }

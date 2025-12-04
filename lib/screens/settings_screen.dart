@@ -1,4 +1,5 @@
 import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import '../l10n/app_localizations.dart';
 import '../utils/dialog_helper.dart';
@@ -25,7 +26,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -55,50 +56,47 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: ListView(
           controller: _scrollController,
           padding: EdgeInsets.all(16),
-        children: [
-          // Notifications Section
-          _buildSwitchTile(
-            title: l10n.pushNotifications,
-            subtitle: l10n.pushNotificationsDesc,
-            value: _notificationsEnabled,
-            onChanged: (value) {
-              setState(() {
-                _notificationsEnabled = value;
-              });
-            },
-          ),
-          
-          SizedBox(height: 16),
-          
-          // Clear Cache - Android only (iOS manages cache automatically)
-          if (Platform.isAndroid) ...[
-            _buildSettingTile(
-              icon: Icons.delete_outline,
-              title: l10n.clearCache,
-              onTap: () {
-                _showClearCacheDialog();
+          children: [
+            // Notifications Section
+            _buildSwitchTile(
+              title: l10n.pushNotifications,
+              subtitle: l10n.pushNotificationsDesc,
+              value: _notificationsEnabled,
+              onChanged: (value) {
+                setState(() {
+                  _notificationsEnabled = value;
+                });
               },
+            ),
+
+            SizedBox(height: 16),
+
+            // Clear Cache - Android only (iOS manages cache automatically)
+            if (!kIsWeb && Platform.isAndroid) ...[
+              _buildSettingTile(
+                icon: Icons.delete_outline,
+                title: l10n.clearCache,
+                onTap: () {
+                  _showClearCacheDialog();
+                },
+              ),
+              SizedBox(height: 16),
+            ],
+
+            // App Version
+            Center(
+              child: Text(
+                l10n.version('1.0.0'),
+                style: TextStyle(color: Colors.grey[600], fontSize: 12),
+              ),
             ),
             SizedBox(height: 16),
           ],
-          
-          // App Version
-          Center(
-            child: Text(
-              l10n.version('1.0.0'),
-              style: TextStyle(
-                color: Colors.grey[600],
-                fontSize: 12,
-              ),
-            ),
-          ),
-          SizedBox(height: 16),
-        ],
-      ),
+        ),
       ),
     );
   }
-  
+
   Widget _buildSwitchTile({
     required String title,
     required String subtitle,
@@ -116,17 +114,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
         contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         title: Text(
           title,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-          ),
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
         ),
         subtitle: Text(
           subtitle,
-          style: TextStyle(
-            fontSize: 14,
-            color: Colors.grey[600],
-          ),
+          style: TextStyle(fontSize: 14, color: Colors.grey[600]),
         ),
         value: value,
         onChanged: onChanged,
@@ -135,7 +127,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
     );
   }
-  
+
   Widget _buildSettingTile({
     required IconData icon,
     required String title,
@@ -153,17 +145,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
         leading: Icon(icon, color: Color(0xFFDD2C00), size: 24),
         title: Text(
           title,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-          ),
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
         ),
         trailing: Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
         onTap: onTap,
       ),
     );
   }
-  
+
   Future<void> _showClearCacheDialog() async {
     final l10n = AppLocalizations.of(context)!;
     final confirmed = await DialogHelper.showConfirmDialog(
@@ -174,11 +163,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
       confirmText: l10n.clearCache,
       isDangerous: true,
     );
-    
+
     if (confirmed) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.cacheCleared)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.cacheCleared)));
     }
   }
 }

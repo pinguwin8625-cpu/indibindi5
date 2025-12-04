@@ -24,16 +24,16 @@ class AppLocalizationsTr extends AppLocalizations {
   String get account => 'Hesap';
 
   @override
-  String get uploadPhoto => 'Upload Photo';
+  String get uploadPhoto => 'Fotoğraf Yükle';
 
   @override
   String get changePhoto => 'Fotoğraf Değiştir';
 
   @override
-  String get camera => 'Camera';
+  String get camera => 'Kamera';
 
   @override
-  String get gallery => 'Gallery';
+  String get gallery => 'Galeri';
 
   @override
   String get takePhoto => 'Fotoğraf Çek';
@@ -42,7 +42,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get chooseFromGallery => 'Galeriden Seç';
 
   @override
-  String get removePhoto => 'Remove Photo';
+  String get removePhoto => 'Fotoğrafı Kaldır';
 
   @override
   String get selectRoute => 'Başlamak için bir rota seçin';
@@ -373,13 +373,13 @@ class AppLocalizationsTr extends AppLocalizations {
   String get rideHistory => 'Seyahat Geçmişi';
 
   @override
-  String get help => 'Help';
+  String get help => 'Yardım';
 
   @override
-  String get faq => 'FAQ';
+  String get faq => 'SSS';
 
   @override
-  String get support => 'Support';
+  String get support => 'Destek';
 
   @override
   String get helpAndSupport => 'Yardım ve Destek';
@@ -389,6 +389,9 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get logout => 'Çıkış Yap';
+
+  @override
+  String get clearMyBookings => 'Rezervasyonlarımı Temizle';
 
   @override
   String get deleteAccount => 'Hesabı Sil';
@@ -463,6 +466,12 @@ class AppLocalizationsTr extends AppLocalizations {
   String get completeBooking => 'Rezervasyonu Tamamla';
 
   @override
+  String get postRide => 'Yolculuk Yayınla';
+
+  @override
+  String get ridePosted => 'Yolculuk Yayınlandı';
+
+  @override
   String get noAvailableSeats => 'Müsait Koltuk Yok';
 
   @override
@@ -503,4 +512,88 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get suggestStop => 'Yeni durak öner';
+
+  @override
+  String get areYouDriverOrRider => 'Sürücü müsünüz yoksa yolcu mu?';
+
+  @override
+  String get pickUpAndDropOff => 'Biniş Noktası Seçin';
+
+  @override
+  String get chooseDropOffPoint => 'İniş Noktası Seçin';
+
+  @override
+  String get tapSeatsToChangeAvailability =>
+      'Müsaitliği değiştirmek için koltuklara dokunun';
+
+  @override
+  String get setYourTime => 'Saatinizi Belirleyin';
+
+  @override
+  String get incompleteProfile => 'Eksik Profil';
+
+  @override
+  String get incompleteVehicleInfo => 'Eksik Araç Bilgisi';
+
+  @override
+  String get completeProfile => 'Profili Tamamla';
+
+  @override
+  String get addVehicle => 'Araç Ekle';
+
+  @override
+  String get completePersonalInfoForBooking =>
+      'Yolculuk rezervasyonu yapmadan önce lütfen kişisel bilgilerinizi (ad, soyad, e-posta, telefon numarası) tamamlayın.';
+
+  @override
+  String get completePersonalInfoForPosting =>
+      'Yolculuk yayınlamadan önce lütfen kişisel bilgilerinizi (ad, soyad, e-posta, telefon numarası) tamamlayın.';
+
+  @override
+  String get completeVehicleInfoForPosting =>
+      'Yolculuk yayınlamadan önce lütfen araç bilgilerinizi (marka, model, renk, plaka) tamamlayın.';
+
+  @override
+  String get noMatchingRidesFound => 'Eşleşen yolculuk bulunamadı';
+
+  @override
+  String get tryAdjustingTimeOrRoute =>
+      'Saatinizi veya güzergahınızı ayarlamayı deneyin';
+
+  @override
+  String get cannotBookOwnRide =>
+      'Kendi yolculuğunuza rezervasyon yapamazsınız';
+
+  @override
+  String get thisIsYourRide =>
+      'Bu sizin yolculuğunuz - rezervasyon yapamazsınız';
+
+  @override
+  String get alreadyHaveRideScheduled =>
+      'Bu saatte zaten planlanmış bir yolculuğunuz var';
+
+  @override
+  String get book => 'Rezerve Et';
+
+  @override
+  String get booked => 'Rezerve Edildi';
+
+  @override
+  String get noMessagesYet => 'Henüz mesaj yok';
+
+  @override
+  String get messagesWillAppear =>
+      'Yolculuk rezervasyonu yaptığınızda mesajlar görünecek';
+
+  @override
+  String get startConversation => 'Bir sohbet başlatın!';
+
+  @override
+  String get pleaseLoginToViewMessages => 'Mesajları görmek için giriş yapın';
+
+  @override
+  String get bookARide => 'Yolculuk Rezerve Et';
+
+  @override
+  String get cancelRide => 'Yolculuğu İptal Et';
 }

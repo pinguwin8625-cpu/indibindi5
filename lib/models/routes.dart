@@ -1,6 +1,7 @@
 class StopInfo {
   final String name;
-  final double distanceFromPrevious; // Distance from previous stop in kilometers
+  final double
+  distanceFromPrevious; // Distance from previous stop in kilometers
   final int durationFromPrevious; // Duration from previous stop in minutes
 
   const StopInfo({
@@ -651,6 +652,7 @@ const List<RouteInfo> predefinedRoutes = [
 class RideInfo {
   final String id;
   final RouteInfo route;
+  final String driverId;
   final String driverName;
   final String driverPhoto;
   final double driverRating;
@@ -660,10 +662,12 @@ class RideInfo {
   final int destinationIndex;
   final int availableSeats;
   final String price;
+  final List<dynamic>? riders; // List of RiderInfo objects
 
   const RideInfo({
     required this.id,
     required this.route,
+    required this.driverId,
     required this.driverName,
     required this.driverPhoto,
     required this.driverRating,
@@ -673,5 +677,6 @@ class RideInfo {
     required this.destinationIndex,
     required this.availableSeats,
     required this.price,
+    this.riders,
   });
 }

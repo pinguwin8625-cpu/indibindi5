@@ -3,7 +3,15 @@
   "appTitle": "IndiBindi",
   "home": "ホーム",
   "myBookings": "予約履歴",
+  "inbox": "受信トレイ",
   "account": "アカウント",
+  "uploadPhoto": "写真をアップロード",
+  "changePhoto": "写真を変更",
+  "camera": "カメラ",
+  "gallery": "ギャラリー",
+  "takePhoto": "写真を撮る",
+  "chooseFromGallery": "ギャラリーから選択",
+  "removePhoto": "写真を削除",
   "selectRoute": "ルートを選択して開始",
   "driver": "ドライバー",
   "rider": "乗客",
@@ -143,5 +151,56 @@
   "completed": "完了",
   "canceled": "キャンセル",
   "suggestRoute": "新しいルートを提案",
-  "suggestStop": "新しい停留所を提案"
+  "suggestStop": "新しい停留所を提案",
+  "areYouDriverOrRider": "ドライバーですか、ライダーですか？",
+  "pickUpAndDropOff": "乗車地点を選択",
+  "chooseDropOffPoint": "降車地点を選択",
+  "tapSeatsToChangeAvailability": "座席をタップして空き状況を変更",
+  "setYourTime": "時間を設定",
+  "incompleteProfile": "プロフィール未完了",
+  "incompleteVehicleInfo": "車両情報未完了",
+  "completeProfile": "プロフィールを完成",
+  "addVehicle": "車両を追加",
+  "completePersonalInfoForBooking": "乗車を予約する前に、個人情報（名前、姓、メール、電話番号）を入力してください。",
+  "completePersonalInfoForPosting": "乗車を投稿する前に、個人情報（名前、姓、メール、電話番号）を入力してください。",
+  "completeVehicleInfoForPosting": "乗車を投稿する前に、車両情報（ブランド、モデル、色、ナンバープレート）を入力してください。",
+  "noMatchingRidesFound": "一致する乗車が見つかりません",
+  "tryAdjustingTimeOrRoute": "時間やルートを調整してみてください",
+  "cannotBookOwnRide": "自分の乗車に席を予約することはできません",
+  "alreadyHaveRideScheduled": "この時間帯にすでに乗車が予定されています",
+  "book": "予約",
+  "booked": "予約済み",
+  "postRide": "乗車を投稿",
+  "ridePosted": "乗車投稿完了",
+  "thisIsYourRide": "これはあなたの乗車です - 予約できません",
+  "available": "空き",
+  "availableSeats": "{count}席空き",
+  "@availableSeats": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "seatsAvailable": "席空き",
+  "seatsSelected": "{count}席選択済み",
+  "@seatsSelected": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "selectYourSeat": "座席を選択",
+  "chooseYourSeat": "座席を選んでください",
+  "help": "ヘルプ",
+  "support": "サポート",
+  "faq": "よくある質問",
+  "clearMyBookings": "予約をクリア",
+  "noMessagesYet": "まだメッセージはありません",
+  "messagesWillAppear": "乗車を予約するとメッセージが表示されます",
+  "startConversation": "会話を始めましょう！",
+  "pleaseLoginToViewMessages": "メッセージを見るにはログインしてください",
+  "bookARide": "乗車を予約",
+  "cancelRide": "乗車をキャンセル"
 }

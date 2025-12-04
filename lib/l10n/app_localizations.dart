@@ -289,7 +289,7 @@ abstract class AppLocalizations {
   /// Instruction for rider to select a seat
   ///
   /// In en, this message translates to:
-  /// **'Select your seat'**
+  /// **'Select Your Seat'**
   String get selectYourSeat;
 
   /// Word for available (used in brackets)
@@ -307,7 +307,7 @@ abstract class AppLocalizations {
   /// Number of seats selected by rider
   ///
   /// In en, this message translates to:
-  /// **'{count} seat(s) selected'**
+  /// **'{count} Seat(s) Selected'**
   String seatsSelected(int count);
 
   /// Title for stops selection
@@ -856,6 +856,12 @@ abstract class AppLocalizations {
   /// **'Logout'**
   String get logout;
 
+  /// Clear my bookings menu item
+  ///
+  /// In en, this message translates to:
+  /// **'Clear My Bookings'**
+  String get clearMyBookings;
+
   /// Delete account menu item
   ///
   /// In en, this message translates to:
@@ -1000,6 +1006,18 @@ abstract class AppLocalizations {
   /// **'Complete Booking'**
   String get completeBooking;
 
+  /// Button text for driver to post a ride
+  ///
+  /// In en, this message translates to:
+  /// **'Post a Ride'**
+  String get postRide;
+
+  /// Button text after driver successfully posts a ride
+  ///
+  /// In en, this message translates to:
+  /// **'Ride Posted'**
+  String get ridePosted;
+
   /// Message when no seats are available
   ///
   /// In en, this message translates to:
@@ -1083,6 +1101,156 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Suggest a new stop'**
   String get suggestStop;
+
+  /// Question to choose role
+  ///
+  /// In en, this message translates to:
+  /// **'Are you driver or rider?'**
+  String get areYouDriverOrRider;
+
+  /// Title for pick up stop selection screen
+  ///
+  /// In en, this message translates to:
+  /// **'Choose Pick Up Point'**
+  String get pickUpAndDropOff;
+
+  /// Title for drop off stop selection screen
+  ///
+  /// In en, this message translates to:
+  /// **'Choose Drop Off Point'**
+  String get chooseDropOffPoint;
+
+  /// Hint text for driver seat selection
+  ///
+  /// In en, this message translates to:
+  /// **'Tap Seats To Change Availability'**
+  String get tapSeatsToChangeAvailability;
+
+  /// Title for time selection
+  ///
+  /// In en, this message translates to:
+  /// **'Set Your Time'**
+  String get setYourTime;
+
+  /// Dialog title for incomplete profile
+  ///
+  /// In en, this message translates to:
+  /// **'Incomplete Profile'**
+  String get incompleteProfile;
+
+  /// Dialog title for incomplete vehicle info
+  ///
+  /// In en, this message translates to:
+  /// **'Incomplete Vehicle Info'**
+  String get incompleteVehicleInfo;
+
+  /// Button to complete profile
+  ///
+  /// In en, this message translates to:
+  /// **'Complete Profile'**
+  String get completeProfile;
+
+  /// Button to add vehicle
+  ///
+  /// In en, this message translates to:
+  /// **'Add Vehicle'**
+  String get addVehicle;
+
+  /// Message for incomplete personal info for riders
+  ///
+  /// In en, this message translates to:
+  /// **'Please complete your personal information (name, surname, email, phone number) before booking a ride.'**
+  String get completePersonalInfoForBooking;
+
+  /// Message for incomplete personal info for drivers
+  ///
+  /// In en, this message translates to:
+  /// **'Please complete your personal information (name, surname, email, phone number) before posting a ride.'**
+  String get completePersonalInfoForPosting;
+
+  /// Message for incomplete vehicle info for drivers
+  ///
+  /// In en, this message translates to:
+  /// **'Please complete your vehicle information (brand, model, color, license plate) before posting a ride.'**
+  String get completeVehicleInfoForPosting;
+
+  /// Message when no rides match criteria
+  ///
+  /// In en, this message translates to:
+  /// **'No matching rides found'**
+  String get noMatchingRidesFound;
+
+  /// Suggestion when no matching rides
+  ///
+  /// In en, this message translates to:
+  /// **'Try adjusting your time or route'**
+  String get tryAdjustingTimeOrRoute;
+
+  /// Error message when trying to book own ride
+  ///
+  /// In en, this message translates to:
+  /// **'You cannot book seats on your own ride'**
+  String get cannotBookOwnRide;
+
+  /// Info message shown on user's own ride
+  ///
+  /// In en, this message translates to:
+  /// **'This is your ride - you cannot book it'**
+  String get thisIsYourRide;
+
+  /// Error message for time conflict
+  ///
+  /// In en, this message translates to:
+  /// **'You already have a ride scheduled around this time'**
+  String get alreadyHaveRideScheduled;
+
+  /// Book button text
+  ///
+  /// In en, this message translates to:
+  /// **'Book'**
+  String get book;
+
+  /// Booked status text
+  ///
+  /// In en, this message translates to:
+  /// **'Booked'**
+  String get booked;
+
+  /// Empty inbox message
+  ///
+  /// In en, this message translates to:
+  /// **'No messages yet'**
+  String get noMessagesYet;
+
+  /// Empty inbox helper text
+  ///
+  /// In en, this message translates to:
+  /// **'Messages will appear when you book a ride'**
+  String get messagesWillAppear;
+
+  /// Prompt to start chatting
+  ///
+  /// In en, this message translates to:
+  /// **'Start a conversation!'**
+  String get startConversation;
+
+  /// Login prompt for inbox
+  ///
+  /// In en, this message translates to:
+  /// **'Please log in to view messages'**
+  String get pleaseLoginToViewMessages;
+
+  /// Title for ride booking screen
+  ///
+  /// In en, this message translates to:
+  /// **'Book a Ride'**
+  String get bookARide;
+
+  /// Button to cancel a ride booking
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel Ride'**
+  String get cancelRide;
 }
 
 class _AppLocalizationsDelegate

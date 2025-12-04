@@ -141,7 +141,7 @@
     "description": "Title for rider's seat selection"
   },
 
-  "selectYourSeat": "Select your seat",
+  "selectYourSeat": "Select Your Seat",
   "@selectYourSeat": {
     "description": "Instruction for rider to select a seat"
   },
@@ -161,7 +161,7 @@
     }
   },
 
-  "seatsSelected": "{count} seat(s) selected",
+  "seatsSelected": "{count} Seat(s) Selected",
   "@seatsSelected": {
     "description": "Number of seats selected by rider",
     "placeholders": {
@@ -564,6 +564,11 @@
     "description": "Logout menu item"
   },
 
+  "clearMyBookings": "Clear My Bookings",
+  "@clearMyBookings": {
+    "description": "Clear my bookings menu item"
+  },
+
   "deleteAccount": "Delete Account",
   "@deleteAccount": {
     "description": "Delete account menu item"
@@ -607,6 +612,16 @@
   "completeBooking": "Complete Booking",
   "@completeBooking": {
     "description": "Button text to complete a booking"
+  },
+
+  "postRide": "Post a Ride",
+  "@postRide": {
+    "description": "Button text for driver to post a ride"
+  },
+
+  "ridePosted": "Ride Posted",
+  "@ridePosted": {
+    "description": "Button text after driver successfully posts a ride"
   },
 
   "noAvailableSeats": "No Available Seats",
@@ -677,5 +692,130 @@
   "suggestStop": "Suggest a new stop",
   "@suggestStop": {
     "description": "Link text to suggest a new stop"
+  },
+
+  "areYouDriverOrRider": "Are you driver or rider?",
+  "@areYouDriverOrRider": {
+    "description": "Question to choose role"
+  },
+
+  "pickUpAndDropOff": "Choose Pick Up Point",
+  "@pickUpAndDropOff": {
+    "description": "Title for pick up stop selection screen"
+  },
+
+  "chooseDropOffPoint": "Choose Drop Off Point",
+  "@chooseDropOffPoint": {
+    "description": "Title for drop off stop selection screen"
+  },
+
+  "tapSeatsToChangeAvailability": "Tap Seats To Change Availability",
+  "@tapSeatsToChangeAvailability": {
+    "description": "Hint text for driver seat selection"
+  },
+
+  "setYourTime": "Set Your Time",
+  "@setYourTime": {
+    "description": "Title for time selection"
+  },
+
+  "incompleteProfile": "Incomplete Profile",
+  "@incompleteProfile": {
+    "description": "Dialog title for incomplete profile"
+  },
+
+  "incompleteVehicleInfo": "Incomplete Vehicle Info",
+  "@incompleteVehicleInfo": {
+    "description": "Dialog title for incomplete vehicle info"
+  },
+
+  "completeProfile": "Complete Profile",
+  "@completeProfile": {
+    "description": "Button to complete profile"
+  },
+
+  "addVehicle": "Add Vehicle",
+  "@addVehicle": {
+    "description": "Button to add vehicle"
+  },
+
+  "completePersonalInfoForBooking": "Please complete your personal information (name, surname, email, phone number) before booking a ride.",
+  "@completePersonalInfoForBooking": {
+    "description": "Message for incomplete personal info for riders"
+  },
+
+  "completePersonalInfoForPosting": "Please complete your personal information (name, surname, email, phone number) before posting a ride.",
+  "@completePersonalInfoForPosting": {
+    "description": "Message for incomplete personal info for drivers"
+  },
+
+  "completeVehicleInfoForPosting": "Please complete your vehicle information (brand, model, color, license plate) before posting a ride.",
+  "@completeVehicleInfoForPosting": {
+    "description": "Message for incomplete vehicle info for drivers"
+  },
+
+  "noMatchingRidesFound": "No matching rides found",
+  "@noMatchingRidesFound": {
+    "description": "Message when no rides match criteria"
+  },
+
+  "tryAdjustingTimeOrRoute": "Try adjusting your time or route",
+  "@tryAdjustingTimeOrRoute": {
+    "description": "Suggestion when no matching rides"
+  },
+
+  "cannotBookOwnRide": "You cannot book seats on your own ride",
+  "@cannotBookOwnRide": {
+    "description": "Error message when trying to book own ride"
+  },
+
+  "thisIsYourRide": "This is your ride - you cannot book it",
+  "@thisIsYourRide": {
+    "description": "Info message shown on user's own ride"
+  },
+
+  "alreadyHaveRideScheduled": "You already have a ride scheduled around this time",
+  "@alreadyHaveRideScheduled": {
+    "description": "Error message for time conflict"
+  },
+
+  "book": "Book",
+  "@book": {
+    "description": "Book button text"
+  },
+
+  "booked": "Booked",
+  "@booked": {
+    "description": "Booked status text"
+  },
+
+  "noMessagesYet": "No messages yet",
+  "@noMessagesYet": {
+    "description": "Empty inbox message"
+  },
+
+  "messagesWillAppear": "Messages will appear when you book a ride",
+  "@messagesWillAppear": {
+    "description": "Empty inbox helper text"
+  },
+
+  "startConversation": "Start a conversation!",
+  "@startConversation": {
+    "description": "Prompt to start chatting"
+  },
+
+  "pleaseLoginToViewMessages": "Please log in to view messages",
+  "@pleaseLoginToViewMessages": {
+    "description": "Login prompt for inbox"
+  },
+
+  "bookARide": "Book a Ride",
+  "@bookARide": {
+    "description": "Title for ride booking screen"
+  },
+
+  "cancelRide": "Cancel Ride",
+  "@cancelRide": {
+    "description": "Button to cancel a ride booking"
   }
 }

@@ -3,7 +3,15 @@
   "appTitle": "IndiBindi",
   "home": "홈",
   "myBookings": "내 예약",
+  "inbox": "받은 편지함",
   "account": "계정",
+  "uploadPhoto": "사진 업로드",
+  "changePhoto": "사진 변경",
+  "camera": "카메라",
+  "gallery": "갤러리",
+  "takePhoto": "사진 찍기",
+  "chooseFromGallery": "갤러리에서 선택",
+  "removePhoto": "사진 삭제",
   "selectRoute": "경로를 선택하여 시작하세요",
   "driver": "운전자",
   "rider": "승객",
@@ -143,5 +151,56 @@
   "completed": "완료됨",
   "canceled": "취소됨",
   "suggestRoute": "새 경로 제안",
-  "suggestStop": "새 정류장 제안"
+  "suggestStop": "새 정류장 제안",
+  "areYouDriverOrRider": "운전자입니까, 탑승자입니까?",
+  "pickUpAndDropOff": "승차 지점 선택",
+  "chooseDropOffPoint": "하차 지점 선택",
+  "tapSeatsToChangeAvailability": "좌석을 탭하여 이용 가능 여부 변경",
+  "setYourTime": "시간 설정",
+  "incompleteProfile": "프로필 미완성",
+  "incompleteVehicleInfo": "차량 정보 미완성",
+  "completeProfile": "프로필 완성",
+  "addVehicle": "차량 추가",
+  "completePersonalInfoForBooking": "탑승 예약 전에 개인 정보(이름, 성, 이메일, 전화번호)를 입력해 주세요.",
+  "completePersonalInfoForPosting": "탑승 게시 전에 개인 정보(이름, 성, 이메일, 전화번호)를 입력해 주세요.",
+  "completeVehicleInfoForPosting": "탑승 게시 전에 차량 정보(브랜드, 모델, 색상, 번호판)를 입력해 주세요.",
+  "noMatchingRidesFound": "일치하는 탑승을 찾을 수 없습니다",
+  "tryAdjustingTimeOrRoute": "시간이나 경로를 조정해 보세요",
+  "cannotBookOwnRide": "자신의 탑승에는 좌석을 예약할 수 없습니다",
+  "alreadyHaveRideScheduled": "이 시간대에 이미 예정된 탑승이 있습니다",
+  "book": "예약",
+  "booked": "예약됨",
+  "postRide": "탑승 게시",
+  "ridePosted": "탑승 게시됨",
+  "thisIsYourRide": "이것은 당신의 탑승입니다 - 예약할 수 없습니다",
+  "available": "이용 가능",
+  "availableSeats": "{count}석 이용 가능",
+  "@availableSeats": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "seatsAvailable": "석 이용 가능",
+  "seatsSelected": "{count}석 선택됨",
+  "@seatsSelected": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "selectYourSeat": "좌석을 선택하세요",
+  "chooseYourSeat": "좌석을 선택해 주세요",
+  "help": "도움말",
+  "support": "지원",
+  "faq": "자주 묻는 질문",
+  "clearMyBookings": "내 예약 삭제",
+  "noMessagesYet": "아직 메시지가 없습니다",
+  "messagesWillAppear": "탑승을 예약하면 메시지가 표시됩니다",
+  "startConversation": "대화를 시작하세요!",
+  "pleaseLoginToViewMessages": "메시지를 보려면 로그인하세요",
+  "bookARide": "탑승 예약",
+  "cancelRide": "탑승 취소"
 }

@@ -30,22 +30,28 @@ class BookingLogic {
     int? originIndex,
     int? destinationIndex,
     bool hasSelectedDateTime,
-    List<int> selectedSeats,
-  ) {
+    List<int> selectedSeats, {
+    bool hasSelectedRole = false,
+    bool isActionCompleted = false,
+  }) {
     int step;
-    if (selectedRoute == null) {
-      step = 0; // Stage 0: Nothing selected
+    if (!hasSelectedRole) {
+      step = 0; // Stage 0: Role not selected
+    } else if (selectedRoute == null) {
+      step = 1; // Stage 1: Role selected, no route yet
     } else if (originIndex == null) {
-      step = 1; // Stage 1: Route selected
+      step = 2; // Stage 2: Route selected
     } else if (destinationIndex == null) {
-      step = 2; // Stage 2: Pick up stop selected
+      step = 3; // Stage 3: Pick up stop selected
     } else if (!hasSelectedDateTime) {
-      step = 3; // Stage 3: Drop off stop selected, time not yet selected
+      step = 4; // Stage 4: Drop off stop selected, time not yet selected
+    } else if (!isActionCompleted) {
+      step = 5; // Stage 5: Time selected, ready to post/book
     } else {
-      step = 4; // Stage 4: Time selected (only when both stops AND time are selected)
+      step = 6; // Stage 6: Ride posted or booked (completed)
     }
     
-    print('🚗 BookingLogic.getCurrentStep: route=${selectedRoute?.name}, origin=$originIndex, dest=$destinationIndex, hasTime=$hasSelectedDateTime → step=$step');
+    print('🚗 BookingLogic.getCurrentStep: hasRole=$hasSelectedRole, route=${selectedRoute?.name}, origin=$originIndex, dest=$destinationIndex, hasTime=$hasSelectedDateTime, completed=$isActionCompleted → step=$step');
     return step;
   }
 }

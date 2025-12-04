@@ -4,7 +4,15 @@
   "appTitle": "IndiBindi",
   "home": "Inicio",
   "myBookings": "Mis Reservas",
+  "inbox": "Bandeja de Entrada",
   "account": "Cuenta",
+  "uploadPhoto": "Subir Foto",
+  "changePhoto": "Cambiar Foto",
+  "camera": "Cámara",
+  "gallery": "Galería",
+  "takePhoto": "Tomar Foto",
+  "chooseFromGallery": "Elegir de la Galería",
+  "removePhoto": "Eliminar Foto",
   "selectRoute": "Selecciona una ruta para comenzar",
   "driver": "Conductor",
   "rider": "Pasajero",
@@ -131,6 +139,8 @@
   "passenger": "Pasajero",
   "bookingCompleted": "Reserva Completada",
   "completeBooking": "Completar Reserva",
+  "postRide": "Publicar Viaje",
+  "ridePosted": "Viaje Publicado",
   "noAvailableSeats": "No Hay Asientos Disponibles",
   "whenDoYouWantToTravel": "¿Cuándo quieres viajar?",
   "matchingRides": "Viajes Coincidentes",
@@ -144,5 +154,54 @@
   "completed": "Completado",
   "canceled": "Cancelado",
   "suggestRoute": "Sugerir una nueva ruta",
-  "suggestStop": "Sugerir una nueva parada"
+  "suggestStop": "Sugerir una nueva parada",
+  "areYouDriverOrRider": "¿Eres conductor o pasajero?",
+  "pickUpAndDropOff": "Elige Punto de Recogida",
+  "chooseDropOffPoint": "Elige Punto de Bajada",
+  "tapSeatsToChangeAvailability": "Toca los asientos para cambiar la disponibilidad",
+  "setYourTime": "Establece tu Hora",
+  "incompleteProfile": "Perfil Incompleto",
+  "incompleteVehicleInfo": "Info de Vehículo Incompleta",
+  "completeProfile": "Completar Perfil",
+  "addVehicle": "Agregar Vehículo",
+  "completePersonalInfoForBooking": "Por favor completa tu información personal (nombre, apellido, correo, teléfono) antes de reservar un viaje.",
+  "completePersonalInfoForPosting": "Por favor completa tu información personal (nombre, apellido, correo, teléfono) antes de publicar un viaje.",
+  "completeVehicleInfoForPosting": "Por favor completa la información de tu vehículo (marca, modelo, color, matrícula) antes de publicar un viaje.",
+  "noMatchingRidesFound": "No se encontraron viajes coincidentes",
+  "tryAdjustingTimeOrRoute": "Intenta ajustar la hora o la ruta",
+  "cannotBookOwnRide": "No puedes reservar asientos en tu propio viaje",
+  "alreadyHaveRideScheduled": "Ya tienes un viaje programado a esta hora",
+  "book": "Reservar",
+  "booked": "Reservado",
+  "thisIsYourRide": "Este es tu viaje - no puedes reservarlo",
+  "available": "disponible",
+  "availableSeats": "{count} asientos disponibles",
+  "@availableSeats": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "seatsAvailable": "asientos disponibles",
+  "seatsSelected": "{count} asientos seleccionados",
+  "@seatsSelected": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "selectYourSeat": "Selecciona tu asiento",
+  "chooseYourSeat": "Elige tu asiento",
+  "help": "Ayuda",
+  "support": "Soporte",
+  "faq": "FAQ",
+  "clearMyBookings": "Borrar Mis Reservas",
+  "noMessagesYet": "Aún no hay mensajes",
+  "messagesWillAppear": "Los mensajes aparecerán cuando reserves un viaje",
+  "startConversation": "¡Inicia una conversación!",
+  "pleaseLoginToViewMessages": "Inicia sesión para ver los mensajes",
+  "bookARide": "Reservar un Viaje",
+  "cancelRide": "Cancelar Viaje"
 }

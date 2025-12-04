@@ -42,11 +42,7 @@ class AdminPanelScreen extends StatelessWidget {
           ),
         ),
         body: TabBarView(
-          children: [
-            _UsersTab(),
-            _BookingsTab(),
-            _MessagesTab(),
-          ],
+          children: [_UsersTab(), _BookingsTab(), _MessagesTab()],
         ),
       ),
     );
@@ -64,7 +60,9 @@ class _UsersTab extends StatelessWidget {
       itemCount: users.length,
       itemBuilder: (context, index) {
         final user = users[index];
-        final bookingCount = BookingStorage().getBookingsForUser(user.id).length;
+        final bookingCount = BookingStorage()
+            .getBookingsForUser(user.id)
+            .length;
 
         return Card(
           margin: EdgeInsets.only(bottom: 12),
@@ -72,13 +70,16 @@ class _UsersTab extends StatelessWidget {
             leading: CircleAvatar(
               backgroundColor: user.isAdmin ? Color(0xFFDD2C00) : Colors.blue,
               child: Icon(
-                user.isAdmin 
-                    ? Icons.admin_panel_settings 
+                user.isAdmin
+                    ? Icons.admin_panel_settings
                     : (user.hasVehicle ? Icons.directions_car : Icons.person),
                 color: Colors.white,
               ),
             ),
-            title: Text(user.fullName, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+            title: Text(
+              user.fullName,
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+            ),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -86,8 +87,8 @@ class _UsersTab extends StatelessWidget {
                 Text(user.email, style: TextStyle(fontSize: 14)),
                 SizedBox(height: 2),
                 Text(
-                  user.isAdmin 
-                      ? 'Admin' 
+                  user.isAdmin
+                      ? 'Admin'
                       : (user.hasVehicle ? 'Driver' : 'Rider'),
                   style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                 ),
@@ -101,7 +102,10 @@ class _UsersTab extends StatelessWidget {
                   '$bookingCount',
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
-                Text('bookings', style: TextStyle(fontSize: 10, color: Colors.grey[600])),
+                Text(
+                  'bookings',
+                  style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+                ),
               ],
             ),
             onTap: () => _showUserDetails(context, user),
@@ -113,7 +117,7 @@ class _UsersTab extends StatelessWidget {
 
   void _showUserDetails(BuildContext context, User user) {
     final bookings = BookingStorage().getBookingsForUser(user.id);
-    
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -136,9 +140,11 @@ class _UsersTab extends StatelessWidget {
                     radius: 30,
                     backgroundColor: Colors.white,
                     child: Icon(
-                      user.isAdmin 
-                          ? Icons.admin_panel_settings 
-                          : (user.hasVehicle ? Icons.directions_car : Icons.person),
+                      user.isAdmin
+                          ? Icons.admin_panel_settings
+                          : (user.hasVehicle
+                                ? Icons.directions_car
+                                : Icons.person),
                       color: Color(0xFFDD2C00),
                       size: 30,
                     ),
@@ -150,7 +156,11 @@ class _UsersTab extends StatelessWidget {
                       children: [
                         Text(
                           user.fullName,
-                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
                         ),
                         Text(
                           user.email,
@@ -173,10 +183,21 @@ class _UsersTab extends StatelessWidget {
                 children: [
                   _buildInfoRow('ID', user.id),
                   _buildInfoRow('Phone', user.formattedPhone),
-                  _buildInfoRow('Role', user.isAdmin ? 'Admin' : (user.hasVehicle ? 'Driver' : 'Rider')),
+                  _buildInfoRow(
+                    'Role',
+                    user.isAdmin
+                        ? 'Admin'
+                        : (user.hasVehicle ? 'Driver' : 'Rider'),
+                  ),
                   if (user.hasVehicle) ...[
                     Divider(height: 32),
-                    Text('Vehicle Information', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    Text(
+                      'Vehicle Information',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     SizedBox(height: 8),
                     _buildInfoRow('Make', user.vehicleBrand ?? ''),
                     _buildInfoRow('Model', user.vehicleModel ?? ''),
@@ -184,25 +205,35 @@ class _UsersTab extends StatelessWidget {
                     _buildInfoRow('Plate', user.licensePlate ?? ''),
                   ],
                   Divider(height: 32),
-                  Text('Bookings (${bookings.length})', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  Text(
+                    'Bookings (${bookings.length})',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
                   SizedBox(height: 8),
-                  ...bookings.map((booking) => Card(
-                    margin: EdgeInsets.only(bottom: 8),
-                    child: ListTile(
-                      title: Text(booking.route.name, style: TextStyle(fontSize: 14)),
-                      subtitle: Text(
-                        booking.departureTime.toString().substring(0, 16),
-                        style: TextStyle(fontSize: 12),
-                      ),
-                      trailing: Text(
-                        booking.isUpcoming ? 'Upcoming' : 'Past',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: booking.isUpcoming ? Colors.green : Colors.grey,
+                  ...bookings.map(
+                    (booking) => Card(
+                      margin: EdgeInsets.only(bottom: 8),
+                      child: ListTile(
+                        title: Text(
+                          booking.route.name,
+                          style: TextStyle(fontSize: 14),
+                        ),
+                        subtitle: Text(
+                          booking.departureTime.toString().substring(0, 16),
+                          style: TextStyle(fontSize: 12),
+                        ),
+                        trailing: Text(
+                          booking.isUpcoming ? 'Upcoming' : 'Past',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: booking.isUpcoming
+                                ? Colors.green
+                                : Colors.grey,
+                          ),
                         ),
                       ),
                     ),
-                  )),
+                  ),
                 ],
               ),
             ),
@@ -244,66 +275,140 @@ class _BookingsTab extends StatelessWidget {
     return ValueListenableBuilder(
       valueListenable: BookingStorage().bookings,
       builder: (context, bookings, _) {
-        if (bookings.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.calendar_today, size: 64, color: Colors.grey[300]),
-                SizedBox(height: 16),
-                Text(
-                  'No bookings yet',
-                  style: TextStyle(fontSize: 18, color: Colors.grey[600]),
-                ),
-              ],
-            ),
-          );
-        }
-
-        final upcomingBookings = bookings.where((b) => b.isUpcoming).toList();
-        final pastBookings = bookings.where((b) => b.isPast).toList();
-
-        return ListView(
-          padding: EdgeInsets.all(16),
+        return Column(
           children: [
-            if (upcomingBookings.isNotEmpty) ...[
-              Text('Upcoming (${upcomingBookings.length})', 
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              SizedBox(height: 8),
-              ...upcomingBookings.map((booking) => _buildBookingCard(context, booking)),
-              SizedBox(height: 16),
-            ],
-            if (pastBookings.isNotEmpty) ...[
-              Text('Past (${pastBookings.length})', 
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              SizedBox(height: 8),
-              ...pastBookings.map((booking) => _buildBookingCard(context, booking)),
-            ],
+            // Management buttons
+            Container(
+              padding: EdgeInsets.all(16),
+              color: Colors.grey[100],
+              child: ElevatedButton.icon(
+                onPressed: () => _confirmClearAll(context),
+                icon: Icon(Icons.delete_sweep),
+                label: Text('Clear All Bookings'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red[700],
+                  foregroundColor: Colors.white,
+                ),
+              ),
+            ),
+
+            // Bookings list
+            Expanded(
+              child: bookings.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.calendar_today,
+                            size: 64,
+                            color: Colors.grey[300],
+                          ),
+                          SizedBox(height: 16),
+                          Text(
+                            'No bookings yet',
+                            style: TextStyle(
+                              fontSize: 18,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : _buildBookingsList(context, bookings),
+            ),
           ],
         );
       },
     );
   }
 
+  Widget _buildBookingsList(BuildContext context, List bookings) {
+    final upcomingBookings = bookings.where((b) => b.isUpcoming).toList();
+    final pastBookings = bookings.where((b) => b.isPast).toList();
+
+    return ListView(
+      padding: EdgeInsets.all(16),
+      children: [
+        if (upcomingBookings.isNotEmpty) ...[
+          Text(
+            'Upcoming (${upcomingBookings.length})',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          SizedBox(height: 8),
+          ...upcomingBookings.map(
+            (booking) => _buildBookingCard(context, booking),
+          ),
+          SizedBox(height: 16),
+        ],
+        if (pastBookings.isNotEmpty) ...[
+          Text(
+            'Past (${pastBookings.length})',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          SizedBox(height: 8),
+          ...pastBookings.map((booking) => _buildBookingCard(context, booking)),
+        ],
+      ],
+    );
+  }
+
+  void _confirmClearAll(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Clear All Bookings?'),
+        content: Text(
+          'This will permanently delete all bookings. This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              BookingStorage().clearAllBookings();
+              Navigator.pop(context);
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text('All bookings cleared')));
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red[700]),
+            child: Text('Clear All', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildBookingCard(BuildContext context, Booking booking) {
-    final user = MockUsers.users.firstWhere((u) => u.id == booking.userId);
-    
+    final user = MockUsers.getUserById(booking.userId);
+
     return Card(
       margin: EdgeInsets.only(bottom: 12),
       child: ListTile(
         leading: CircleAvatar(
           backgroundColor: booking.isUpcoming ? Colors.green : Colors.grey,
           child: Icon(
-            booking.userRole.toLowerCase() == 'driver' ? Icons.directions_car : Icons.person,
+            booking.userRole.toLowerCase() == 'driver'
+                ? Icons.directions_car
+                : Icons.person,
             color: Colors.white,
           ),
         ),
-        title: Text(booking.route.name, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+        title: Text(
+          booking.route.name,
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+        ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             SizedBox(height: 4),
-            Text(user.fullName, style: TextStyle(fontSize: 14)),
+            Text(
+              user?.fullName ?? 'Unknown User',
+              style: TextStyle(fontSize: 14),
+            ),
             Text(
               booking.departureTime.toString().substring(0, 16),
               style: TextStyle(fontSize: 12, color: Colors.grey[600]),
@@ -318,7 +423,10 @@ class _BookingsTab extends StatelessWidget {
               '${booking.selectedSeats.length}',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
-            Text('seats', style: TextStyle(fontSize: 10, color: Colors.grey[600])),
+            Text(
+              'seats',
+              style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+            ),
           ],
         ),
       ),
@@ -369,18 +477,18 @@ class _MessagesTab extends StatelessWidget {
               margin: EdgeInsets.only(bottom: 12),
               child: ListTile(
                 leading: CircleAvatar(
-                  backgroundColor: conversation.id.startsWith('support_') 
-                      ? Color(0xFFDD2C00) 
+                  backgroundColor: conversation.id.startsWith('support_')
+                      ? Color(0xFFDD2C00)
                       : Colors.blue,
                   child: Icon(
-                    conversation.id.startsWith('support_') 
-                        ? Icons.support_agent 
+                    conversation.id.startsWith('support_')
+                        ? Icons.support_agent
                         : Icons.message,
                     color: Colors.white,
                   ),
                 ),
                 title: Text(
-                  conversation.routeName, 
+                  conversation.routeName,
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                 ),
                 subtitle: Column(
@@ -406,13 +514,22 @@ class _MessagesTab extends StatelessWidget {
                   children: [
                     Text(
                       '$messageCount',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                    Text('messages', style: TextStyle(fontSize: 10, color: Colors.grey[600])),
+                    Text(
+                      'messages',
+                      style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+                    ),
                     if (unreadCount > 0)
                       Container(
                         margin: EdgeInsets.only(top: 4),
-                        padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: Color(0xFFDD2C00),
                           borderRadius: BorderRadius.circular(10),

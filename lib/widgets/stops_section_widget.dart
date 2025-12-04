@@ -40,14 +40,11 @@ class _StopsSectionWidgetState extends State<StopsSectionWidget> {
     if (widget.hideUnusedStops &&
         widget.originIndex != null &&
         widget.destinationIndex != null) {
-      int start = widget.originIndex!;
-      int end = widget.destinationIndex!;
-      if (start > end) {
-        int temp = start;
-        start = end;
-        end = temp;
-      }
-      visibleStops = visibleStops.sublist(start, end + 1);
+      // Only show origin and destination, hide stops in between
+      visibleStops = [
+        widget.selectedRoute.stops[widget.originIndex!],
+        widget.selectedRoute.stops[widget.destinationIndex!],
+      ];
     }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -84,7 +81,7 @@ class _StopsSectionWidgetState extends State<StopsSectionWidget> {
             ],
           ),
         ),
-        
+
         // Suggestion link for new stop
         Padding(
           padding: EdgeInsets.only(top: 16, bottom: 8),
@@ -93,7 +90,11 @@ class _StopsSectionWidgetState extends State<StopsSectionWidget> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
-                Icon(Icons.add_location_outlined, size: 16, color: Colors.blue[700]),
+                Icon(
+                  Icons.add_location_outlined,
+                  size: 16,
+                  color: Colors.blue[700],
+                ),
                 SizedBox(width: 8),
                 Text(
                   AppLocalizations.of(context)!.suggestStop,

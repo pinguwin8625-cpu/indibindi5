@@ -4,7 +4,15 @@
   "appTitle": "IndiBindi",
   "home": "Startseite",
   "myBookings": "Meine Buchungen",
+  "inbox": "Posteingang",
   "account": "Konto",
+  "uploadPhoto": "Foto Hochladen",
+  "changePhoto": "Foto Ändern",
+  "camera": "Kamera",
+  "gallery": "Galerie",
+  "takePhoto": "Foto Aufnehmen",
+  "chooseFromGallery": "Aus Galerie Wählen",
+  "removePhoto": "Foto Entfernen",
   "selectRoute": "Wählen Sie eine Route zum Starten",
   "driver": "Fahrer",
   "rider": "Fahrgast",
@@ -131,6 +139,8 @@
   "passenger": "Passagier",
   "bookingCompleted": "Buchung Abgeschlossen",
   "completeBooking": "Buchung Abschließen",
+  "postRide": "Fahrt Veröffentlichen",
+  "ridePosted": "Fahrt Veröffentlicht",
   "noAvailableSeats": "Keine Plätze Verfügbar",
   "whenDoYouWantToTravel": "Wann möchten Sie reisen?",
   "matchingRides": "Passende Fahrten",
@@ -144,5 +154,54 @@
   "completed": "Abgeschlossen",
   "canceled": "Storniert",
   "suggestRoute": "Neue Route vorschlagen",
-  "suggestStop": "Neue Haltestelle vorschlagen"
+  "suggestStop": "Neue Haltestelle vorschlagen",
+  "areYouDriverOrRider": "Sind Sie Fahrer oder Mitfahrer?",
+  "pickUpAndDropOff": "Einstiegspunkt Wählen",
+  "chooseDropOffPoint": "Ausstiegspunkt Wählen",
+  "tapSeatsToChangeAvailability": "Tippen Sie auf Sitze, um die Verfügbarkeit zu ändern",
+  "setYourTime": "Zeit festlegen",
+  "incompleteProfile": "Unvollständiges Profil",
+  "incompleteVehicleInfo": "Unvollständige Fahrzeuginfo",
+  "completeProfile": "Profil vervollständigen",
+  "addVehicle": "Fahrzeug hinzufügen",
+  "completePersonalInfoForBooking": "Bitte vervollständigen Sie Ihre persönlichen Daten (Name, Nachname, E-Mail, Telefonnummer), bevor Sie eine Fahrt buchen.",
+  "completePersonalInfoForPosting": "Bitte vervollständigen Sie Ihre persönlichen Daten (Name, Nachname, E-Mail, Telefonnummer), bevor Sie eine Fahrt veröffentlichen.",
+  "completeVehicleInfoForPosting": "Bitte vervollständigen Sie Ihre Fahrzeugdaten (Marke, Modell, Farbe, Kennzeichen), bevor Sie eine Fahrt veröffentlichen.",
+  "noMatchingRidesFound": "Keine passenden Fahrten gefunden",
+  "tryAdjustingTimeOrRoute": "Versuchen Sie, Zeit oder Route anzupassen",
+  "cannotBookOwnRide": "Sie können keine Plätze bei Ihrer eigenen Fahrt buchen",
+  "alreadyHaveRideScheduled": "Sie haben bereits eine Fahrt zu dieser Zeit geplant",
+  "book": "Buchen",
+  "booked": "Gebucht",
+  "thisIsYourRide": "Dies ist Ihre Fahrt - Sie können sie nicht buchen",
+  "available": "verfügbar",
+  "availableSeats": "{count} Plätze verfügbar",
+  "@availableSeats": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "seatsAvailable": "Plätze verfügbar",
+  "seatsSelected": "{count} Plätze ausgewählt",
+  "@seatsSelected": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "selectYourSeat": "Wählen Sie Ihren Sitzplatz",
+  "chooseYourSeat": "Wählen Sie Ihren Sitzplatz",
+  "help": "Hilfe",
+  "support": "Support",
+  "faq": "FAQ",
+  "clearMyBookings": "Meine Buchungen Löschen",
+  "noMessagesYet": "Noch keine Nachrichten",
+  "messagesWillAppear": "Nachrichten erscheinen, wenn Sie eine Fahrt buchen",
+  "startConversation": "Starten Sie ein Gespräch!",
+  "pleaseLoginToViewMessages": "Bitte melden Sie sich an, um Nachrichten zu sehen",
+  "bookARide": "Fahrt Buchen",
+  "cancelRide": "Fahrt Stornieren"
 }

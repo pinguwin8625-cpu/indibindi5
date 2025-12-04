@@ -98,18 +98,19 @@ class User {
   }
 
   String get fullName => '$name $surname';
-  
+
   String get formattedPhone => '$countryCode $phoneNumber';
-  
-  bool get hasVehicle => vehicleBrand != null && 
-                         vehicleModel != null && 
-                         vehicleColor != null && 
-                         licensePlate != null;
-  
-  bool get hasCompletePersonalInfo => 
-      name.isNotEmpty && 
-      surname.isNotEmpty && 
-      email.isNotEmpty && 
-      phoneNumber.isNotEmpty && 
+
+  bool get hasVehicle =>
+      vehicleBrand != null &&
+      vehicleModel != null &&
+      vehicleColor != null &&
+      licensePlate != null;
+
+  bool get hasCompletePersonalInfo =>
+      name.isNotEmpty &&
+      surname.isNotEmpty &&
+      email.isNotEmpty &&
+      phoneNumber.isNotEmpty &&
       countryCode.isNotEmpty;
 }

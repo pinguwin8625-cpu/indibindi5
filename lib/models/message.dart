@@ -54,6 +54,9 @@ class Conversation {
   final String riderId;
   final String riderName;
   final String routeName;
+  final String originName;
+  final String destinationName;
+  final DateTime departureTime;
   final DateTime arrivalTime;
   final List<Message> messages;
 
@@ -65,14 +68,24 @@ class Conversation {
     required this.riderId,
     required this.riderName,
     required this.routeName,
+    required this.originName,
+    required this.destinationName,
+    required this.departureTime,
     required this.arrivalTime,
     this.messages = const [],
   });
 
-  // Check if messaging is still allowed (within 24 hours after arrival)
+  // Check if messaging is still allowed (within 3 days after arrival)
   bool get isMessagingAllowed {
     final now = DateTime.now();
-    final cutoffTime = arrivalTime.add(Duration(hours: 24));
+    final cutoffTime = arrivalTime.add(Duration(days: 3));
+    return now.isBefore(cutoffTime);
+  }
+
+  // Check if conversation should be visible in inbox (within 7 days after arrival)
+  bool get isVisible {
+    final now = DateTime.now();
+    final cutoffTime = arrivalTime.add(Duration(days: 7));
     return now.isBefore(cutoffTime);
   }
 
@@ -95,7 +108,9 @@ class Conversation {
   Message? get lastMessage {
     try {
       if (messages.isEmpty) return null;
-      return messages.reduce((a, b) => a.timestamp.isAfter(b.timestamp) ? a : b);
+      return messages.reduce(
+        (a, b) => a.timestamp.isAfter(b.timestamp) ? a : b,
+      );
     } catch (e) {
       return null;
     }
@@ -109,6 +124,9 @@ class Conversation {
     String? riderId,
     String? riderName,
     String? routeName,
+    String? originName,
+    String? destinationName,
+    DateTime? departureTime,
     DateTime? arrivalTime,
     List<Message>? messages,
   }) {
@@ -120,6 +138,9 @@ class Conversation {
       riderId: riderId ?? this.riderId,
       riderName: riderName ?? this.riderName,
       routeName: routeName ?? this.routeName,
+      originName: originName ?? this.originName,
+      destinationName: destinationName ?? this.destinationName,
+      departureTime: departureTime ?? this.departureTime,
       arrivalTime: arrivalTime ?? this.arrivalTime,
       messages: messages ?? this.messages,
     );

@@ -1,18 +1,86 @@
 import 'package:flutter/material.dart';
 
-class BookingProgressBar extends StatelessWidget {
+class BookingProgressBar extends StatefulWidget {
   final int currentStep;
   final int totalSteps;
 
   const BookingProgressBar({
     super.key,
     required this.currentStep,
-    this.totalSteps = 4,
+    this.totalSteps = 6,
   });
 
   @override
+  State<BookingProgressBar> createState() => _BookingProgressBarState();
+}
+
+class _BookingProgressBarState extends State<BookingProgressBar>
+    with SingleTickerProviderStateMixin {
+  AnimationController? _autoMoveController;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkAndStartAutoMove();
+  }
+
+  @override
+  void didUpdateWidget(BookingProgressBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    
+    // Check if we just entered step 5 (post a ride screen)
+    if (widget.currentStep == 5 && oldWidget.currentStep != 5) {
+      _startAutoMove();
+    }
+    // Check if we left step 5 (either completed or went back)
+    else if (widget.currentStep != 5 && _autoMoveController != null) {
+      _stopAutoMove();
+      // Force rebuild to move car to final position immediately
+      setState(() {});
+    }
+  }
+
+  void _checkAndStartAutoMove() {
+    if (widget.currentStep == 5) {
+      // Delay to ensure widget is built
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _startAutoMove();
+      });
+    }
+  }
+
+  void _startAutoMove() {
+    _autoMoveController?.dispose();
+    _autoMoveController = AnimationController(
+      duration: const Duration(seconds: 15),
+      vsync: this,
+    );
+    
+    _autoMoveController!.addListener(() {
+      setState(() {});
+    });
+    
+    _autoMoveController!.forward();
+  }
+
+  void _stopAutoMove() {
+    _autoMoveController?.stop();
+    _autoMoveController?.dispose();
+    _autoMoveController = null;
+  }
+
+  @override
+  void dispose() {
+    _autoMoveController?.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    double progress = currentStep / totalSteps;
+    final trackWidth = MediaQuery.of(context).size.width - 48;
+    final carPosition = _calculateCarPosition(context);
+    // Red trail follows the car (car position + half car width to reach center of car)
+    final redTrailWidth = carPosition - 8 + 15;
 
     return Container(
       margin: EdgeInsets.only(
@@ -28,21 +96,13 @@ class BookingProgressBar extends StatelessWidget {
           Positioned(
             left: 0,
             top: 14, // Centered: (48 - 20) / 2 = 14
-            child: Icon(
-              Icons.location_on,
-              color: Colors.green,
-              size: 20,
-            ),
+            child: Icon(Icons.location_on, color: Colors.green, size: 20),
           ),
           // Destination marker (end point - flag icon)
           Positioned(
             right: 0,
             top: 14, // Centered: (48 - 20) / 2 = 14
-            child: Icon(
-              Icons.flag,
-              color: Colors.red,
-              size: 20,
-            ),
+            child: Icon(Icons.flag, color: Colors.red, size: 20),
           ),
           // Background track (full width)
           Positioned(
@@ -58,15 +118,12 @@ class BookingProgressBar extends StatelessWidget {
             ),
           ),
           // Red progress trail (follows behind the car)
-          if (progress > 0)
+          if (redTrailWidth > 0)
             Positioned(
               top: 32, // Match background track position
               left: 8, // Offset to match background track
               child: Container(
-                width:
-                    (progress *
-                    (MediaQuery.of(context).size.width -
-                        48)), // Adjusted for marker offsets
+                width: redTrailWidth.clamp(0, trackWidth),
                 height: 2,
                 decoration: BoxDecoration(
                   color: Colors.red[600],
@@ -76,11 +133,12 @@ class BookingProgressBar extends StatelessWidget {
             ),
 
           // Step markers along the progress line
-          ...List.generate(totalSteps - 1, (index) {
-            double stepProgress = (index + 1) / totalSteps;
+          ...List.generate(widget.totalSteps - 1, (index) {
+            double stepProgress = (index + 1) / widget.totalSteps;
             double stepPosition =
                 8 + (stepProgress * (MediaQuery.of(context).size.width - 48));
-            bool isCompleted = currentStep > index + 1;
+            // Dot is red if the car has passed it (car center position > dot position)
+            bool isCompleted = (carPosition + 15) > stepPosition;
 
             return Positioned(
               left: stepPosition - 4, // Center the 8px marker
@@ -106,26 +164,8 @@ class BookingProgressBar extends StatelessWidget {
             );
           }),
           // Big red car icon (custom side view, heading right) - stops before destination
-          AnimatedPositioned(
-            duration: Duration(milliseconds: 500),
-            curve: Curves.easeInOut,
-            left: () {
-              // Simple car positioning based on booking progress
-              double carPosition;
-              if (currentStep == 0) {
-                carPosition = 10.0; // Start position
-              } else if (currentStep >= totalSteps) {
-                carPosition = (MediaQuery.of(context).size.width - 48 - 30) + 10; // End position
-              } else {
-                // Car moves proportionally with booking progress
-                double stepProgress = currentStep / totalSteps;
-                double stopPosition = 8 + (stepProgress * (MediaQuery.of(context).size.width - 48));
-                carPosition = stopPosition - 15; // 15 is half car width
-              }
-              
-              print('🚗 Car position: currentStep=$currentStep, totalSteps=$totalSteps, carPosition=$carPosition');
-              return carPosition;
-            }(),
+          Positioned(
+            left: carPosition,
             top:
                 19, // Centered: 32 - 13 = 19 (track position - half car height)
             child: CustomPaint(
@@ -136,6 +176,36 @@ class BookingProgressBar extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  double _calculateCarPosition(BuildContext context) {
+    final trackWidth = MediaQuery.of(context).size.width - 48;
+    final startPosition = 10.0;
+    final endPosition = trackWidth - 30 + 10; // End position before flag
+    
+    double carPosition;
+    
+    if (widget.currentStep == 0) {
+      carPosition = startPosition;
+    } else if (widget.currentStep >= widget.totalSteps) {
+      carPosition = endPosition;
+    } else if (widget.currentStep == 5 && _autoMoveController != null) {
+      // On "Post a Ride" screen - animate from step 5 position towards step 6
+      double step5Progress = 5 / widget.totalSteps;
+      double step5Position = 8 + (step5Progress * trackWidth) - 15;
+      double step6Position = endPosition;
+      
+      // Interpolate between step 5 and step 6 based on animation
+      double animValue = _autoMoveController!.value;
+      carPosition = step5Position + (step6Position - step5Position) * animValue;
+    } else {
+      // Normal step-based positioning
+      double stepProgress = widget.currentStep / widget.totalSteps;
+      double stopPosition = 8 + (stepProgress * trackWidth);
+      carPosition = stopPosition - 15; // 15 is half car width
+    }
+
+    return carPosition;
   }
 }
 

@@ -18,31 +18,31 @@ class AppLocalizationsRu extends AppLocalizations {
   String get myBookings => 'Мои Бронирования';
 
   @override
-  String get inbox => 'Inbox';
+  String get inbox => 'Входящие';
 
   @override
   String get account => 'Аккаунт';
 
   @override
-  String get uploadPhoto => 'Upload Photo';
+  String get uploadPhoto => 'Загрузить Фото';
 
   @override
-  String get changePhoto => 'Change Photo';
+  String get changePhoto => 'Изменить Фото';
 
   @override
-  String get camera => 'Camera';
+  String get camera => 'Камера';
 
   @override
-  String get gallery => 'Gallery';
+  String get gallery => 'Галерея';
 
   @override
-  String get takePhoto => 'Take Photo';
+  String get takePhoto => 'Сделать Фото';
 
   @override
-  String get chooseFromGallery => 'Choose from Gallery';
+  String get chooseFromGallery => 'Выбрать из Галереи';
 
   @override
-  String get removePhoto => 'Remove Photo';
+  String get removePhoto => 'Удалить Фото';
 
   @override
   String get selectRoute => 'Выберите маршрут для начала';
@@ -87,25 +87,25 @@ class AppLocalizationsRu extends AppLocalizations {
   String get chooseYourSeats => 'Выберите свои места';
 
   @override
-  String get availableSeats => 'Available Seats';
+  String get availableSeats => 'null мест свободно';
 
   @override
-  String get chooseYourSeat => 'Choose Your Seat';
+  String get chooseYourSeat => 'Выберите ваше место';
 
   @override
-  String get selectYourSeat => 'Select your seat';
+  String get selectYourSeat => 'Выберите место';
 
   @override
-  String get available => 'available';
+  String get available => 'свободно';
 
   @override
   String seatsAvailable(int count) {
-    return '$count seat(s) available';
+    return 'мест свободно';
   }
 
   @override
   String seatsSelected(int count) {
-    return '$count seat(s) selected';
+    return '$count мест выбрано';
   }
 
   @override
@@ -374,13 +374,13 @@ class AppLocalizationsRu extends AppLocalizations {
   String get rideHistory => 'История Поездок';
 
   @override
-  String get help => 'Help';
+  String get help => 'Помощь';
 
   @override
-  String get faq => 'FAQ';
+  String get faq => 'ЧЗВ';
 
   @override
-  String get support => 'Support';
+  String get support => 'Поддержка';
 
   @override
   String get helpAndSupport => 'Помощь и Поддержка';
@@ -390,6 +390,9 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get logout => 'Выйти';
+
+  @override
+  String get clearMyBookings => 'Очистить Мои Бронирования';
 
   @override
   String get deleteAccount => 'Удалить Аккаунт';
@@ -464,6 +467,12 @@ class AppLocalizationsRu extends AppLocalizations {
   String get completeBooking => 'Завершить Бронирование';
 
   @override
+  String get postRide => 'Опубликовать Поездку';
+
+  @override
+  String get ridePosted => 'Поездка Опубликована';
+
+  @override
   String get noAvailableSeats => 'Нет Свободных Мест';
 
   @override
@@ -504,4 +513,88 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get suggestStop => 'Предложить новую остановку';
+
+  @override
+  String get areYouDriverOrRider => 'Вы водитель или пассажир?';
+
+  @override
+  String get pickUpAndDropOff => 'Выберите Точку Посадки';
+
+  @override
+  String get chooseDropOffPoint => 'Выберите Точку Высадки';
+
+  @override
+  String get tapSeatsToChangeAvailability =>
+      'Нажмите на места, чтобы изменить доступность';
+
+  @override
+  String get setYourTime => 'Установите Время';
+
+  @override
+  String get incompleteProfile => 'Незавершенный Профиль';
+
+  @override
+  String get incompleteVehicleInfo => 'Неполная Информация о Транспорте';
+
+  @override
+  String get completeProfile => 'Заполнить Профиль';
+
+  @override
+  String get addVehicle => 'Добавить Транспорт';
+
+  @override
+  String get completePersonalInfoForBooking =>
+      'Пожалуйста, заполните личную информацию (имя, фамилия, email, телефон) перед бронированием поездки.';
+
+  @override
+  String get completePersonalInfoForPosting =>
+      'Пожалуйста, заполните личную информацию (имя, фамилия, email, телефон) перед публикацией поездки.';
+
+  @override
+  String get completeVehicleInfoForPosting =>
+      'Пожалуйста, заполните информацию о транспорте (марка, модель, цвет, номер) перед публикацией поездки.';
+
+  @override
+  String get noMatchingRidesFound => 'Подходящие поездки не найдены';
+
+  @override
+  String get tryAdjustingTimeOrRoute => 'Попробуйте изменить время или маршрут';
+
+  @override
+  String get cannotBookOwnRide =>
+      'Вы не можете бронировать места в своей поездке';
+
+  @override
+  String get thisIsYourRide =>
+      'Это ваша поездка - вы не можете её забронировать';
+
+  @override
+  String get alreadyHaveRideScheduled =>
+      'У вас уже запланирована поездка на это время';
+
+  @override
+  String get book => 'Забронировать';
+
+  @override
+  String get booked => 'Забронировано';
+
+  @override
+  String get noMessagesYet => 'Сообщений пока нет';
+
+  @override
+  String get messagesWillAppear =>
+      'Сообщения появятся, когда вы забронируете поездку';
+
+  @override
+  String get startConversation => 'Начните разговор!';
+
+  @override
+  String get pleaseLoginToViewMessages =>
+      'Войдите, чтобы просмотреть сообщения';
+
+  @override
+  String get bookARide => 'Забронировать Поездку';
+
+  @override
+  String get cancelRide => 'Отменить Поездку';
 }

@@ -6,17 +6,29 @@ import '../l10n/app_localizations.dart';
 import '../services/auth_service.dart';
 
 class SearchScreen extends StatefulWidget {
-  final VoidCallback? onBookingCompleted;
+  final void Function({int tabIndex})? onBookingCompleted;
 
   const SearchScreen({super.key, this.onBookingCompleted});
 
   @override
-  State<SearchScreen> createState() => _SearchScreenState();
+  State<SearchScreen> createState() => SearchScreenState();
 }
 
-class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderStateMixin {
+class SearchScreenState extends State<SearchScreen>
+    with SingleTickerProviderStateMixin {
   TabController? _tabController;
   bool _isLoading = true;
+  bool _hasSelectedRole = false; // Shared role selection state
+  Key _driverBookingKey = UniqueKey();
+  Key _riderBookingKey = UniqueKey();
+
+  void resetBookingLayers() {
+    setState(() {
+      _hasSelectedRole = false; // Reset role selection to show question first
+      _driverBookingKey = UniqueKey();
+      _riderBookingKey = UniqueKey();
+    });
+  }
 
   @override
   void initState() {
@@ -27,15 +39,19 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
   Future<void> _loadLastTab() async {
     final prefs = await SharedPreferences.getInstance();
     final currentUser = AuthService.currentUser;
-    
+
     int initialTab = 0;
     if (currentUser != null) {
       final key = 'last_tab_${currentUser.id}';
       initialTab = prefs.getInt(key) ?? 0;
     }
-    
+
     setState(() {
-      _tabController = TabController(length: 2, vsync: this, initialIndex: initialTab);
+      _tabController = TabController(
+        length: 2,
+        vsync: this,
+        initialIndex: initialTab,
+      );
       _tabController!.addListener(_saveTabIndex);
       _tabController!.addListener(() {
         setState(() {}); // Rebuild to update button states
@@ -64,7 +80,7 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    
+
     if (_isLoading || _tabController == null) {
       return Scaffold(
         appBar: AppBar(
@@ -77,17 +93,16 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
         body: Center(child: CircularProgressIndicator()),
       );
     }
-    
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
           l10n.home,
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
-        backgroundColor: Color(0xFFDD2C00), // Use custom red instead of Colors.red
+        backgroundColor: Color(
+          0xFFDD2C00,
+        ), // Use custom red instead of Colors.red
         iconTheme: IconThemeData(color: Colors.white),
         actions: [
           Padding(
@@ -100,13 +115,39 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
         controller: _tabController!,
         children: [
           LayeredBookingWidget(
+            key: _driverBookingKey,
             userRole: 'driver',
-            onBookingCompleted: widget.onBookingCompleted,
+            hasSelectedRole: _hasSelectedRole,
+            onRoleSelected: () {
+              setState(() {
+                _hasSelectedRole = true;
+              });
+            },
+            onBackToRoleSelection: () {
+              setState(() {
+                _hasSelectedRole = false;
+              });
+            },
+            onBookingCompleted: () =>
+                widget.onBookingCompleted?.call(tabIndex: 0),
             tabController: _tabController!,
           ),
           LayeredBookingWidget(
+            key: _riderBookingKey,
             userRole: 'rider',
-            onBookingCompleted: widget.onBookingCompleted,
+            hasSelectedRole: _hasSelectedRole,
+            onRoleSelected: () {
+              setState(() {
+                _hasSelectedRole = true;
+              });
+            },
+            onBackToRoleSelection: () {
+              setState(() {
+                _hasSelectedRole = false;
+              });
+            },
+            onBookingCompleted: () =>
+                widget.onBookingCompleted?.call(tabIndex: 1),
             tabController: _tabController!,
           ),
         ],

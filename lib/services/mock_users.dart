@@ -1,4 +1,5 @@
 import '../models/user.dart';
+import 'rating_service.dart';
 
 class MockUsers {
   static final List<User> users = [
@@ -16,7 +17,7 @@ class MockUsers {
       vehicleColor: null,
       licensePlate: null,
       isAdmin: true,
-      rating: 5.0,
+      rating: 0.0,
     ),
 
     // User 1: Complete profile with vehicle (Driver)
@@ -32,7 +33,7 @@ class MockUsers {
       vehicleModel: 'Golf',
       vehicleColor: 'White',
       licensePlate: '34ABC123',
-      rating: 4.8,
+      rating: 0.0,
     ),
 
     // User 2: Complete profile with vehicle (Driver)
@@ -48,10 +49,10 @@ class MockUsers {
       vehicleModel: 'Corolla',
       vehicleColor: 'Silver',
       licensePlate: '06DEF456',
-      rating: 4.9,
+      rating: 0.0,
     ),
 
-    // User 3: Complete profile without vehicle (Rider)
+    // User 3: Complete profile with vehicle (Driver)
     User(
       id: '3',
       name: 'Elena',
@@ -60,11 +61,11 @@ class MockUsers {
       phoneNumber: '612345678',
       countryCode: '+34',
       profilePhotoUrl: 'assets/images/profile_elena.jpeg',
-      vehicleBrand: null,
-      vehicleModel: null,
-      vehicleColor: null,
-      licensePlate: null,
-      rating: 4.7,
+      vehicleBrand: 'Honda',
+      vehicleModel: 'Civic',
+      vehicleColor: 'Red',
+      licensePlate: '34GHI789',
+      rating: 0.0,
     ),
 
     // User 4: Complete profile with vehicle (Driver)
@@ -80,10 +81,10 @@ class MockUsers {
       vehicleModel: '3 Series',
       vehicleColor: 'Black',
       licensePlate: '35XYZ789',
-      rating: 4.6,
+      rating: 0.0,
     ),
 
-    // User 5: Complete profile without vehicle (Rider)
+    // User 5: Profile without vehicle (for testing vehicle warning)
     User(
       id: '5',
       name: 'Yuki',
@@ -96,17 +97,25 @@ class MockUsers {
       vehicleModel: null,
       vehicleColor: null,
       licensePlate: null,
-      rating: 4.5,
+      rating: 0.0,
     ),
   ];
 
-  // Get user by ID
+  // Get user by ID with live rating from RatingService
   static User? getUserById(String id) {
     try {
-      return users.firstWhere((user) => user.id == id);
+      final user = users.firstWhere((user) => user.id == id);
+      // Get live rating from RatingService
+      final liveRating = RatingService().getUserAverageRating(id);
+      return user.copyWith(rating: liveRating);
     } catch (e) {
       return null;
     }
+  }
+
+  // Get live rating for a user
+  static double getLiveRating(String userId) {
+    return RatingService().getUserAverageRating(userId);
   }
 
   // Get all drivers (users with vehicles)

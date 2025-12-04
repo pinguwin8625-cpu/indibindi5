@@ -29,9 +29,13 @@ class BookingSummaryBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    print('🏗️ BookingSummaryBar: Building with onBack=${onBack != null ? "NOT NULL" : "NULL"}');
+    print(
+      '🏗️ BookingSummaryBar: Building with onBack=${onBack != null ? "NOT NULL" : "NULL"}',
+    );
     // Don't show if no data is selected
-    if (selectedRoute == null && departureTime == null && selectedSeats == null) {
+    if (selectedRoute == null &&
+        departureTime == null &&
+        selectedSeats == null) {
       return SizedBox.shrink();
     }
 
@@ -42,6 +46,7 @@ class BookingSummaryBar extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.red[300]!, width: 1),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.08),
@@ -53,6 +58,19 @@ class BookingSummaryBar extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Title
+          Center(
+            child: Text(
+              'Ride Requested',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.red[700],
+                letterSpacing: 0.5,
+              ),
+            ),
+          ),
+          SizedBox(height: 8),
           // Back button and route name with date
           if (selectedRoute != null) ...[
             Row(
@@ -70,7 +88,11 @@ class BookingSummaryBar extends StatelessWidget {
                     },
                     child: Padding(
                       padding: EdgeInsets.all(8),
-                      child: Icon(Icons.arrow_back_ios, color: Colors.red, size: 20),
+                      child: Icon(
+                        Icons.arrow_back_ios,
+                        color: Colors.red,
+                        size: 20,
+                      ),
                     ),
                   ),
                   SizedBox(width: 8),
@@ -110,9 +132,11 @@ class BookingSummaryBar extends StatelessWidget {
           ],
 
           // Origin and destination with times
-          if (selectedRoute != null && originIndex != null && destinationIndex != null) ...[
+          if (selectedRoute != null &&
+              originIndex != null &&
+              destinationIndex != null) ...[
             SizedBox(height: 12),
-            
+
             // Origin with departure time
             Row(
               children: [
@@ -131,8 +155,9 @@ class BookingSummaryBar extends StatelessWidget {
                   ),
                 ),
                 // Show departure time for drivers, or for riders who chose departure
-                if (departureTime != null && 
-                    (userRole?.toLowerCase() == 'driver' || riderTimeChoice == 'departure'))
+                if (departureTime != null &&
+                    (userRole?.toLowerCase() == 'driver' ||
+                        riderTimeChoice == 'departure'))
                   Container(
                     padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
@@ -150,9 +175,9 @@ class BookingSummaryBar extends StatelessWidget {
                   ),
               ],
             ),
-            
+
             SizedBox(height: 8),
-            
+
             // Destination with arrival time
             Row(
               children: [
@@ -171,8 +196,9 @@ class BookingSummaryBar extends StatelessWidget {
                   ),
                 ),
                 // Show arrival time for drivers, or for riders who chose arrival
-                if (arrivalTime != null && 
-                    (userRole?.toLowerCase() == 'driver' || riderTimeChoice == 'arrival'))
+                if (arrivalTime != null &&
+                    (userRole?.toLowerCase() == 'driver' ||
+                        riderTimeChoice == 'arrival'))
                   Container(
                     padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(

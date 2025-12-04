@@ -3,7 +3,15 @@
   "appTitle": "IndiBindi",
   "home": "الرئيسية",
   "myBookings": "حجوزاتي",
+  "inbox": "البريد الوارد",
   "account": "الحساب",
+  "uploadPhoto": "رفع صورة",
+  "changePhoto": "تغيير الصورة",
+  "camera": "الكاميرا",
+  "gallery": "المعرض",
+  "takePhoto": "التقاط صورة",
+  "chooseFromGallery": "اختر من المعرض",
+  "removePhoto": "إزالة الصورة",
   "selectRoute": "اختر مساراً للبدء",
   "driver": "السائق",
   "rider": "الراكب",
@@ -130,6 +138,8 @@
   "passenger": "راكب",
   "bookingCompleted": "اكتمل الحجز",
   "completeBooking": "إكمال الحجز",
+  "postRide": "نشر رحلة",
+  "ridePosted": "تم نشر الرحلة",
   "noAvailableSeats": "لا توجد مقاعد متاحة",
   "whenDoYouWantToTravel": "متى تريد السفر؟",
   "matchingRides": "الرحلات المطابقة",
@@ -143,5 +153,54 @@
   "completed": "مكتمل",
   "canceled": "ملغي",
   "suggestRoute": "اقتراح مسار جديد",
-  "suggestStop": "اقتراح محطة جديدة"
+  "suggestStop": "اقتراح محطة جديدة",
+  "areYouDriverOrRider": "هل أنت سائق أم راكب؟",
+  "pickUpAndDropOff": "اختر نقطة الصعود",
+  "chooseDropOffPoint": "اختر نقطة النزول",
+  "tapSeatsToChangeAvailability": "اضغط على المقاعد لتغيير التوفر",
+  "setYourTime": "حدد وقتك",
+  "incompleteProfile": "ملف شخصي غير مكتمل",
+  "incompleteVehicleInfo": "معلومات السيارة غير مكتملة",
+  "completeProfile": "أكمل الملف الشخصي",
+  "addVehicle": "إضافة سيارة",
+  "completePersonalInfoForBooking": "يرجى إكمال معلوماتك الشخصية (الاسم، اللقب، البريد الإلكتروني، رقم الهاتف) قبل حجز رحلة.",
+  "completePersonalInfoForPosting": "يرجى إكمال معلوماتك الشخصية (الاسم، اللقب، البريد الإلكتروني، رقم الهاتف) قبل نشر رحلة.",
+  "completeVehicleInfoForPosting": "يرجى إكمال معلومات السيارة (العلامة التجارية، الموديل، اللون، رقم اللوحة) قبل نشر رحلة.",
+  "noMatchingRidesFound": "لم يتم العثور على رحلات مطابقة",
+  "tryAdjustingTimeOrRoute": "حاول تعديل الوقت أو المسار",
+  "cannotBookOwnRide": "لا يمكنك حجز مقاعد في رحلتك الخاصة",
+  "alreadyHaveRideScheduled": "لديك بالفعل رحلة مجدولة في هذا الوقت",
+  "book": "احجز",
+  "booked": "محجوز",
+  "thisIsYourRide": "هذه رحلتك - لا يمكنك حجزها",
+  "available": "متاح",
+  "availableSeats": "{count} مقاعد متاحة",
+  "@availableSeats": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "seatsAvailable": "مقاعد متاحة",
+  "seatsSelected": "{count} مقاعد محددة",
+  "@seatsSelected": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "selectYourSeat": "اختر مقعدك",
+  "chooseYourSeat": "اختر مقعدك",
+  "help": "مساعدة",
+  "support": "الدعم",
+  "faq": "الأسئلة الشائعة",
+  "clearMyBookings": "مسح حجوزاتي",
+  "noMessagesYet": "لا توجد رسائل بعد",
+  "messagesWillAppear": "ستظهر الرسائل عند حجز رحلة",
+  "startConversation": "ابدأ محادثة!",
+  "pleaseLoginToViewMessages": "يرجى تسجيل الدخول لعرض الرسائل",
+  "bookARide": "حجز رحلة",
+  "cancelRide": "إلغاء الرحلة"
 }

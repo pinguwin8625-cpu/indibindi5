@@ -5,6 +5,7 @@ import '../widgets/time_selection_widget.dart';
 import '../widgets/scroll_indicator.dart';
 import '../widgets/ride_details_bar.dart';
 import '../utils/booking_logic.dart';
+import '../l10n/app_localizations.dart';
 
 class StopsLayerWidget extends StatefulWidget {
   final String userRole;
@@ -14,8 +15,15 @@ class StopsLayerWidget extends StatefulWidget {
   final DateTime? departureTime;
   final DateTime? arrivalTime;
   final bool hasSelectedDateTime;
-  final bool isActionCompleted; // Can be either booking completed or ride posted
-  final Function(int origin, int destination, DateTime? departure, DateTime? arrival) onStopsAndTimeSelected;
+  final bool
+  isActionCompleted; // Can be either booking completed or ride posted
+  final Function(
+    int origin,
+    int destination,
+    DateTime? departure,
+    DateTime? arrival,
+  )
+  onStopsAndTimeSelected;
   final Function(int?)? onOriginSelected;
   final Function(int?)? onDestinationSelected;
   final Function(DateTime departure, DateTime arrival)? onTimeSelected;
@@ -88,7 +96,12 @@ class _StopsLayerWidgetState extends State<StopsLayerWidget> {
       widget.onTimeSelected?.call(localDepartureTime!, localArrivalTime!);
 
       // Then trigger the combined callback for navigation
-      widget.onStopsAndTimeSelected(localOriginIndex!, localDestinationIndex!, localDepartureTime, localArrivalTime);
+      widget.onStopsAndTimeSelected(
+        localOriginIndex!,
+        localDestinationIndex!,
+        localDepartureTime,
+        localArrivalTime,
+      );
     }
   }
 
@@ -101,22 +114,49 @@ class _StopsLayerWidgetState extends State<StopsLayerWidget> {
       localDestinationIndex,
     );
 
-    bool canProceed = localOriginIndex != null && localDestinationIndex != null && localHasSelectedDateTime;
+    bool canProceed =
+        localOriginIndex != null &&
+        localDestinationIndex != null &&
+        localHasSelectedDateTime;
 
     return Column(
       children: [
         // Summary bar showing selected route with back button
-        RideDetailsBar(selectedRoute: widget.selectedRoute, onBack: widget.isActionCompleted ? null : widget.onBack),
+        RideDetailsBar(
+          selectedRoute: widget.selectedRoute,
+          userRole: widget.userRole,
+          originIndex: localOriginIndex,
+          destinationIndex: localDestinationIndex,
+          onBack: widget.isActionCompleted ? null : widget.onBack,
+        ),
 
         // Header with title only
-        Container(
-          padding: EdgeInsets.fromLTRB(16, 8, 16, 8),
-          child: Center(
-            child: Text(
-              localOriginIndex != null && localDestinationIndex != null ? 'Set Your Time' : 'Departure and Arrival',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600, color: Colors.black, letterSpacing: 0.5),
-            ),
-          ),
+        Builder(
+          builder: (context) {
+            final l10n = AppLocalizations.of(context)!;
+            String headerText;
+            if (localOriginIndex != null && localDestinationIndex != null) {
+              headerText = l10n.setYourTime;
+            } else if (localOriginIndex != null) {
+              headerText = l10n.chooseDropOffPoint;
+            } else {
+              headerText = l10n.pickUpAndDropOff;
+            }
+            return Container(
+              padding: EdgeInsets.fromLTRB(16, 8, 16, 16),
+              child: Center(
+                child: Text(
+                  headerText,
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ),
+            );
+          },
         ),
 
         // Content
@@ -130,8 +170,6 @@ class _StopsLayerWidgetState extends State<StopsLayerWidget> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    SizedBox(height: 24),
-
                     // Side-by-side layout for stops and time selection
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -147,7 +185,9 @@ class _StopsLayerWidgetState extends State<StopsLayerWidget> {
                             hideUnusedStops: localOriginIndex != null && localDestinationIndex != null,
                             isDisabled: widget.isActionCompleted,
                             onOriginChanged: (index) {
-                              print('🔥 StopsLayer: onOriginChanged called with $index');
+                              print(
+                                '🔥 StopsLayer: onOriginChanged called with $index',
+                              );
                               setState(() {
                                 localOriginIndex = index;
                               });
@@ -156,7 +196,9 @@ class _StopsLayerWidgetState extends State<StopsLayerWidget> {
                               _checkAndNavigate();
                             },
                             onDestinationChanged: (index) {
-                              print('🔥 StopsLayer: onDestinationChanged called with $index');
+                              print(
+                                '🔥 StopsLayer: onDestinationChanged called with $index',
+                              );
                               setState(() {
                                 localDestinationIndex = index;
                               });
@@ -198,7 +240,9 @@ class _StopsLayerWidgetState extends State<StopsLayerWidget> {
                                         localDepartureTime ?? DateTime.now(),
                                         localArrivalTime ?? DateTime.now(),
                                       );
-                                      print('🕐 StopsLayer: User selected time, calling onTimeSelected');
+                                      print(
+                                        '🕐 StopsLayer: User selected time, calling onTimeSelected',
+                                      );
                                       _checkAndNavigate();
                                     }
                                   },
@@ -206,12 +250,18 @@ class _StopsLayerWidgetState extends State<StopsLayerWidget> {
                                     setState(() {
                                       riderTimeChoice = choice;
                                     });
-                                    print('🧑 StopsLayer: Rider time choice changed to: $choice');
+                                    print(
+                                      '🧑 StopsLayer: Rider time choice changed to: $choice',
+                                    );
                                     // Notify parent
-                                    widget.onRiderTimeChoiceChanged?.call(choice);
+                                    widget.onRiderTimeChoiceChanged?.call(
+                                      choice,
+                                    );
                                   },
                                   onTimesChanged: (departure, arrival) {
-                                    print('🕐 StopsLayer: onTimesChanged called with:');
+                                    print(
+                                      '🕐 StopsLayer: onTimesChanged called with:',
+                                    );
                                     print('   departure: $departure');
                                     print('   arrival: $arrival');
                                     setState(() {

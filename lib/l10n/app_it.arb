@@ -3,7 +3,15 @@
   "appTitle": "IndiBindi",
   "home": "Home",
   "myBookings": "Le Mie Prenotazioni",
+  "inbox": "Posta in Arrivo",
   "account": "Account",
+  "uploadPhoto": "Carica Foto",
+  "changePhoto": "Cambia Foto",
+  "camera": "Fotocamera",
+  "gallery": "Galleria",
+  "takePhoto": "Scatta Foto",
+  "chooseFromGallery": "Scegli dalla Galleria",
+  "removePhoto": "Rimuovi Foto",
   "selectRoute": "Seleziona un percorso per iniziare",
   "driver": "Autista",
   "rider": "Passeggero",
@@ -130,6 +138,8 @@
   "passenger": "Passeggero",
   "bookingCompleted": "Prenotazione Completata",
   "completeBooking": "Completa Prenotazione",
+  "postRide": "Pubblica Corsa",
+  "ridePosted": "Corsa Pubblicata",
   "noAvailableSeats": "Nessun Posto Disponibile",
   "whenDoYouWantToTravel": "Quando vuoi viaggiare?",
   "matchingRides": "Corse Corrispondenti",
@@ -143,5 +153,54 @@
   "completed": "Completato",
   "canceled": "Cancellato",
   "suggestRoute": "Suggerisci un nuovo percorso",
-  "suggestStop": "Suggerisci una nuova fermata"
+  "suggestStop": "Suggerisci una nuova fermata",
+  "areYouDriverOrRider": "Sei autista o passeggero?",
+  "pickUpAndDropOff": "Scegli Punto di Ritiro",
+  "chooseDropOffPoint": "Scegli Punto di Discesa",
+  "tapSeatsToChangeAvailability": "Tocca i posti per modificare la disponibilità",
+  "setYourTime": "Imposta l'Orario",
+  "incompleteProfile": "Profilo Incompleto",
+  "incompleteVehicleInfo": "Info Veicolo Incompleta",
+  "completeProfile": "Completa Profilo",
+  "addVehicle": "Aggiungi Veicolo",
+  "completePersonalInfoForBooking": "Completa le tue informazioni personali (nome, cognome, email, telefono) prima di prenotare una corsa.",
+  "completePersonalInfoForPosting": "Completa le tue informazioni personali (nome, cognome, email, telefono) prima di pubblicare una corsa.",
+  "completeVehicleInfoForPosting": "Completa le informazioni del veicolo (marca, modello, colore, targa) prima di pubblicare una corsa.",
+  "noMatchingRidesFound": "Nessuna corsa corrispondente trovata",
+  "tryAdjustingTimeOrRoute": "Prova a modificare l'orario o il percorso",
+  "cannotBookOwnRide": "Non puoi prenotare posti sulla tua corsa",
+  "alreadyHaveRideScheduled": "Hai già una corsa programmata a quest'ora",
+  "book": "Prenota",
+  "booked": "Prenotato",
+  "thisIsYourRide": "Questa è la tua corsa - non puoi prenotarla",
+  "available": "disponibile",
+  "availableSeats": "{count} posti disponibili",
+  "@availableSeats": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "seatsAvailable": "posti disponibili",
+  "seatsSelected": "{count} posti selezionati",
+  "@seatsSelected": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "selectYourSeat": "Seleziona il tuo posto",
+  "chooseYourSeat": "Scegli il tuo posto",
+  "help": "Aiuto",
+  "support": "Supporto",
+  "faq": "FAQ",
+  "clearMyBookings": "Cancella Le Mie Prenotazioni",
+  "noMessagesYet": "Nessun messaggio ancora",
+  "messagesWillAppear": "I messaggi appariranno quando prenoterai una corsa",
+  "startConversation": "Inizia una conversazione!",
+  "pleaseLoginToViewMessages": "Accedi per visualizzare i messaggi",
+  "bookARide": "Prenota una Corsa",
+  "cancelRide": "Annulla Corsa"
 }

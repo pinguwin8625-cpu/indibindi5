@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'dart:io';
 import '../l10n/app_localizations.dart';
 import '../services/auth_service.dart';
+import '../services/mock_users.dart';
 
 class SeatPlanningSectionWidget extends StatelessWidget {
   final String userRole;
@@ -21,11 +22,11 @@ class SeatPlanningSectionWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    
+
     // Format driver name (first name + last initial) and get rating
     String driverDisplayName = l10n.driver;
     String driverRating = '0.0';
-    
+
     // Get current user info if they are the driver
     final currentUser = AuthService.currentUser;
     if (currentUser != null && userRole.toLowerCase() == 'driver') {
@@ -33,16 +34,18 @@ class SeatPlanningSectionWidget extends StatelessWidget {
       if (currentUser.surname.isNotEmpty) {
         driverDisplayName = '${currentUser.name} ${currentUser.surname[0]}.';
       }
-      driverRating = currentUser.rating.toStringAsFixed(1);
+      // Get live rating from RatingService
+      driverRating = MockUsers.getLiveRating(currentUser.id).toStringAsFixed(1);
     }
 
     // Helper function to get rider info for a seat (placeholder for now)
     String getRiderName(int seatIndex) {
-      return '${l10n.passenger}-${seatIndex + 1}';
+      return '${l10n.rider}-${seatIndex + 1}';
     }
 
-    String getRiderRating(int seatIndex) {
-      return '0.0';
+    // Return null for unoccupied seats (no rating to show for placeholders)
+    String? getRiderRating(int seatIndex) {
+      return null;
     }
 
     return Center(
@@ -69,19 +72,6 @@ class SeatPlanningSectionWidget extends StatelessWidget {
               SizedBox(height: 4),
               Row(
                 children: [
-                  _buildSeatLabel(getRiderName(2), getRiderRating(2)),
-                  SizedBox(width: 4),
-                  _buildMiniSeat(
-                    context: context,
-                    seatIndex: 2,
-                    isSelected: selectedSeats.contains(2),
-                    passengerName: getRiderName(2),
-                  ),
-                ],
-              ),
-              SizedBox(height: 4),
-              Row(
-                children: [
                   _buildSeatLabel(getRiderName(3), getRiderRating(3)),
                   SizedBox(width: 4),
                   _buildMiniSeat(
@@ -89,6 +79,19 @@ class SeatPlanningSectionWidget extends StatelessWidget {
                     seatIndex: 3,
                     isSelected: selectedSeats.contains(3),
                     passengerName: getRiderName(3),
+                  ),
+                ],
+              ),
+              SizedBox(height: 4),
+              Row(
+                children: [
+                  _buildSeatLabel(getRiderName(2), getRiderRating(2)),
+                  SizedBox(width: 4),
+                  _buildMiniSeat(
+                    context: context,
+                    seatIndex: 2,
+                    isSelected: selectedSeats.contains(2),
+                    passengerName: getRiderName(2),
                   ),
                 ],
               ),
@@ -159,9 +162,11 @@ class SeatPlanningSectionWidget extends StatelessWidget {
       }
 
       if (isAvailable) {
+        // Available seat - green
         backgroundColor = Colors.green[100]!;
         borderColor = Color(0xFF00C853);
       } else {
+        // Unavailable seat - red
         backgroundColor = Colors.red[100]!;
         borderColor = Color(0xFFDD2C00);
       }
@@ -232,8 +237,7 @@ class SeatPlanningSectionWidget extends StatelessWidget {
     final currentUser = AuthService.currentUser;
 
     // Check if current user is the driver and has a profile photo
-    if (currentUser != null &&
-        userRole.toLowerCase() == 'driver') {
+    if (currentUser != null && userRole.toLowerCase() == 'driver') {
       if (currentUser.profilePhotoUrl != null &&
           currentUser.profilePhotoUrl!.isNotEmpty) {
         // Check if it's an asset or file path
@@ -287,37 +291,40 @@ class SeatPlanningSectionWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildSeatLabel(String name, String rating) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Text(
-          name,
-          style: TextStyle(
-            color: Color(0xFF2E2E2E),
-            fontWeight: FontWeight.w600,
-            fontSize: 11,
+  Widget _buildSeatLabel(String name, String? rating) {
+    return Container(
+      width: 85, // Fixed width
+      height: 38, // Fixed height regardless of rating
+      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: Colors.grey[300]!, width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            name,
+            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
           ),
-        ),
-        SizedBox(height: 2),
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Icon(Icons.star, color: Colors.amber, size: 10),
-            SizedBox(width: 1),
-            Text(
-              rating,
-              style: TextStyle(
-                color: Color(0xFF2E2E2E),
-                fontWeight: FontWeight.w500,
-                fontSize: 11,
-              ),
+          if (rating != null)
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.star, size: 10, color: Colors.amber[700]),
+                SizedBox(width: 2),
+                Text(
+                  rating,
+                  style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+                ),
+              ],
             ),
-          ],
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -325,16 +332,16 @@ class SeatPlanningSectionWidget extends StatelessWidget {
     if (kDebugMode) {
       debugPrint('Toggling seat: $seatIndex');
     }
-    
+
     List<int> newSelectedSeats = List.from(selectedSeats);
-    
+
     // Toggle seat selection
     if (newSelectedSeats.contains(seatIndex)) {
       newSelectedSeats.remove(seatIndex);
     } else {
       newSelectedSeats.add(seatIndex);
     }
-    
+
     onSeatsSelected(newSelectedSeats);
   }
 }

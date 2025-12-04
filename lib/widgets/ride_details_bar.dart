@@ -30,12 +30,14 @@ class RideDetailsBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Don't show if no data is selected
-    if (selectedRoute == null && departureTime == null && selectedSeats == null) {
+    if (selectedRoute == null &&
+        departureTime == null &&
+        selectedSeats == null) {
       return SizedBox.shrink();
     }
 
     return Container(
-      margin: EdgeInsets.fromLTRB(16, 12, 16, 8),
+      margin: EdgeInsets.fromLTRB(16, 8, 16, 8),
       padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(8),
@@ -55,28 +57,47 @@ class RideDetailsBar extends StatelessWidget {
                   color: Color(0xFFDD2C00).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: Icon(Icons.arrow_back_ios_new, color: Color(0xFFDD2C00), size: 16),
+                child: Icon(
+                  Icons.arrow_back_ios_new,
+                  color: Color(0xFFDD2C00),
+                  size: 16,
+                ),
               ),
             )
           else
             SizedBox(width: 28), // Same width as back button for centering
-
+          
           SizedBox(width: 8),
-
+          
           // Route and stops info - centered
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Route name and date on same row
+                // Role icon, route name and date on same row
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
+                    // Role icon
+                    if (userRole != null) ...[
+                      Icon(
+                        userRole!.toLowerCase() == 'driver'
+                            ? Icons.directions_car
+                            : Icons.person,
+                        color: Color(0xFFDD2C00),
+                        size: 14,
+                      ),
+                      SizedBox(width: 6),
+                    ],
                     Flexible(
                       child: Text(
                         selectedRoute?.name ?? '',
-                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF2E2E2E)),
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF2E2E2E),
+                        ),
                         overflow: TextOverflow.ellipsis,
                         textAlign: TextAlign.center,
                       ),
@@ -85,15 +106,44 @@ class RideDetailsBar extends StatelessWidget {
                       SizedBox(width: 8),
                       Container(
                         padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(4)),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[200],
+                          borderRadius: BorderRadius.circular(4),
+                        ),
                         child: Text(
                           _formatDate(departureTime!),
-                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Colors.grey[700]),
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.grey[700],
+                          ),
                         ),
                       ),
                     ],
                   ],
                 ),
+                
+                // Origin only (when pick up is selected but not drop off)
+                if (originIndex != null && destinationIndex == null)
+                  Padding(
+                    padding: EdgeInsets.only(top: 4),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Origin - location pin icon (same as progress bar)
+                        Icon(Icons.location_on, color: Colors.green, size: 14),
+                        SizedBox(width: 2),
+                        Flexible(
+                          child: Text(
+                            _shortenStopName(selectedRoute!.stops[originIndex!].name),
+                            style: TextStyle(fontSize: 11, color: Colors.grey[700]),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
 
                 // Origin → Destination with times (compact single row)
                 if (originIndex != null && destinationIndex != null)
@@ -103,9 +153,9 @@ class RideDetailsBar extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // Origin
-                        Icon(Icons.circle, color: Colors.green, size: 8),
-                        SizedBox(width: 4),
+                        // Origin - location pin icon (same as progress bar)
+                        Icon(Icons.location_on, color: Colors.green, size: 14),
+                        SizedBox(width: 2),
                         Flexible(
                           child: Text(
                             _shortenStopName(selectedRoute!.stops[originIndex!].name),
@@ -116,18 +166,22 @@ class RideDetailsBar extends StatelessWidget {
                         if (departureTime != null)
                           Text(
                             ' ${formatTimeHHmm(departureTime!)}',
-                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.green[700]),
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.green[700],
+                            ),
                           ),
-
+                        
                         // Arrow
                         Padding(
                           padding: EdgeInsets.symmetric(horizontal: 6),
                           child: Icon(Icons.arrow_forward, size: 12, color: Colors.grey[400]),
                         ),
-
-                        // Destination
-                        Icon(Icons.circle, color: Colors.red, size: 8),
-                        SizedBox(width: 4),
+                        
+                        // Destination - flag icon (same as progress bar)
+                        Icon(Icons.flag, color: Colors.red, size: 14),
+                        SizedBox(width: 2),
                         Flexible(
                           child: Text(
                             _shortenStopName(selectedRoute!.stops[destinationIndex!].name),
@@ -138,7 +192,11 @@ class RideDetailsBar extends StatelessWidget {
                         if (arrivalTime != null)
                           Text(
                             ' ${formatTimeHHmm(arrivalTime!)}',
-                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.red[700]),
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.red[700],
+                            ),
                           ),
                       ],
                     ),
@@ -146,10 +204,10 @@ class RideDetailsBar extends StatelessWidget {
               ],
             ),
           ),
-
+          
           SizedBox(width: 8),
-
-          // Spacer for balance
+          
+          // Spacer to balance the back button
           SizedBox(width: 28),
         ],
       ),
@@ -171,7 +229,7 @@ class RideDetailsBar extends StatelessWidget {
   String _shortenStopName(String name) {
     // If name is short enough, return as is
     if (name.length <= 15) return name;
-
+    
     // Try to get first meaningful part
     if (name.contains(' - ')) {
       return name.split(' - ').first;
@@ -179,8 +237,8 @@ class RideDetailsBar extends StatelessWidget {
     if (name.contains(', ')) {
       return name.split(', ').first;
     }
-
+    
     // Just truncate
-    return name.substring(0, 12) + '...';
+    return '${name.substring(0, 12)}...';
   }
 }

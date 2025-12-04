@@ -3,7 +3,15 @@
   "appTitle": "IndiBindi",
   "home": "首页",
   "myBookings": "我的预订",
+  "inbox": "收件箱",
   "account": "账户",
+  "uploadPhoto": "上传照片",
+  "changePhoto": "更换照片",
+  "camera": "相机",
+  "gallery": "相册",
+  "takePhoto": "拍照",
+  "chooseFromGallery": "从相册选择",
+  "removePhoto": "删除照片",
   "selectRoute": "选择路线开始",
   "driver": "司机",
   "rider": "乘客",
@@ -143,5 +151,56 @@
   "completed": "已完成",
   "canceled": "已取消",
   "suggestRoute": "建议新路线",
-  "suggestStop": "建议新站点"
+  "suggestStop": "建议新站点",
+  "areYouDriverOrRider": "您是司机还是乘客？",
+  "pickUpAndDropOff": "选择上车点",
+  "chooseDropOffPoint": "选择下车点",
+  "tapSeatsToChangeAvailability": "点击座位更改可用状态",
+  "setYourTime": "设置时间",
+  "incompleteProfile": "资料不完整",
+  "incompleteVehicleInfo": "车辆信息不完整",
+  "completeProfile": "完善资料",
+  "addVehicle": "添加车辆",
+  "completePersonalInfoForBooking": "预订行程前请先填写个人信息（姓名、姓氏、电子邮箱、电话号码）。",
+  "completePersonalInfoForPosting": "发布行程前请先填写个人信息（姓名、姓氏、电子邮箱、电话号码）。",
+  "completeVehicleInfoForPosting": "发布行程前请先填写车辆信息（品牌、型号、颜色、车牌号）。",
+  "noMatchingRidesFound": "未找到匹配的行程",
+  "tryAdjustingTimeOrRoute": "请尝试调整时间或路线",
+  "cannotBookOwnRide": "您不能预订自己发布的行程",
+  "alreadyHaveRideScheduled": "您已在此时间安排了行程",
+  "book": "预订",
+  "booked": "已预订",
+  "postRide": "发布行程",
+  "ridePosted": "行程已发布",
+  "thisIsYourRide": "这是您的行程 - 无法预订",
+  "available": "可用",
+  "availableSeats": "{count}个座位可用",
+  "@availableSeats": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "seatsAvailable": "个座位可用",
+  "seatsSelected": "已选{count}个座位",
+  "@seatsSelected": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "selectYourSeat": "选择座位",
+  "chooseYourSeat": "请选择您的座位",
+  "help": "帮助",
+  "support": "支持",
+  "faq": "常见问题",
+  "clearMyBookings": "清除我的预订",
+  "noMessagesYet": "暂无消息",
+  "messagesWillAppear": "预订行程后将显示消息",
+  "startConversation": "开始对话！",
+  "pleaseLoginToViewMessages": "请登录以查看消息",
+  "bookARide": "预订行程",
+  "cancelRide": "取消行程"
 }

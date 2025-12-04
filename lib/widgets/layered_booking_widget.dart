@@ -6,9 +6,13 @@ import '../widgets/stops_layer_widget.dart';
 import '../widgets/booking_layer_widget.dart';
 import '../widgets/matching_rides_widget.dart';
 import '../utils/booking_logic.dart';
-import '../l10n/app_localizations.dart';
 
-enum BookingLayer { routeSelection, stopsSelection, timeAndSeats, matchingRides }
+enum BookingLayer {
+  routeSelection,
+  stopsSelection,
+  timeAndSeats,
+  matchingRides,
+}
 
 class LayeredBookingWidget extends StatefulWidget {
   final String userRole;
@@ -16,6 +20,7 @@ class LayeredBookingWidget extends StatefulWidget {
   final TabController? tabController;
   final bool hasSelectedRole;
   final VoidCallback? onRoleSelected;
+  final VoidCallback? onBackToRoleSelection;
 
   const LayeredBookingWidget({
     super.key,
@@ -24,6 +29,7 @@ class LayeredBookingWidget extends StatefulWidget {
     this.tabController,
     this.hasSelectedRole = false,
     this.onRoleSelected,
+    this.onBackToRoleSelection,
   });
 
   @override
@@ -42,7 +48,8 @@ class _LayeredBookingWidgetState extends State<LayeredBookingWidget> {
   DateTime? departureTime;
   DateTime? arrivalTime;
   String? riderTimeChoice; // 'departure' or 'arrival' for riders
-  bool isActionCompleted = false; // Can be either booking completed or ride posted
+  bool isActionCompleted =
+      false; // Can be either booking completed or ride posted
 
   void _navigateToLayer(BookingLayer layer) {
     setState(() {
@@ -56,7 +63,9 @@ class _LayeredBookingWidgetState extends State<LayeredBookingWidget> {
     setState(() {
       switch (currentLayer) {
         case BookingLayer.stopsSelection:
-          print('🔙 LayeredBooking: Was on stopsSelection, going to routeSelection');
+          print(
+            '🔙 LayeredBooking: Was on stopsSelection, going to routeSelection',
+          );
           // Clear stops data
           originIndex = null;
           destinationIndex = null;
@@ -67,7 +76,9 @@ class _LayeredBookingWidgetState extends State<LayeredBookingWidget> {
           currentLayer = BookingLayer.routeSelection;
           break;
         case BookingLayer.timeAndSeats:
-          print('🔙 LayeredBooking: Was on timeAndSeats, going to stopsSelection');
+          print(
+            '🔙 LayeredBooking: Was on timeAndSeats, going to stopsSelection',
+          );
           // Clear time and seats data
           departureTime = null;
           arrivalTime = null;
@@ -76,7 +87,9 @@ class _LayeredBookingWidgetState extends State<LayeredBookingWidget> {
           currentLayer = BookingLayer.stopsSelection;
           break;
         case BookingLayer.matchingRides:
-          print('🔙 LayeredBooking: Was on matchingRides, going to stopsSelection');
+          print(
+            '🔙 LayeredBooking: Was on matchingRides, going to stopsSelection',
+          );
           // Clear time data (but keep stops)
           departureTime = null;
           arrivalTime = null;
@@ -95,8 +108,6 @@ class _LayeredBookingWidgetState extends State<LayeredBookingWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-
     return Column(
       children: [
         // Fixed progress bar at the top
@@ -107,33 +118,11 @@ class _LayeredBookingWidgetState extends State<LayeredBookingWidget> {
             destinationIndex,
             hasSelectedDateTime,
             selectedSeats,
+            hasSelectedRole: widget.hasSelectedRole,
+            isActionCompleted: isActionCompleted,
           ),
-          totalSteps: 4,
+          totalSteps: 6,
         ),
-
-        // Slim toggle button - only show after role is selected
-        if (widget.tabController != null && widget.hasSelectedRole)
-          Container(
-            padding: EdgeInsets.symmetric(vertical: 6),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _buildSlimToggle(
-                  label: l10n.driver,
-                  icon: Icons.directions_car,
-                  isSelected: widget.tabController!.index == 0,
-                  onTap: () => widget.tabController!.animateTo(0),
-                ),
-                SizedBox(width: 4),
-                _buildSlimToggle(
-                  label: l10n.rider,
-                  icon: Icons.person,
-                  isSelected: widget.tabController!.index == 1,
-                  onTap: () => widget.tabController!.animateTo(1),
-                ),
-              ],
-            ),
-          ),
 
         // Layer navigation
         Expanded(
@@ -141,7 +130,10 @@ class _LayeredBookingWidgetState extends State<LayeredBookingWidget> {
             duration: Duration(milliseconds: 300),
             transitionBuilder: (Widget child, Animation<double> animation) {
               return SlideTransition(
-                position: Tween<Offset>(begin: Offset(1.0, 0.0), end: Offset.zero).animate(animation),
+                position: Tween<Offset>(
+                  begin: Offset(1.0, 0.0),
+                  end: Offset.zero,
+                ).animate(animation),
                 child: child,
               );
             },
@@ -152,45 +144,15 @@ class _LayeredBookingWidgetState extends State<LayeredBookingWidget> {
     );
   }
 
-  Widget _buildSlimToggle({
-    required String label,
-    required IconData icon,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-        decoration: BoxDecoration(
-          color: isSelected ? Color(0xFFDD2C00) : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: isSelected ? Colors.white : Colors.grey[500], size: 14),
-            SizedBox(width: 4),
-            Text(
-              label,
-              style: TextStyle(
-                color: isSelected ? Colors.white : Colors.grey[500],
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                fontSize: 12,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildCurrentLayer() {
     return AnimatedSwitcher(
       duration: Duration(milliseconds: 300),
       transitionBuilder: (Widget child, Animation<double> animation) {
         return SlideTransition(
-          position: Tween<Offset>(begin: Offset(1.0, 0.0), end: Offset.zero).animate(animation),
+          position: Tween<Offset>(
+            begin: Offset(1.0, 0.0),
+            end: Offset.zero,
+          ).animate(animation),
           child: child,
         );
       },
@@ -207,6 +169,7 @@ class _LayeredBookingWidgetState extends State<LayeredBookingWidget> {
               onRoleSelected: (role) {
                 widget.onRoleSelected?.call();
               },
+              onBackToRoleSelection: widget.onBackToRoleSelection,
               onRouteSelected: (route) {
                 setState(() {
                   selectedRoute = route;
@@ -239,7 +202,9 @@ class _LayeredBookingWidgetState extends State<LayeredBookingWidget> {
                 print('🔥 LayeredBooking: onStopsAndTimeSelected called with:');
                 print('   Departure: $departure');
                 print('   Arrival: $arrival');
-                print('🔥 Role check: widget.userRole="${widget.userRole}", comparing to "driver"');
+                print(
+                  '🔥 Role check: widget.userRole="${widget.userRole}", comparing to "driver"',
+                );
 
                 setState(() {
                   originIndex = origin;
@@ -251,7 +216,9 @@ class _LayeredBookingWidgetState extends State<LayeredBookingWidget> {
                   // For drivers, initialize all 4 seats as available
                   if (widget.userRole.toLowerCase() == 'driver') {
                     selectedSeats = [0, 1, 2, 3];
-                    print('🚗 LayeredBooking: Initialized driver seats: $selectedSeats');
+                    print(
+                      '🚗 LayeredBooking: Initialized driver seats: $selectedSeats',
+                    );
                   } else {
                     print('❌ Not a driver, userRole is: ${widget.userRole}');
                   }
@@ -292,13 +259,17 @@ class _LayeredBookingWidgetState extends State<LayeredBookingWidget> {
                   arrivalTime = arrival;
                   hasSelectedDateTime = true;
                 });
-                print('🕐 LayeredBooking: State updated, departureTime=$departureTime, arrivalTime=$arrivalTime');
+                print(
+                  '🕐 LayeredBooking: State updated, departureTime=$departureTime, arrivalTime=$arrivalTime',
+                );
               },
               onRiderTimeChoiceChanged: (choice) {
                 setState(() {
                   riderTimeChoice = choice;
                 });
-                print('🧑 LayeredBooking: Rider time choice changed to: $choice');
+                print(
+                  '🧑 LayeredBooking: Rider time choice changed to: $choice',
+                );
               },
               onBack: _goBack,
             );
@@ -320,7 +291,9 @@ class _LayeredBookingWidgetState extends State<LayeredBookingWidget> {
             print('📦 LayeredBooking: Building BookingLayerWidget with:');
             print('   departureTime: $departureTime');
             print('   arrivalTime: $arrivalTime');
-            print('   selectedSeats: $selectedSeats (length: ${selectedSeats.length})');
+            print(
+              '   selectedSeats: $selectedSeats (length: ${selectedSeats.length})',
+            );
             return BookingLayerWidget(
               key: ValueKey('booking-layer'),
               userRole: widget.userRole,

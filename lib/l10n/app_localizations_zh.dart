@@ -18,31 +18,31 @@ class AppLocalizationsZh extends AppLocalizations {
   String get myBookings => '我的预订';
 
   @override
-  String get inbox => 'Inbox';
+  String get inbox => '收件箱';
 
   @override
   String get account => '账户';
 
   @override
-  String get uploadPhoto => 'Upload Photo';
+  String get uploadPhoto => '上传照片';
 
   @override
-  String get changePhoto => 'Change Photo';
+  String get changePhoto => '更换照片';
 
   @override
-  String get camera => 'Camera';
+  String get camera => '相机';
 
   @override
-  String get gallery => 'Gallery';
+  String get gallery => '相册';
 
   @override
-  String get takePhoto => 'Take Photo';
+  String get takePhoto => '拍照';
 
   @override
-  String get chooseFromGallery => 'Choose from Gallery';
+  String get chooseFromGallery => '从相册选择';
 
   @override
-  String get removePhoto => 'Remove Photo';
+  String get removePhoto => '删除照片';
 
   @override
   String get selectRoute => '选择路线开始';
@@ -87,25 +87,25 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chooseYourSeats => '选择您的座位';
 
   @override
-  String get availableSeats => 'Available Seats';
+  String get availableSeats => 'null个座位可用';
 
   @override
-  String get chooseYourSeat => 'Choose Your Seat';
+  String get chooseYourSeat => '请选择您的座位';
 
   @override
-  String get selectYourSeat => 'Select your seat';
+  String get selectYourSeat => '选择座位';
 
   @override
-  String get available => 'available';
+  String get available => '可用';
 
   @override
   String seatsAvailable(int count) {
-    return '$count seat(s) available';
+    return '个座位可用';
   }
 
   @override
   String seatsSelected(int count) {
-    return '$count seat(s) selected';
+    return '已选$count个座位';
   }
 
   @override
@@ -370,13 +370,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get rideHistory => '行程历史';
 
   @override
-  String get help => 'Help';
+  String get help => '帮助';
 
   @override
-  String get faq => 'FAQ';
+  String get faq => '常见问题';
 
   @override
-  String get support => 'Support';
+  String get support => '支持';
 
   @override
   String get helpAndSupport => '帮助与支持';
@@ -386,6 +386,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get logout => '退出登录';
+
+  @override
+  String get clearMyBookings => '清除我的预订';
 
   @override
   String get deleteAccount => '删除账户';
@@ -460,6 +463,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get completeBooking => '完成预订';
 
   @override
+  String get postRide => '发布行程';
+
+  @override
+  String get ridePosted => '行程已发布';
+
+  @override
   String get noAvailableSeats => '无可用座位';
 
   @override
@@ -500,4 +509,81 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get suggestStop => '建议新站点';
+
+  @override
+  String get areYouDriverOrRider => '您是司机还是乘客？';
+
+  @override
+  String get pickUpAndDropOff => '选择上车点';
+
+  @override
+  String get chooseDropOffPoint => '选择下车点';
+
+  @override
+  String get tapSeatsToChangeAvailability => '点击座位更改可用状态';
+
+  @override
+  String get setYourTime => '设置时间';
+
+  @override
+  String get incompleteProfile => '资料不完整';
+
+  @override
+  String get incompleteVehicleInfo => '车辆信息不完整';
+
+  @override
+  String get completeProfile => '完善资料';
+
+  @override
+  String get addVehicle => '添加车辆';
+
+  @override
+  String get completePersonalInfoForBooking =>
+      '预订行程前请先填写个人信息（姓名、姓氏、电子邮箱、电话号码）。';
+
+  @override
+  String get completePersonalInfoForPosting =>
+      '发布行程前请先填写个人信息（姓名、姓氏、电子邮箱、电话号码）。';
+
+  @override
+  String get completeVehicleInfoForPosting => '发布行程前请先填写车辆信息（品牌、型号、颜色、车牌号）。';
+
+  @override
+  String get noMatchingRidesFound => '未找到匹配的行程';
+
+  @override
+  String get tryAdjustingTimeOrRoute => '请尝试调整时间或路线';
+
+  @override
+  String get cannotBookOwnRide => '您不能预订自己发布的行程';
+
+  @override
+  String get thisIsYourRide => '这是您的行程 - 无法预订';
+
+  @override
+  String get alreadyHaveRideScheduled => '您已在此时间安排了行程';
+
+  @override
+  String get book => '预订';
+
+  @override
+  String get booked => '已预订';
+
+  @override
+  String get noMessagesYet => '暂无消息';
+
+  @override
+  String get messagesWillAppear => '预订行程后将显示消息';
+
+  @override
+  String get startConversation => '开始对话！';
+
+  @override
+  String get pleaseLoginToViewMessages => '请登录以查看消息';
+
+  @override
+  String get bookARide => '预订行程';
+
+  @override
+  String get cancelRide => '取消行程';
 }

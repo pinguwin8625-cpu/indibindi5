@@ -18,31 +18,31 @@ class AppLocalizationsKo extends AppLocalizations {
   String get myBookings => '내 예약';
 
   @override
-  String get inbox => 'Inbox';
+  String get inbox => '받은 편지함';
 
   @override
   String get account => '계정';
 
   @override
-  String get uploadPhoto => 'Upload Photo';
+  String get uploadPhoto => '사진 업로드';
 
   @override
-  String get changePhoto => 'Change Photo';
+  String get changePhoto => '사진 변경';
 
   @override
-  String get camera => 'Camera';
+  String get camera => '카메라';
 
   @override
-  String get gallery => 'Gallery';
+  String get gallery => '갤러리';
 
   @override
-  String get takePhoto => 'Take Photo';
+  String get takePhoto => '사진 찍기';
 
   @override
-  String get chooseFromGallery => 'Choose from Gallery';
+  String get chooseFromGallery => '갤러리에서 선택';
 
   @override
-  String get removePhoto => 'Remove Photo';
+  String get removePhoto => '사진 삭제';
 
   @override
   String get selectRoute => '경로를 선택하여 시작하세요';
@@ -87,25 +87,25 @@ class AppLocalizationsKo extends AppLocalizations {
   String get chooseYourSeats => '좌석을 선택하세요';
 
   @override
-  String get availableSeats => 'Available Seats';
+  String get availableSeats => 'null석 이용 가능';
 
   @override
-  String get chooseYourSeat => 'Choose Your Seat';
+  String get chooseYourSeat => '좌석을 선택해 주세요';
 
   @override
-  String get selectYourSeat => 'Select your seat';
+  String get selectYourSeat => '좌석을 선택하세요';
 
   @override
-  String get available => 'available';
+  String get available => '이용 가능';
 
   @override
   String seatsAvailable(int count) {
-    return '$count seat(s) available';
+    return '석 이용 가능';
   }
 
   @override
   String seatsSelected(int count) {
-    return '$count seat(s) selected';
+    return '$count석 선택됨';
   }
 
   @override
@@ -370,13 +370,13 @@ class AppLocalizationsKo extends AppLocalizations {
   String get rideHistory => '승차 기록';
 
   @override
-  String get help => 'Help';
+  String get help => '도움말';
 
   @override
-  String get faq => 'FAQ';
+  String get faq => '자주 묻는 질문';
 
   @override
-  String get support => 'Support';
+  String get support => '지원';
 
   @override
   String get helpAndSupport => '도움말 및 지원';
@@ -386,6 +386,9 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get logout => '로그아웃';
+
+  @override
+  String get clearMyBookings => '내 예약 삭제';
 
   @override
   String get deleteAccount => '계정 삭제';
@@ -460,6 +463,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get completeBooking => '예약 완료하기';
 
   @override
+  String get postRide => '탑승 게시';
+
+  @override
+  String get ridePosted => '탑승 게시됨';
+
+  @override
   String get noAvailableSeats => '사용 가능한 좌석 없음';
 
   @override
@@ -500,4 +509,82 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get suggestStop => '새 정류장 제안';
+
+  @override
+  String get areYouDriverOrRider => '운전자입니까, 탑승자입니까?';
+
+  @override
+  String get pickUpAndDropOff => '승차 지점 선택';
+
+  @override
+  String get chooseDropOffPoint => '하차 지점 선택';
+
+  @override
+  String get tapSeatsToChangeAvailability => '좌석을 탭하여 이용 가능 여부 변경';
+
+  @override
+  String get setYourTime => '시간 설정';
+
+  @override
+  String get incompleteProfile => '프로필 미완성';
+
+  @override
+  String get incompleteVehicleInfo => '차량 정보 미완성';
+
+  @override
+  String get completeProfile => '프로필 완성';
+
+  @override
+  String get addVehicle => '차량 추가';
+
+  @override
+  String get completePersonalInfoForBooking =>
+      '탑승 예약 전에 개인 정보(이름, 성, 이메일, 전화번호)를 입력해 주세요.';
+
+  @override
+  String get completePersonalInfoForPosting =>
+      '탑승 게시 전에 개인 정보(이름, 성, 이메일, 전화번호)를 입력해 주세요.';
+
+  @override
+  String get completeVehicleInfoForPosting =>
+      '탑승 게시 전에 차량 정보(브랜드, 모델, 색상, 번호판)를 입력해 주세요.';
+
+  @override
+  String get noMatchingRidesFound => '일치하는 탑승을 찾을 수 없습니다';
+
+  @override
+  String get tryAdjustingTimeOrRoute => '시간이나 경로를 조정해 보세요';
+
+  @override
+  String get cannotBookOwnRide => '자신의 탑승에는 좌석을 예약할 수 없습니다';
+
+  @override
+  String get thisIsYourRide => '이것은 당신의 탑승입니다 - 예약할 수 없습니다';
+
+  @override
+  String get alreadyHaveRideScheduled => '이 시간대에 이미 예정된 탑승이 있습니다';
+
+  @override
+  String get book => '예약';
+
+  @override
+  String get booked => '예약됨';
+
+  @override
+  String get noMessagesYet => '아직 메시지가 없습니다';
+
+  @override
+  String get messagesWillAppear => '탑승을 예약하면 메시지가 표시됩니다';
+
+  @override
+  String get startConversation => '대화를 시작하세요!';
+
+  @override
+  String get pleaseLoginToViewMessages => '메시지를 보려면 로그인하세요';
+
+  @override
+  String get bookARide => '탑승 예약';
+
+  @override
+  String get cancelRide => '탑승 취소';
 }

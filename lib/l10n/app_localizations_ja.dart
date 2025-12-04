@@ -18,31 +18,31 @@ class AppLocalizationsJa extends AppLocalizations {
   String get myBookings => '予約履歴';
 
   @override
-  String get inbox => 'Inbox';
+  String get inbox => '受信トレイ';
 
   @override
   String get account => 'アカウント';
 
   @override
-  String get uploadPhoto => 'Upload Photo';
+  String get uploadPhoto => '写真をアップロード';
 
   @override
-  String get changePhoto => 'Change Photo';
+  String get changePhoto => '写真を変更';
 
   @override
-  String get camera => 'Camera';
+  String get camera => 'カメラ';
 
   @override
-  String get gallery => 'Gallery';
+  String get gallery => 'ギャラリー';
 
   @override
-  String get takePhoto => 'Take Photo';
+  String get takePhoto => '写真を撮る';
 
   @override
-  String get chooseFromGallery => 'Choose from Gallery';
+  String get chooseFromGallery => 'ギャラリーから選択';
 
   @override
-  String get removePhoto => 'Remove Photo';
+  String get removePhoto => '写真を削除';
 
   @override
   String get selectRoute => 'ルートを選択して開始';
@@ -87,25 +87,25 @@ class AppLocalizationsJa extends AppLocalizations {
   String get chooseYourSeats => '座席を選択してください';
 
   @override
-  String get availableSeats => 'Available Seats';
+  String get availableSeats => 'null席空き';
 
   @override
-  String get chooseYourSeat => 'Choose Your Seat';
+  String get chooseYourSeat => '座席を選んでください';
 
   @override
-  String get selectYourSeat => 'Select your seat';
+  String get selectYourSeat => '座席を選択';
 
   @override
-  String get available => 'available';
+  String get available => '空き';
 
   @override
   String seatsAvailable(int count) {
-    return '$count seat(s) available';
+    return '席空き';
   }
 
   @override
   String seatsSelected(int count) {
-    return '$count seat(s) selected';
+    return '$count席選択済み';
   }
 
   @override
@@ -370,13 +370,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get rideHistory => '乗車履歴';
 
   @override
-  String get help => 'Help';
+  String get help => 'ヘルプ';
 
   @override
-  String get faq => 'FAQ';
+  String get faq => 'よくある質問';
 
   @override
-  String get support => 'Support';
+  String get support => 'サポート';
 
   @override
   String get helpAndSupport => 'ヘルプとサポート';
@@ -386,6 +386,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get logout => 'ログアウト';
+
+  @override
+  String get clearMyBookings => '予約をクリア';
 
   @override
   String get deleteAccount => 'アカウントを削除';
@@ -460,6 +463,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get completeBooking => '予約を完了';
 
   @override
+  String get postRide => '乗車を投稿';
+
+  @override
+  String get ridePosted => '乗車投稿完了';
+
+  @override
   String get noAvailableSeats => '空席なし';
 
   @override
@@ -500,4 +509,82 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get suggestStop => '新しい停留所を提案';
+
+  @override
+  String get areYouDriverOrRider => 'ドライバーですか、ライダーですか？';
+
+  @override
+  String get pickUpAndDropOff => '乗車地点を選択';
+
+  @override
+  String get chooseDropOffPoint => '降車地点を選択';
+
+  @override
+  String get tapSeatsToChangeAvailability => '座席をタップして空き状況を変更';
+
+  @override
+  String get setYourTime => '時間を設定';
+
+  @override
+  String get incompleteProfile => 'プロフィール未完了';
+
+  @override
+  String get incompleteVehicleInfo => '車両情報未完了';
+
+  @override
+  String get completeProfile => 'プロフィールを完成';
+
+  @override
+  String get addVehicle => '車両を追加';
+
+  @override
+  String get completePersonalInfoForBooking =>
+      '乗車を予約する前に、個人情報（名前、姓、メール、電話番号）を入力してください。';
+
+  @override
+  String get completePersonalInfoForPosting =>
+      '乗車を投稿する前に、個人情報（名前、姓、メール、電話番号）を入力してください。';
+
+  @override
+  String get completeVehicleInfoForPosting =>
+      '乗車を投稿する前に、車両情報（ブランド、モデル、色、ナンバープレート）を入力してください。';
+
+  @override
+  String get noMatchingRidesFound => '一致する乗車が見つかりません';
+
+  @override
+  String get tryAdjustingTimeOrRoute => '時間やルートを調整してみてください';
+
+  @override
+  String get cannotBookOwnRide => '自分の乗車に席を予約することはできません';
+
+  @override
+  String get thisIsYourRide => 'これはあなたの乗車です - 予約できません';
+
+  @override
+  String get alreadyHaveRideScheduled => 'この時間帯にすでに乗車が予定されています';
+
+  @override
+  String get book => '予約';
+
+  @override
+  String get booked => '予約済み';
+
+  @override
+  String get noMessagesYet => 'まだメッセージはありません';
+
+  @override
+  String get messagesWillAppear => '乗車を予約するとメッセージが表示されます';
+
+  @override
+  String get startConversation => '会話を始めましょう！';
+
+  @override
+  String get pleaseLoginToViewMessages => 'メッセージを見るにはログインしてください';
+
+  @override
+  String get bookARide => '乗車を予約';
+
+  @override
+  String get cancelRide => '乗車をキャンセル';
 }

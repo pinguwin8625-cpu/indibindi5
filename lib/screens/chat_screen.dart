@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import '../models/message.dart';
 import '../services/messaging_service.dart';
 import '../services/auth_service.dart';
+import '../services/mock_users.dart';
 import '../utils/date_time_helpers.dart';
+import '../l10n/app_localizations.dart';
+import 'dart:io';
 
 class ChatScreen extends StatefulWidget {
   final Conversation conversation;
@@ -10,7 +13,7 @@ class ChatScreen extends StatefulWidget {
   final String? initialMessagePrefix;
 
   const ChatScreen({
-    super.key, 
+    super.key,
     required this.conversation,
     this.createConversationOnFirstMessage = false,
     this.initialMessagePrefix,
@@ -32,7 +35,10 @@ class _ChatScreenState extends State<ChatScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final currentUser = AuthService.currentUser;
       if (currentUser != null && !widget.createConversationOnFirstMessage) {
-        _messagingService.markMessagesAsRead(widget.conversation.id, currentUser.id);
+        _messagingService.markMessagesAsRead(
+          widget.conversation.id,
+          currentUser.id,
+        );
       }
     });
   }
@@ -54,7 +60,9 @@ class _ChatScreenState extends State<ChatScreen> {
     if (!widget.conversation.isMessagingAllowed) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Messaging period has expired (24 hours after arrival)'),
+          content: Text(
+            'Messaging period has expired (3 days after arrival)',
+          ),
           backgroundColor: Colors.red,
         ),
       );
@@ -63,19 +71,28 @@ class _ChatScreenState extends State<ChatScreen> {
 
     try {
       // Check if this is the first message
-      final isFirstMessage = widget.createConversationOnFirstMessage && 
+      final isFirstMessage =
+          widget.createConversationOnFirstMessage &&
           _messagingService.getConversation(widget.conversation.id) == null;
-      
+
+      print('💬 ChatScreen._sendMessage: isFirstMessage=$isFirstMessage');
+      print('   createConversationOnFirstMessage=${widget.createConversationOnFirstMessage}');
+      print('   conversationId=${widget.conversation.id}');
+      print('   existing conversation=${_messagingService.getConversation(widget.conversation.id) != null}');
+
       // If this is the first message, add conversation to inbox first
       if (isFirstMessage) {
+        print('💬 ChatScreen: Adding conversation to inbox...');
         _messagingService.addConversation(widget.conversation);
+        print('💬 ChatScreen: Conversation added, total conversations=${_messagingService.conversations.value.length}');
       }
-      
+
       // Prepare message content with prefix if it's the first message
-      final messageContent = isFirstMessage && widget.initialMessagePrefix != null
+      final messageContent =
+          isFirstMessage && widget.initialMessagePrefix != null
           ? '${widget.initialMessagePrefix}$content'
           : content;
-      
+
       _messagingService.sendMessage(
         conversationId: widget.conversation.id,
         senderId: currentUser.id,
@@ -86,7 +103,7 @@ class _ChatScreenState extends State<ChatScreen> {
       );
 
       _messageController.clear();
-      
+
       // Scroll to bottom after sending
       Future.delayed(Duration(milliseconds: 100), () {
         if (_scrollController.hasClients) {
@@ -99,10 +116,7 @@ class _ChatScreenState extends State<ChatScreen> {
       });
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString()),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
       );
     }
   }
@@ -118,91 +132,151 @@ class _ChatScreenState extends State<ChatScreen> {
         );
       }
 
-      final otherUserName = widget.conversation.getOtherUserName(currentUser.id);
+      final otherUserName = widget.conversation.getOtherUserName(
+        currentUser.id,
+      );
       final isExpired = !widget.conversation.isMessagingAllowed;
 
+      // Get other user's info for profile photo and rating
+      final otherUserId = widget.conversation.getOtherUserId(currentUser.id);
+      final otherUser = MockUsers.getUserById(otherUserId);
+
       return Scaffold(
-      appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              otherUserName,
-              style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            Text(
-              widget.conversation.routeName,
-              style: TextStyle(color: Colors.white70, fontSize: 14),
-            ),
-          ],
-        ),
-        backgroundColor: Theme.of(context).primaryColor,
-        iconTheme: IconThemeData(color: Colors.white),
-      ),
-      body: Column(
-        children: [
-          if (isExpired)
-            Container(
-              padding: EdgeInsets.all(12),
-              color: Colors.red[50],
-              child: Row(
+        appBar: AppBar(
+          title: Row(
+            children: [
+              // Profile photo
+              CircleAvatar(
+                radius: 18,
+                backgroundColor: Colors.grey[300],
+                backgroundImage: otherUser?.profilePhotoUrl != null
+                    ? (otherUser!.profilePhotoUrl!.startsWith('assets/')
+                        ? AssetImage(otherUser.profilePhotoUrl!) as ImageProvider
+                        : FileImage(File(otherUser.profilePhotoUrl!)))
+                    : null,
+                child: otherUser?.profilePhotoUrl == null
+                    ? Icon(Icons.person, size: 18, color: Colors.grey[600])
+                    : null,
+              ),
+              SizedBox(width: 12),
+              // Name and rating
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.info_outline, color: Colors.red[700], size: 20),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Messaging expired (24 hours after arrival)',
-                      style: TextStyle(color: Colors.red[700], fontSize: 14),
+                  Text(
+                    otherUserName,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                ],
-              ),
-            ),
-          Expanded(
-            child: ValueListenableBuilder(
-              valueListenable: _messagingService.conversations,
-              builder: (context, List<Conversation> conversations, child) {
-                // Use the conversation from the service if it exists, otherwise use the widget's conversation
-                final conversation = _messagingService.getConversation(widget.conversation.id) ?? widget.conversation;
-
-                if (conversation.messages.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                  if (otherUser?.rating != null)
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.chat_bubble_outline, size: 64, color: Colors.grey[400]),
-                        SizedBox(height: 16),
-                        Text(
-                          'No messages yet',
-                          style: TextStyle(color: Colors.grey[600], fontSize: 16),
+                        Icon(
+                          Icons.star,
+                          size: 14,
+                          color: Colors.amber,
                         ),
-                        SizedBox(height: 8),
+                        SizedBox(width: 4),
                         Text(
-                          'Start a conversation!',
-                          style: TextStyle(color: Colors.grey[500], fontSize: 14),
+                          (otherUser?.rating ?? 0.0).toStringAsFixed(1),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                          ),
                         ),
                       ],
                     ),
-                  );
-                }
-
-                return ListView.builder(
-                  controller: _scrollController,
-                  padding: EdgeInsets.all(16),
-                  itemCount: conversation.messages.length,
-                  itemBuilder: (context, index) {
-                    final message = conversation.messages[index];
-                    final isMe = message.senderId == currentUser.id;
-                    return _buildMessageBubble(message, isMe);
-                  },
-                );
-              },
-            ),
+                ],
+              ),
+            ],
           ),
-          _buildMessageInput(),
-        ],
-      ),
-    );
+          backgroundColor: Theme.of(context).primaryColor,
+          iconTheme: IconThemeData(color: Colors.white),
+        ),
+        body: Column(
+          children: [
+            if (isExpired)
+              Container(
+                padding: EdgeInsets.all(12),
+                color: Colors.red[50],
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline, color: Colors.red[700], size: 20),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Messaging expired (3 days after arrival)',
+                        style: TextStyle(color: Colors.red[700], fontSize: 14),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            Expanded(
+              child: ValueListenableBuilder(
+                valueListenable: _messagingService.conversations,
+                builder: (context, List<Conversation> conversations, child) {
+                  final l10n = AppLocalizations.of(context)!;
+                  // Use the conversation from the service if it exists, otherwise use the widget's conversation
+                  final conversation =
+                      _messagingService.getConversation(
+                        widget.conversation.id,
+                      ) ??
+                      widget.conversation;
+
+                  if (conversation.messages.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.chat_bubble_outline,
+                            size: 64,
+                            color: Colors.grey[400],
+                          ),
+                          SizedBox(height: 16),
+                          Text(
+                            l10n.noMessagesYet,
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 16,
+                            ),
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            l10n.startConversation,
+                            style: TextStyle(
+                              color: Colors.grey[500],
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  return ListView.builder(
+                    controller: _scrollController,
+                    padding: EdgeInsets.all(16),
+                    itemCount: conversation.messages.length,
+                    itemBuilder: (context, index) {
+                      final message = conversation.messages[index];
+                      final isMe = message.senderId == currentUser.id;
+                      return _buildMessageBubble(message, isMe);
+                    },
+                  );
+                },
+              ),
+            ),
+            _buildMessageInput(),
+          ],
+        ),
+      );
     } catch (e, stackTrace) {
       print('Error in ChatScreen build: $e');
       print('Stack trace: $stackTrace');
@@ -223,9 +297,13 @@ class _ChatScreenState extends State<ChatScreen> {
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
         margin: EdgeInsets.only(bottom: 12),
-        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width * 0.75,
+        ),
         child: Column(
-          crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+          crossAxisAlignment: isMe
+              ? CrossAxisAlignment.end
+              : CrossAxisAlignment.start,
           children: [
             Container(
               padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -246,10 +324,7 @@ class _ChatScreenState extends State<ChatScreen> {
               padding: EdgeInsets.symmetric(horizontal: 4),
               child: Text(
                 formatTimeHHmm(message.timestamp),
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[600],
-                ),
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
               ),
             ),
           ],
@@ -260,7 +335,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Widget _buildMessageInput() {
     final isExpired = !widget.conversation.isMessagingAllowed;
-    
+
     return Container(
       padding: EdgeInsets.all(8),
       decoration: BoxDecoration(
@@ -287,7 +362,10 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
                 filled: true,
                 fillColor: Colors.grey[100],
-                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
               ),
               maxLines: null,
               textCapitalization: TextCapitalization.sentences,
@@ -295,7 +373,9 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
           SizedBox(width: 8),
           CircleAvatar(
-            backgroundColor: isExpired ? Colors.grey : Theme.of(context).primaryColor,
+            backgroundColor: isExpired
+                ? Colors.grey
+                : Theme.of(context).primaryColor,
             child: IconButton(
               icon: Icon(Icons.send, color: Colors.white, size: 20),
               onPressed: isExpired ? null : _sendMessage,

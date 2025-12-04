@@ -5,20 +5,30 @@ import '../widgets/scroll_indicator.dart';
 import '../l10n/app_localizations.dart';
 import '../services/auth_service.dart';
 import '../screens/personal_information_screen.dart';
+import '../screens/vehicle_screen.dart';
 import '../utils/dialog_helper.dart';
 
 class RouteLayerWidget extends StatefulWidget {
   final String userRole;
   final RouteInfo? selectedRoute;
-  final bool isBookingCompleted;
+  final bool
+  isActionCompleted; // Can be either booking completed or ride posted
   final Function(RouteInfo?) onRouteSelected;
+  final Function(String)? onRoleSelected;
+  final VoidCallback? onBackToRoleSelection;
+  final TabController? tabController;
+  final bool hasSelectedRole;
 
   const RouteLayerWidget({
     super.key,
     required this.userRole,
     required this.selectedRoute,
-    required this.isBookingCompleted,
+    required this.isActionCompleted,
     required this.onRouteSelected,
+    this.onRoleSelected,
+    this.onBackToRoleSelection,
+    this.tabController,
+    this.hasSelectedRole = false,
   });
 
   @override
@@ -27,6 +37,7 @@ class RouteLayerWidget extends StatefulWidget {
 
 class _RouteLayerWidgetState extends State<RouteLayerWidget> {
   final ScrollController _scrollController = ScrollController();
+  String? _selectedRole;
 
   @override
   void dispose() {
@@ -36,40 +47,72 @@ class _RouteLayerWidgetState extends State<RouteLayerWidget> {
 
   void _handleRouteSelection(RouteInfo route) {
     final currentUser = AuthService.currentUser;
-    
+
     if (currentUser == null) {
       return;
     }
 
-    // Check if personal information is complete
-    if (!currentUser.hasCompletePersonalInfo) {
-      _showIncompleteProfileDialog();
-      return;
+    // Check requirements based on user role
+    if (widget.userRole == 'driver') {
+      // Drivers need both personal info AND vehicle info
+      if (!currentUser.hasCompletePersonalInfo) {
+        _showIncompletePersonalInfoDialog(isDriver: true);
+        return;
+      }
+      if (!currentUser.hasVehicle) {
+        _showIncompleteVehicleInfoDialog();
+        return;
+      }
+    } else {
+      // Riders only need personal info
+      if (!currentUser.hasCompletePersonalInfo) {
+        _showIncompletePersonalInfoDialog(isDriver: false);
+        return;
+      }
     }
 
     // If complete, proceed with route selection
-    if (!widget.isBookingCompleted) {
+    if (!widget.isActionCompleted) {
       widget.onRouteSelected(route);
     }
   }
 
-  Future<void> _showIncompleteProfileDialog() async {
+  Future<void> _showIncompletePersonalInfoDialog({required bool isDriver}) async {
     final l10n = AppLocalizations.of(context)!;
-    
+
     final confirmed = await DialogHelper.showConfirmDialog(
       context: context,
-      title: 'Incomplete Profile',
-      content: 'Please complete your personal information (name, surname, email, phone number) before booking a ride.',
+      title: l10n.incompleteProfile,
+      content: isDriver
+          ? l10n.completePersonalInfoForPosting
+          : l10n.completePersonalInfoForBooking,
       cancelText: l10n.cancel,
-      confirmText: 'Complete Profile',
+      confirmText: l10n.completeProfile,
     );
-    
+
     if (confirmed) {
       Navigator.push(
         context,
-        MaterialPageRoute(
-          builder: (context) => PersonalInformationScreen(),
-        ),
+        MaterialPageRoute(builder: (context) => PersonalInformationScreen()),
+      );
+    }
+  }
+
+  Future<void> _showIncompleteVehicleInfoDialog() async {
+    final l10n = AppLocalizations.of(context)!;
+
+    final confirmed = await DialogHelper.showConfirmDialog(
+      context: context,
+      title: l10n.incompleteVehicleInfo,
+      content: l10n.completeVehicleInfoForPosting,
+      cancelText: l10n.cancel,
+      confirmText: l10n.addVehicle,
+    );
+
+    if (confirmed) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => VehicleScreen()),
       );
     }
   }
@@ -77,51 +120,253 @@ class _RouteLayerWidgetState extends State<RouteLayerWidget> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    
+
+    // Role selection screen - no scroll indicator needed
+    if (!widget.hasSelectedRole) {
+      return Visibility(
+        visible: widget.tabController != null && 
+                 widget.userRole == (widget.tabController!.index == 0 ? 'driver' : 'rider'),
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Question
+                Text(
+                  l10n.areYouDriverOrRider,
+                  style: TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black,
+                    letterSpacing: 0.5,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 60),
+                // Buttons
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Driver Button
+                      GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _selectedRole = 'driver';
+                          });
+                          widget.tabController?.animateTo(0); // Switch to driver tab
+                          widget.onRoleSelected?.call('driver');
+                        },
+                        child: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: _selectedRole == 'driver' ? Color(0xFFDD2C00) : Colors.white,
+                            borderRadius: BorderRadius.circular(30),
+                            border: Border.all(
+                              color: _selectedRole == 'driver' ? Color(0xFFDD2C00) : Colors.grey[300]!,
+                              width: 2,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // Driver icon with dot overlay
+                              SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: Stack(
+                                    children: [
+                                      Icon(
+                                        Icons.directions_car,
+                                        color: _selectedRole == 'driver' ? Colors.white : Color(0xFFDD2C00),
+                                        size: 20,
+                                      ),
+                                      Positioned(
+                                        top: 6,
+                                        left: 10,
+                                        child: Container(
+                                          width: 3,
+                                          height: 3,
+                                          decoration: BoxDecoration(
+                                            color: _selectedRole == 'driver' ? Colors.white : Color(0xFFDD2C00),
+                                            shape: BoxShape.circle,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                SizedBox(width: 8),
+                                Text(
+                                  l10n.driver,
+                                  style: TextStyle(
+                                    color: _selectedRole == 'driver' ? Colors.white : Color(0xFFDD2C00),
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      SizedBox(width: 20),
+                      // Rider Button
+                      GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _selectedRole = 'rider';
+                          });
+                          widget.tabController?.animateTo(1); // Switch to rider tab
+                          widget.onRoleSelected?.call('rider');
+                        },
+                        child: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: _selectedRole == 'rider' ? Color(0xFFDD2C00) : Colors.white,
+                            borderRadius: BorderRadius.circular(30),
+                            border: Border.all(
+                              color: _selectedRole == 'rider' ? Color(0xFFDD2C00) : Colors.grey[300]!,
+                              width: 2,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.person,
+                                color: _selectedRole == 'rider' ? Colors.white : Color(0xFFDD2C00),
+                                size: 20,
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                l10n.rider,
+                                style: TextStyle(
+                                  color: _selectedRole == 'rider' ? Colors.white : Color(0xFFDD2C00),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+    }
+
+    // Route selection screen - with scroll indicator
     return ScrollIndicator(
       scrollController: _scrollController,
       child: SingleChildScrollView(
         controller: _scrollController,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Title
-            Text(
-              l10n.chooseYourRoute,
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.w600,
-                color: Colors.black,
-                letterSpacing: 0.5,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Summary bar with back button (similar to RideDetailsBar)
+              Container(
+                margin: EdgeInsets.fromLTRB(0, 8, 0, 8),
+                padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey[300]!, width: 1),
+                  color: Colors.grey[50],
+                ),
+                child: Row(
+                  children: [
+                    // Back button
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: widget.onBackToRoleSelection,
+                      child: Container(
+                        padding: EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: Color(0xFFDD2C00).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Icon(
+                          Icons.arrow_back_ios_new,
+                          color: Color(0xFFDD2C00),
+                          size: 16,
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    // Role display - centered
+                    Expanded(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            widget.userRole.toLowerCase() == 'driver'
+                                ? Icons.directions_car
+                                : Icons.person,
+                            color: Color(0xFFDD2C00),
+                            size: 16,
+                          ),
+                          SizedBox(width: 6),
+                          Text(
+                            widget.userRole.toLowerCase() == 'driver'
+                                ? l10n.driver
+                                : l10n.rider,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF2E2E2E),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Spacer for symmetry
+                    SizedBox(width: 28),
+                  ],
+                ),
               ),
-            ),
-            SizedBox(height: 32),
+              // Title
+              Padding(
+                padding: EdgeInsets.fromLTRB(0, 8, 0, 16),
+                child: Center(
+                  child: Text(
+                    l10n.chooseYourRoute,
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+              ),
 
-            // Route Selection
-            RouteSelectionWidget(
-              selectedRoute: widget.selectedRoute,
-              originIndex: null,
-              destinationIndex: null,
-              hasSelectedDateTime: false,
-              departureTime: null,
-              arrivalTime: null,
-              isDisabled: widget.isBookingCompleted,
-              onRouteChanged: (route) {
-                // Handle both selection and deselection
-                if (route != null) {
-                  _handleRouteSelection(route);
-                } else {
-                  // Deselect route
-                  widget.onRouteSelected(null);
-                }
-              },
-            ),
-
-          ],
+              // Route Selection
+              RouteSelectionWidget(
+                selectedRoute: widget.selectedRoute,
+                originIndex: null,
+                destinationIndex: null,
+                hasSelectedDateTime: false,
+                departureTime: null,
+                arrivalTime: null,
+                isDisabled: widget.isActionCompleted,
+                onRouteChanged: (route) {
+                  // Handle both selection and deselection
+                  if (route != null) {
+                    _handleRouteSelection(route);
+                  } else {
+                    // Deselect route
+                    widget.onRouteSelected(null);
+                  }
+                },
+              ),
+            ],
+          ),
         ),
-      ),
       ),
     );
   }

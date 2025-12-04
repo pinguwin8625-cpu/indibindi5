@@ -18,31 +18,31 @@ class AppLocalizationsEs extends AppLocalizations {
   String get myBookings => 'Mis Reservas';
 
   @override
-  String get inbox => 'Inbox';
+  String get inbox => 'Bandeja de Entrada';
 
   @override
   String get account => 'Cuenta';
 
   @override
-  String get uploadPhoto => 'Upload Photo';
+  String get uploadPhoto => 'Subir Foto';
 
   @override
-  String get changePhoto => 'Change Photo';
+  String get changePhoto => 'Cambiar Foto';
 
   @override
-  String get camera => 'Camera';
+  String get camera => 'Cámara';
 
   @override
-  String get gallery => 'Gallery';
+  String get gallery => 'Galería';
 
   @override
-  String get takePhoto => 'Take Photo';
+  String get takePhoto => 'Tomar Foto';
 
   @override
-  String get chooseFromGallery => 'Choose from Gallery';
+  String get chooseFromGallery => 'Elegir de la Galería';
 
   @override
-  String get removePhoto => 'Remove Photo';
+  String get removePhoto => 'Eliminar Foto';
 
   @override
   String get selectRoute => 'Selecciona una ruta para comenzar';
@@ -87,25 +87,25 @@ class AppLocalizationsEs extends AppLocalizations {
   String get chooseYourSeats => 'Elija sus asientos';
 
   @override
-  String get availableSeats => 'Available Seats';
+  String get availableSeats => 'null asientos disponibles';
 
   @override
-  String get chooseYourSeat => 'Choose Your Seat';
+  String get chooseYourSeat => 'Elige tu asiento';
 
   @override
-  String get selectYourSeat => 'Select your seat';
+  String get selectYourSeat => 'Selecciona tu asiento';
 
   @override
-  String get available => 'available';
+  String get available => 'disponible';
 
   @override
   String seatsAvailable(int count) {
-    return '$count seat(s) available';
+    return 'asientos disponibles';
   }
 
   @override
   String seatsSelected(int count) {
-    return '$count seat(s) selected';
+    return '$count asientos seleccionados';
   }
 
   @override
@@ -373,13 +373,13 @@ class AppLocalizationsEs extends AppLocalizations {
   String get rideHistory => 'Historial de Viajes';
 
   @override
-  String get help => 'Help';
+  String get help => 'Ayuda';
 
   @override
   String get faq => 'FAQ';
 
   @override
-  String get support => 'Support';
+  String get support => 'Soporte';
 
   @override
   String get helpAndSupport => 'Ayuda y Soporte';
@@ -389,6 +389,9 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get logout => 'Cerrar Sesión';
+
+  @override
+  String get clearMyBookings => 'Borrar Mis Reservas';
 
   @override
   String get deleteAccount => 'Eliminar Cuenta';
@@ -463,6 +466,12 @@ class AppLocalizationsEs extends AppLocalizations {
   String get completeBooking => 'Completar Reserva';
 
   @override
+  String get postRide => 'Publicar Viaje';
+
+  @override
+  String get ridePosted => 'Viaje Publicado';
+
+  @override
   String get noAvailableSeats => 'No Hay Asientos Disponibles';
 
   @override
@@ -503,4 +512,86 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get suggestStop => 'Sugerir una nueva parada';
+
+  @override
+  String get areYouDriverOrRider => '¿Eres conductor o pasajero?';
+
+  @override
+  String get pickUpAndDropOff => 'Elige Punto de Recogida';
+
+  @override
+  String get chooseDropOffPoint => 'Elige Punto de Bajada';
+
+  @override
+  String get tapSeatsToChangeAvailability =>
+      'Toca los asientos para cambiar la disponibilidad';
+
+  @override
+  String get setYourTime => 'Establece tu Hora';
+
+  @override
+  String get incompleteProfile => 'Perfil Incompleto';
+
+  @override
+  String get incompleteVehicleInfo => 'Info de Vehículo Incompleta';
+
+  @override
+  String get completeProfile => 'Completar Perfil';
+
+  @override
+  String get addVehicle => 'Agregar Vehículo';
+
+  @override
+  String get completePersonalInfoForBooking =>
+      'Por favor completa tu información personal (nombre, apellido, correo, teléfono) antes de reservar un viaje.';
+
+  @override
+  String get completePersonalInfoForPosting =>
+      'Por favor completa tu información personal (nombre, apellido, correo, teléfono) antes de publicar un viaje.';
+
+  @override
+  String get completeVehicleInfoForPosting =>
+      'Por favor completa la información de tu vehículo (marca, modelo, color, matrícula) antes de publicar un viaje.';
+
+  @override
+  String get noMatchingRidesFound => 'No se encontraron viajes coincidentes';
+
+  @override
+  String get tryAdjustingTimeOrRoute => 'Intenta ajustar la hora o la ruta';
+
+  @override
+  String get cannotBookOwnRide =>
+      'No puedes reservar asientos en tu propio viaje';
+
+  @override
+  String get thisIsYourRide => 'Este es tu viaje - no puedes reservarlo';
+
+  @override
+  String get alreadyHaveRideScheduled =>
+      'Ya tienes un viaje programado a esta hora';
+
+  @override
+  String get book => 'Reservar';
+
+  @override
+  String get booked => 'Reservado';
+
+  @override
+  String get noMessagesYet => 'Aún no hay mensajes';
+
+  @override
+  String get messagesWillAppear =>
+      'Los mensajes aparecerán cuando reserves un viaje';
+
+  @override
+  String get startConversation => '¡Inicia una conversación!';
+
+  @override
+  String get pleaseLoginToViewMessages => 'Inicia sesión para ver los mensajes';
+
+  @override
+  String get bookARide => 'Reservar un Viaje';
+
+  @override
+  String get cancelRide => 'Cancelar Viaje';
 }

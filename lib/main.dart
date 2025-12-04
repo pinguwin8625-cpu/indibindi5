@@ -1,13 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
+import 'screens/auth_screen.dart';
 import 'screens/main_screen.dart';
-import 'screens/login_screen.dart';
 import 'providers/locale_provider.dart';
 import 'services/auth_service.dart';
+import 'services/booking_storage.dart';
+import 'services/messaging_service.dart';
+import 'services/rating_service.dart';
 import 'l10n/app_localizations.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Ensure bookings and messages are loaded before app starts
+  await BookingStorage().ensureLoaded();
+  await MessagingService().ensureLoaded();
+  await RatingService().ensureLoaded();
+
   runApp(
     ChangeNotifierProvider(
       create: (_) => LocaleProvider(),
@@ -22,11 +32,15 @@ class IndibindiApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final localeProvider = Provider.of<LocaleProvider>(context);
-    
-    print('🌍 MaterialApp rebuilding with locale: ${localeProvider.locale.languageCode}');
-    
+
+    print(
+      '🌍 MaterialApp rebuilding with locale: ${localeProvider.locale.languageCode}',
+    );
+
     return MaterialApp(
-      key: ValueKey(localeProvider.locale.languageCode), // Force rebuild on locale change
+      key: ValueKey(
+        localeProvider.locale.languageCode,
+      ), // Force rebuild on locale change
       title: 'indibindi',
       theme: ThemeData(
         brightness: Brightness.light,
@@ -90,7 +104,11 @@ class IndibindiApp extends StatelessWidget {
         Locale('ko'), // Korean
         Locale('ar'), // Arabic
       ],
-      home: AuthService.isLoggedIn ? const MainScreen() : const LoginScreen(),
+      home: AuthService.isLoggedIn
+          ? (AuthService.currentUser?.isAdmin == true
+              ? const MainScreen(initialIndex: 3)
+              : const MainScreen())
+          : const AuthScreen(),
     );
   }
 }

@@ -1,133 +1,191 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:io';
 import '../services/booking_storage.dart';
 import '../services/auth_service.dart';
-import '../services/messaging_service.dart';
 import '../services/rating_service.dart';
+import '../services/mock_users.dart';
 import '../models/booking.dart';
-import '../models/message.dart';
 import '../models/trip_rating.dart';
+import '../models/message.dart';
 import '../utils/date_time_helpers.dart';
 import '../utils/dialog_helper.dart';
 import '../l10n/app_localizations.dart';
 import '../widgets/scroll_indicator.dart';
 import '../widgets/language_selector.dart';
+import '../widgets/seat_layout_widget.dart';
 import 'chat_screen.dart';
 
 class MyBookingsScreen extends StatefulWidget {
-  const MyBookingsScreen({super.key});
+  final int initialTabIndex;
+
+  const MyBookingsScreen({super.key, this.initialTabIndex = 0});
 
   @override
-  State<MyBookingsScreen> createState() => _MyBookingsScreenState();
+  State<MyBookingsScreen> createState() => MyBookingsScreenState();
 }
 
-class _MyBookingsScreenState extends State<MyBookingsScreen> {
+class MyBookingsScreenState extends State<MyBookingsScreen>
+    with SingleTickerProviderStateMixin {
   final BookingStorage _bookingStorage = BookingStorage();
-  bool _showOlderPastBookings = false;
+  bool _showOlderPastBookings = false; // Archived starts folded
   bool _showUpcoming = true;
   bool _showOngoing = true;
   bool _showCompleted = true;
-  bool _showCanceled = true;
-  final ScrollController _scrollController = ScrollController();
+  bool _showCanceled = false; // Canceled starts folded
+  final ScrollController _driverScrollController = ScrollController();
+  final ScrollController _riderScrollController = ScrollController();
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(
+      length: 2,
+      vsync: this,
+      initialIndex: widget.initialTabIndex,
+    );
+  }
+
+  void switchToTab(int tabIndex) {
+    if (mounted && _tabController.index != tabIndex) {
+      _tabController.animateTo(tabIndex);
+    }
+  }
 
   @override
   void dispose() {
-    _scrollController.dispose();
+    _driverScrollController.dispose();
+    _riderScrollController.dispose();
+    _tabController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final currentUser = AuthService.currentUser;
 
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(
-            l10n.myBookings,
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 20,
+    return Scaffold(
+      key: ValueKey(currentUser?.id ?? 'no-user'), // Force rebuild when user changes
+      appBar: AppBar(
+        title: Text(
+          l10n.myBookings,
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+          ),
+        ),
+        backgroundColor: Theme.of(context).primaryColor,
+        automaticallyImplyLeading: false, // Remove back button
+        actions: [
+          Padding(
+            padding: EdgeInsets.only(right: 12),
+            child: LanguageSelector(isDarkBackground: true),
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          // Toggle style tab buttons (same as booking widget)
+          Container(
+            padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+            child: AnimatedBuilder(
+              animation: _tabController,
+              builder: (context, child) {
+                return Center(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.grey[300]!, width: 1),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _buildToggleButton(
+                          context,
+                          label: l10n.driver,
+                          icon: Icons.directions_car,
+                          isSelected: _tabController.index == 0,
+                          isLeft: true,
+                          onTap: () {
+                            _tabController.animateTo(0);
+                          },
+                        ),
+                        _buildToggleButton(
+                          context,
+                          label: l10n.rider,
+                          icon: Icons.person,
+                          isSelected: _tabController.index == 1,
+                          isLeft: false,
+                          onTap: () {
+                            _tabController.animateTo(1);
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
             ),
           ),
-          backgroundColor: Theme.of(context).primaryColor,
-          automaticallyImplyLeading: false, // Remove back button
-          actions: [
-            Padding(
-              padding: EdgeInsets.only(right: 12),
-              child: LanguageSelector(isDarkBackground: true),
-            ),
-          ],
-        ),
-        body: Builder(
-          builder: (BuildContext context) {
-            final TabController tabController = DefaultTabController.of(context);
-            return Column(
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
               children: [
-                Container(
-                  padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                  child: AnimatedBuilder(
-                    animation: tabController,
-                    builder: (context, child) {
-                      return Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          _buildTabButton(
-                            label: l10n.driver,
-                            icon: Icons.directions_car,
-                            isSelected: tabController.index == 0,
-                            onTap: () {
-                              tabController.animateTo(0);
-                            },
-                          ),
-                          SizedBox(width: 20),
-                          _buildTabButton(
-                            label: l10n.rider,
-                            icon: Icons.person,
-                            isSelected: tabController.index == 1,
-                            onTap: () {
-                              tabController.animateTo(1);
-                            },
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                ),
-                Expanded(
-                  child: TabBarView(
-                    children: [
-                      _buildBookingsList('driver'),
-                      _buildBookingsList('rider'),
-                    ],
-                  ),
-                ),
+                _buildBookingsList('driver', _driverScrollController),
+                _buildBookingsList('rider', _riderScrollController),
               ],
-            );
-          },
-        ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildTabButton({
+  // Helper methods for responsive design
+  bool _isMobileWeb(BuildContext context) {
+    if (!kIsWeb) return false;
+    final width = MediaQuery.of(context).size.width;
+    return width < 600;
+  }
+
+  bool _isMobileApp() {
+    return !kIsWeb;
+  }
+
+  Widget _buildToggleButton(
+    BuildContext context, {
     required String label,
     required IconData icon,
     required bool isSelected,
+    required bool isLeft,
     required VoidCallback onTap,
   }) {
+    // Responsive sizing based on platform
+    final isMobileApp = _isMobileApp();
+    final isMobileWeb = _isMobileWeb(context);
+
+    // Different padding and sizes for each platform
+    // Mobile App: compact, Mobile Web: medium, Desktop Web: larger
+    final horizontalPadding = isMobileApp ? 16.0 : (isMobileWeb ? 20.0 : 24.0);
+    final verticalPadding = isMobileApp ? 8.0 : (isMobileWeb ? 10.0 : 12.0);
+    final iconSize = isMobileApp ? 16.0 : (isMobileWeb ? 18.0 : 20.0);
+    final fontSize = isMobileApp ? 13.0 : (isMobileWeb ? 14.0 : 15.0);
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        padding: EdgeInsets.symmetric(
+          horizontal: horizontalPadding,
+          vertical: verticalPadding,
+        ),
         decoration: BoxDecoration(
           color: isSelected ? Color(0xFFDD2C00) : Colors.white,
-          borderRadius: BorderRadius.circular(30),
-          border: Border.all(
-            color: isSelected ? Color(0xFFDD2C00) : Colors.grey[300]!,
-            width: 2,
+          borderRadius: BorderRadius.horizontal(
+            left: isLeft ? Radius.circular(19) : Radius.zero,
+            right: isLeft ? Radius.zero : Radius.circular(19),
           ),
         ),
         child: Row(
@@ -135,16 +193,16 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
           children: [
             Icon(
               icon,
-              color: isSelected ? Colors.white : Color(0xFFDD2C00),
-              size: 20,
+              color: isSelected ? Colors.white : Colors.grey[600],
+              size: iconSize,
             ),
-            SizedBox(width: 8),
+            SizedBox(width: 6),
             Text(
               label,
               style: TextStyle(
-                color: isSelected ? Colors.white : Color(0xFFDD2C00),
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
+                color: isSelected ? Colors.white : Colors.grey[600],
+                fontWeight: FontWeight.w600,
+                fontSize: fontSize,
               ),
             ),
           ],
@@ -153,20 +211,39 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
     );
   }
 
-  Widget _buildBookingsList(String userRole) {
+  Widget _buildBookingsList(
+    String userRole,
+    ScrollController scrollController,
+  ) {
     return ValueListenableBuilder(
       valueListenable: _bookingStorage.bookings,
       builder: (context, List<Booking> bookings, child) {
         final l10n = AppLocalizations.of(context)!;
         final now = DateTime.now();
 
+        // Get the localized role name for comparison
+        final localizedRole = userRole.toLowerCase() == 'driver' 
+            ? l10n.driver.toLowerCase() 
+            : l10n.rider.toLowerCase();
+
         // Filter bookings based on user and role
+        // Compare with both English role and localized role for compatibility
         final user = AuthService.currentUser;
         final userBookings = bookings
-            .where((b) => 
-                b.userId == user?.id && 
-                b.userRole.toLowerCase() == userRole.toLowerCase())
+            .where(
+              (b) =>
+                  b.userId == user?.id &&
+                  (b.userRole.toLowerCase() == userRole.toLowerCase() ||
+                   b.userRole.toLowerCase() == localizedRole),
+            )
             .toList();
+
+        // Debug: Print all user bookings
+        print('🔍 MyBookings: user=${user?.id}, role=$userRole, localizedRole=$localizedRole');
+        print('🔍 MyBookings: total bookings=${bookings.length}, userBookings=${userBookings.length}');
+        for (final b in userBookings) {
+          print('🔍 Booking: id=${b.id}, departure=${b.departureTime}, arrival=${b.arrivalTime}, role=${b.userRole}, canceled=${b.isCanceled}, archived=${b.isArchived}');
+        }
 
         // Upcoming: departure time is in the future
         final upcomingBookings =
@@ -192,6 +269,8 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                 )
                 .toList()
               ..sort((a, b) => a.departureTime.compareTo(b.departureTime));
+        
+        print('🔍 MyBookings: now=$now, ongoing=${ongoingBookings.length}');
 
         // Past: arrival time has passed or equals now
         final pastBookings =
@@ -236,9 +315,9 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
         }
 
         return ScrollIndicator(
-          scrollController: _scrollController,
+          scrollController: scrollController,
           child: CustomScrollView(
-            controller: _scrollController,
+            controller: scrollController,
             slivers: [
               // Upcoming section
               if (upcomingBookings.isNotEmpty) ...[
@@ -436,7 +515,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
       confirmText: 'Yes, Cancel',
       isDangerous: true,
     );
-    
+
     if (confirmed) {
       BookingStorage().cancelBooking(booking.id);
     }
@@ -453,7 +532,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
       cancelText: 'No',
       confirmText: isArchived ? 'Yes, Unarchive' : 'Yes, Archive',
     );
-    
+
     if (confirmed) {
       if (isArchived) {
         BookingStorage().unarchiveBooking(booking.id);
@@ -484,320 +563,23 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
   }
 
   Widget _buildMiniatureSeatLayout(List<int> selectedSeats, Booking booking) {
-    final l10n = AppLocalizations.of(context)!;
-
-    // Format driver name (first name + last initial) and get rating
-    String driverDisplayName = l10n.driver;
-    String driverRating = '0.0';
-
-    // Use driver info stored in booking (if user was driver when booking was made)
-    print(
-      '📖 My Bookings - userRole: ${booking.userRole}, driverName: ${booking.driverName}, driverRating: ${booking.driverRating}',
+    // Use the centralized seat layout widget
+    return SeatLayoutWidget(
+      booking: booking,
+      isInteractive: false,
+      currentUserId: AuthService.currentUser?.id,
+      onDriverPhotoTap: () {
+        _showUserActionDialog(booking, isDriver: true);
+      },
+      onRiderPhotoTap: (seatIndex) {
+        _showUserActionDialog(booking, isDriver: false, riderSeatIndex: seatIndex);
+      },
     );
-    if (booking.userRole.toLowerCase() == l10n.driver.toLowerCase()) {
-      if (booking.driverName != null && booking.driverName!.isNotEmpty) {
-        driverDisplayName = booking.driverName!;
-      }
-      if (booking.driverRating != null) {
-        driverRating = booking.driverRating!.toStringAsFixed(1);
-      }
-      print(
-        '📖 Display values - Name: $driverDisplayName, Rating: $driverRating',
-      );
-    }
-
-    // Helper function to get rider info for a seat
-    String getRiderName(int seatIndex) {
-      if (booking.riders != null) {
-        final rider = booking.riders!.firstWhere(
-          (r) => r.seatIndex == seatIndex,
-          orElse: () => RiderInfo(name: '${l10n.passenger}-${seatIndex + 1}', rating: 0.0, seatIndex: seatIndex),
-        );
-        return rider.name;
-      }
-      return '${l10n.passenger}-${seatIndex + 1}';
-    }
-
-    String getRiderRating(int seatIndex) {
-      if (booking.riders != null) {
-        final rider = booking.riders!.firstWhere(
-          (r) => r.seatIndex == seatIndex,
-          orElse: () => RiderInfo(name: '', rating: 0.0, seatIndex: seatIndex),
-        );
-        return rider.rating.toStringAsFixed(1);
-      }
-      return '0.0';
-    }
-
-    return Center(
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Left column - Back seats (1, 2, 3)
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Row(
-                children: [
-                  _buildSeatLabel(getRiderName(1), getRiderRating(1)),
-                  SizedBox(width: 4),
-                  _buildMiniSeat(
-                    seatIndex: 1,
-                    isSelected: selectedSeats.contains(1),
-                    booking: booking,
-                    passengerName: getRiderName(1),
-                  ),
-                ],
-              ),
-              SizedBox(height: 4),
-              Row(
-                children: [
-                  _buildSeatLabel(getRiderName(2), getRiderRating(2)),
-                  SizedBox(width: 4),
-                  _buildMiniSeat(
-                    seatIndex: 2,
-                    isSelected: selectedSeats.contains(2),
-                    booking: booking,
-                    passengerName: getRiderName(2),
-                  ),
-                ],
-              ),
-              SizedBox(height: 4),
-              Row(
-                children: [
-                  _buildSeatLabel(getRiderName(3), getRiderRating(3)),
-                  SizedBox(width: 4),
-                  _buildMiniSeat(
-                    seatIndex: 3,
-                    isSelected: selectedSeats.contains(3),
-                    booking: booking,
-                    passengerName: getRiderName(3),
-                  ),
-                ],
-              ),
-            ],
-          ),
-
-          SizedBox(width: 12),
-
-          // Right column - Front seats (Driver and Rider 1)
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  _buildMiniSeat(
-                    isDriver: true,
-                    booking: booking,
-                    passengerName: driverDisplayName,
-                  ),
-                  SizedBox(width: 4),
-                  _buildSeatLabel(driverDisplayName, driverRating),
-                ],
-              ),
-              SizedBox(height: 12),
-              Row(
-                children: [
-                  _buildMiniSeat(
-                    seatIndex: 0,
-                    isSelected: selectedSeats.contains(0),
-                    booking: booking,
-                    passengerName: getRiderName(0),
-                  ),
-                  SizedBox(width: 4),
-                  _buildSeatLabel(getRiderName(0), getRiderRating(0)),
-                ],
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMiniSeat({
-    int? seatIndex,
-    bool isSelected = false,
-    bool isDriver = false,
-    required Booking booking,
-    required String passengerName,
-  }) {
-    Color backgroundColor;
-    Color borderColor;
-    bool isOccupied;
-
-    if (isDriver) {
-      // Driver seat is always red/occupied
-      backgroundColor = Colors.red[100]!;
-      borderColor = Color(0xFFDD2C00);
-      isOccupied = true;
-    } else {
-      // For passenger seats, the meaning of isSelected depends on the booking role
-      bool isAvailable;
-      if (booking.userRole.toLowerCase() == 'driver') {
-        // For driver bookings: seats in selectedSeats list are AVAILABLE (driver offering these seats)
-        isAvailable = isSelected;
-        isOccupied = !isSelected;
-      } else {
-        // For rider bookings: seats in selectedSeats list are OCCUPIED (rider booked these seats)
-        isAvailable = !isSelected;
-        isOccupied = isSelected;
-      }
-
-      if (isAvailable) {
-        backgroundColor = Colors.green[100]!;
-        borderColor = Color(0xFF00C853);
-      } else {
-        backgroundColor = Colors.red[100]!;
-        borderColor = Color(0xFFDD2C00);
-      }
-    }
-
-    // Make driver and all occupied seats clickable
-    final isClickable = isDriver || isOccupied;
-
-    Widget seatContent;
-    if (isDriver) {
-      seatContent = _buildDriverPhoto(booking);
-    } else if (isOccupied && seatIndex != null) {
-      // Show rider photo if this seat is occupied
-      seatContent = _buildRiderPhoto(booking, seatIndex);
-    } else {
-      // Show generic person icon for available seats
-      seatContent = Icon(Icons.person, size: 28, color: Colors.grey[700]);
-    }
-
-    return GestureDetector(
-      onTap: isClickable
-          ? () => _showUserCard(booking, isDriver, passengerName)
-          : null,
-      child: Container(
-        width: 58,
-        height: 58,
-        decoration: BoxDecoration(
-          color: backgroundColor,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: borderColor, width: 2),
-        ),
-        child: Center(
-          child: seatContent,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDriverPhoto(Booking booking) {
-    final currentUser = AuthService.currentUser;
-    final l10n = AppLocalizations.of(context)!;
-
-    // Check if current user is the driver and has a profile photo
-    if (currentUser != null &&
-        booking.userRole.toLowerCase() == l10n.driver.toLowerCase()) {
-      if (currentUser.profilePhotoUrl != null &&
-          currentUser.profilePhotoUrl!.isNotEmpty) {
-        // Check if it's an asset or file path
-        if (currentUser.profilePhotoUrl!.startsWith('assets/')) {
-          return ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: Image.asset(
-              currentUser.profilePhotoUrl!,
-              width: 54,
-              height: 54,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  width: 54,
-                  height: 54,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(Icons.person, size: 28, color: Colors.grey[700]),
-                );
-              },
-            ),
-          );
-        } else {
-          final photoFile = File(currentUser.profilePhotoUrl!);
-          if (photoFile.existsSync()) {
-            return ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Image.file(
-                photoFile,
-                width: 54,
-                height: 54,
-                fit: BoxFit.cover,
-              ),
-            );
-          }
-        }
-      }
-    }
-
-    // Default placeholder
-    return Container(
-      width: 54,
-      height: 54,
-      decoration: BoxDecoration(
-        color: Colors.grey[300],
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Icon(Icons.person, size: 32, color: Colors.grey[600]),
-    );
-  }
-
-  Widget _buildRiderPhoto(Booking booking, int seatIndex) {
-    // Find the rider for this seat
-    if (booking.riders != null && booking.riders!.isNotEmpty) {
-      final rider = booking.riders!.firstWhere(
-        (r) => r.seatIndex == seatIndex,
-        orElse: () => RiderInfo(name: '', rating: 0.0, seatIndex: -1),
-      );
-
-      // Check if rider has a profile photo
-      if (rider.seatIndex != -1 && 
-          rider.profilePhotoUrl != null && 
-          rider.profilePhotoUrl!.isNotEmpty) {
-        // Check if it's an asset or file path
-        if (rider.profilePhotoUrl!.startsWith('assets/')) {
-          return ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: Image.asset(
-              rider.profilePhotoUrl!,
-              width: 54,
-              height: 54,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return Icon(Icons.person, size: 28, color: Colors.grey[700]);
-              },
-            ),
-          );
-        } else {
-          final photoFile = File(rider.profilePhotoUrl!);
-          if (photoFile.existsSync()) {
-            return ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Image.file(
-                photoFile,
-                width: 54,
-                height: 54,
-                fit: BoxFit.cover,
-              ),
-            );
-          }
-        }
-      }
-    }
-
-    // Default placeholder for riders without photos
-    return Icon(Icons.person, size: 28, color: Colors.grey[700]);
   }
 
   Widget _buildUserCardAvatar(String? profilePhotoUrl) {
     print('🖼️ Building user card avatar with URL: $profilePhotoUrl');
-    
+
     if (profilePhotoUrl != null && profilePhotoUrl.isNotEmpty) {
       // Check if it's an asset image
       if (profilePhotoUrl.startsWith('assets/')) {
@@ -851,42 +633,295 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
     );
   }
 
-  void _showUserCard(Booking booking, bool isDriver, String otherUserName) {
+  // Show dialog with options to message or rate a user
+  void _showUserActionDialog(Booking booking, {required bool isDriver, int? riderSeatIndex}) {
     final currentUser = AuthService.currentUser;
     if (currentUser == null) return;
 
-    print('👤 _showUserCard called: isDriver=$isDriver, name=$otherUserName');
-    print('   booking.riders: ${booking.riders?.map((r) => r.name).toList()}');
-
-    // Get rating and profile photo for the user
-    double rating = 0.0;
+    final l10n = AppLocalizations.of(context)!;
+    
+    // Determine if current user is the driver of this booking
+    final currentUserIsDriver = booking.userId == currentUser.id && booking.userRole.toLowerCase() == 'driver';
+    
+    // Get the other user's info
+    String otherUserName;
     String? profilePhotoUrl;
     String? otherUserId;
     
-    if (isDriver && booking.driverRating != null) {
-      rating = booking.driverRating!;
-      profilePhotoUrl = currentUser.profilePhotoUrl;
-      otherUserId = booking.userId;
-      print('   Driver - rating: $rating, photo: $profilePhotoUrl');
-    } else if (!isDriver && booking.riders != null) {
-      // Find rider by name
+    if (isDriver) {
+      // Clicked on driver photo
+      final driverId = booking.driverUserId ?? booking.userId;
+      final driver = MockUsers.getUserById(driverId);
+      otherUserName = booking.driverName ?? driver?.name ?? 'Driver';
+      profilePhotoUrl = driver?.profilePhotoUrl;
+      otherUserId = driverId;
+    } else if (riderSeatIndex != null && booking.riders != null) {
+      // Clicked on rider photo
       final rider = booking.riders!.firstWhere(
-        (r) => r.name == otherUserName,
-        orElse: () => RiderInfo(name: '', rating: 0.0, seatIndex: -1),
+        (r) => r.seatIndex == riderSeatIndex,
+        orElse: () => RiderInfo(userId: '', name: '', rating: 0.0, seatIndex: -1),
       );
-      rating = rider.rating;
+      otherUserName = rider.name;
       profilePhotoUrl = rider.profilePhotoUrl;
-      otherUserId = '${booking.id}_rider_${rider.seatIndex}';
-      print('   Rider - rating: $rating, photo: $profilePhotoUrl');
+      otherUserId = rider.userId;
+    } else {
+      return;
+    }
+    
+    // Get live rating from RatingService
+    final rating = otherUserId.isNotEmpty 
+        ? MockUsers.getLiveRating(otherUserId) 
+        : 0.0;
+    // Determine if messaging is allowed based on rules:
+    // - Riders can message driver only
+    // - Drivers can message riders
+    // - Riders cannot message other riders
+    bool canMessage = false;
+    if (currentUserIsDriver) {
+      // Driver can message any rider
+      canMessage = !isDriver; // Can't message themselves if they're the driver
+    } else {
+      // Rider can only message driver
+      canMessage = isDriver;
     }
 
-    // Check if trip is completed (past trip)
-    final isTripCompleted = booking.isPast;
+    // Check if this is the current user's own card (can't rate yourself)
+    bool isSelf = false;
+    if (isDriver) {
+      final driverId = booking.driverUserId ?? booking.userId;
+      isSelf = driverId == currentUser.id;
+    } else if (riderSeatIndex != null && booking.riders != null) {
+      final rider = booking.riders!.firstWhere(
+        (r) => r.seatIndex == riderSeatIndex,
+        orElse: () => RiderInfo(userId: '', name: '', rating: 0.0, seatIndex: -1),
+      );
+      isSelf = rider.userId == currentUser.id;
+    }
+
+    // Check if rating is allowed (1 hour after arrival time)
+    final now = DateTime.now();
+    final ratingAllowedTime = booking.arrivalTime.add(Duration(hours: 1));
+    final canRate = now.isAfter(ratingAllowedTime);
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Padding(
+            padding: EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // User avatar
+                _buildUserCardAvatar(profilePhotoUrl),
+                SizedBox(height: 16),
+                
+                // User name
+                Text(
+                  otherUserName,
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF2E2E2E),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 8),
+                
+                // Rating
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.star, color: Colors.amber, size: 20),
+                    SizedBox(width: 4),
+                    Text(
+                      rating.toStringAsFixed(1),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF2E2E2E),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 24),
+                
+                // Action buttons
+                if (canMessage)
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      _navigateToChat(booking, isDriver, riderSeatIndex);
+                    },
+                    icon: Icon(Icons.message),
+                    label: Text('Message'),
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: Size(double.infinity, 48),
+                      backgroundColor: Theme.of(context).primaryColor,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                
+                if (canMessage) SizedBox(height: 12),
+                
+                if (!isSelf && canRate)
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      _showSimpleRatingDialog(booking, isDriver, otherUserName);
+                    },
+                    icon: Icon(Icons.star_rate),
+                    label: Text('Rate'),
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: Size(double.infinity, 48),
+                      backgroundColor: Colors.amber,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                
+                if (!isSelf && canRate) SizedBox(height: 12),
+                
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  style: TextButton.styleFrom(
+                    minimumSize: Size(double.infinity, 48),
+                  ),
+                  child: Text(l10n.cancel),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _navigateToChat(Booking booking, bool isClickedOnDriver, int? riderSeatIndex) {
+    final currentUser = AuthService.currentUser;
+    if (currentUser == null) return;
+
+    // Determine driver and rider info
+    String driverId;
+    String driverName;
+    String riderId;
+    String riderName;
+
+    final currentUserIsDriver = booking.userId == currentUser.id && booking.userRole.toLowerCase() == 'driver';
+
+    if (currentUserIsDriver) {
+      // Current user is driver, messaging a rider
+      driverId = currentUser.id;
+      driverName = '${currentUser.name} ${currentUser.surname[0]}.';
+      
+      if (riderSeatIndex != null && booking.riders != null) {
+        final rider = booking.riders!.firstWhere(
+          (r) => r.seatIndex == riderSeatIndex,
+          orElse: () => RiderInfo(userId: '', name: '', rating: 0.0, seatIndex: -1),
+        );
+        riderId = rider.userId;  // Use the actual user ID from RiderInfo
+        riderName = rider.name;
+        
+        // Prevent messaging yourself
+        if (riderId == currentUser.id) {
+          return;
+        }
+      } else {
+        return; // No rider found
+      }
+    } else {
+      // Current user is rider, messaging driver
+      riderId = currentUser.id;
+      riderName = '${currentUser.name} ${currentUser.surname[0]}.';
+      
+      driverId = booking.driverUserId ?? booking.userId;
+      
+      // Prevent messaging yourself
+      if (driverId == currentUser.id) {
+        return;
+      }
+      
+      final driver = MockUsers.getUserById(driverId);
+      driverName = booking.driverName ?? driver?.name ?? 'Driver';
+    }
+
+    // Extract base driver booking ID for consistent conversation ID
+    // Rider bookings have format: driverBookingId_rider_userId
+    String baseBookingId = booking.id;
+    if (booking.id.contains('_rider_')) {
+      baseBookingId = booking.id.split('_rider_')[0];
+    }
+
+    // Create conversation object with consistent ID regardless of who initiates
+    final conversation = Conversation(
+      id: '${baseBookingId}_${driverId}_$riderId',
+      bookingId: baseBookingId,
+      driverId: driverId,
+      driverName: driverName,
+      riderId: riderId,
+      riderName: riderName,
+      routeName: booking.route.name,
+      originName: booking.originName,
+      destinationName: booking.destinationName,
+      departureTime: booking.departureTime,
+      arrivalTime: booking.arrivalTime,
+    );
+
+    print('💬 MyBookings: Creating conversation with ID: ${conversation.id}');
+    print('   original bookingId: ${booking.id}');
+    print('   baseBookingId: $baseBookingId');
+    print('   driverId: $driverId, driverName: $driverName');
+    print('   riderId: $riderId, riderName: $riderName');
+    print('   currentUserIsDriver: $currentUserIsDriver');
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ChatScreen(
+          conversation: conversation,
+          createConversationOnFirstMessage: true,
+        ),
+      ),
+    );
+  }
+
+  void _showSimpleRatingDialog(Booking booking, bool isDriver, String otherUserName) {
+    final currentUser = AuthService.currentUser;
+    if (currentUser == null) return;
+
+    // Get the actual other user ID to check for self-rating
+    String otherUserId;
+    if (isDriver) {
+      // Rating the driver
+      otherUserId = booking.driverUserId ?? booking.userId;
+    } else {
+      // Rating a rider - need to find by name
+      final rider = booking.riders?.firstWhere(
+        (r) => r.name == otherUserName,
+        orElse: () => RiderInfo(userId: '', name: '', rating: 0.0, seatIndex: -1),
+      );
+      otherUserId = rider?.userId ?? '';
+    }
     
-    // Check if user has already rated this person for this trip
-    final hasAlreadyRated = otherUserId != null && 
-        RatingService().hasRated(booking.id, currentUser.id, otherUserId);
-    
+    // Prevent rating yourself
+    if (otherUserId == currentUser.id) {
+      return;
+    }
+
+    // Check if already rated
+    final hasAlreadyRated = RatingService().hasRated(booking.id, currentUser.id, otherUserId);
+
+    if (hasAlreadyRated) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('You have already rated $otherUserName for this trip'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
     // Initialize ratings for 5 categories (0 or 1 for each)
     int polite = 0;
     int clean = 0;
@@ -899,394 +934,149 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (context, setState) {
-            double userRating = rating; // Initialize with current rating
-            // Calculate total stars (sum of all categories, max 5)
+            // Count how many categories have been rated
+            final ratedCount = [polite, clean, communicative, safe, punctual]
+                .where((r) => r > 0)
+                .length;
+            // Calculate average rating (only from rated categories)
             final totalStars = polite + clean + communicative + safe + punctual;
-            final canSubmit = totalStars > 0; // At least one star must be given
+            final averageRating = ratedCount > 0 ? totalStars / ratedCount : 0.0;
+            final canSubmit = ratedCount == 5; // All categories must be rated
 
             return Dialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               child: Padding(
                 padding: EdgeInsets.all(24),
                 child: SingleChildScrollView(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // User avatar and name
-                      Center(child: _buildUserCardAvatar(profilePhotoUrl)),
-                      SizedBox(height: 16),
-                      Center(
-                        child: Text(
-                          otherUserName,
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF2E2E2E),
-                          ),
+                      Text(
+                        'Rate $otherUserName',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF2E2E2E),
                         ),
                       ),
                       SizedBox(height: 8),
-                      // Show overall rating display only
-                      Center(
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.star, color: Colors.amber, size: 20),
-                            SizedBox(width: 4),
-                            Text(
-                              '${userRating.toStringAsFixed(1)} / 5.0',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                          ],
-                        ),
+                      Text(
+                        'Rate each category from 1 to 5 stars',
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                        textAlign: TextAlign.center,
                       ),
-                      SizedBox(height: 8),
-                      Center(
-                        child: Text(
-                          isDriver ? 'Driver' : 'Rider',
-                          style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                        ),
+                      SizedBox(height: 20),
+
+                      // Rating categories
+                      _buildInlineRatingCategory(
+                        'Polite',
+                        Icons.sentiment_satisfied_alt,
+                        polite,
+                        (rating) => setState(() => polite = rating),
                       ),
-                      
-                      // Show rating categories for completed trips
-                      if (isTripCompleted) ...[
-                        SizedBox(height: 24),
-                        Divider(),
-                        SizedBox(height: 16),
-                        
-                        // "Rate this trip" header at the top
-                        Center(
-                          child: Text(
-                            'Rate this trip',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF2E2E2E),
-                            ),
-                          ),
-                        ),
-                        SizedBox(height: 16),
-                        
-                        // Trip route summary (matching ride info card style)
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Origin
-                            Row(
-                              children: [
-                                Icon(Icons.location_on, color: Colors.green, size: 18),
-                                SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    booking.originName,
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      color: Colors.black87,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ),
-                                Container(
-                                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: Colors.green.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: Text(
-                                    formatTimeHHmm(booking.departureTime),
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.green[700],
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: 6),
-                            // Destination
-                            Row(
-                              children: [
-                                Icon(Icons.flag, color: Colors.red, size: 18),
-                                SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    booking.destinationName,
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      color: Colors.black87,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ),
-                                Container(
-                                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: Colors.red.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: Text(
-                                    formatTimeHHmm(booking.arrivalTime),
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.red[700],
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 20),
-                        
-                        // Check if already rated
-                        if (hasAlreadyRated) ...[
-                          // Show "Already rated" message
-                          Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Colors.green.shade50,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Row(
-                              children: [
-                                Icon(Icons.check_circle, color: Colors.green),
-                                SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    'You have already rated this trip',
-                                    style: TextStyle(
-                                      color: Colors.green,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ] else ...[
-                          // Show rating interface
-                        Center(
-                          child: Text(
-                            'Rate this trip',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF2E2E2E),
-                            ),
-                          ),
-                        ),
-                        SizedBox(height: 8),
-                        Center(
-                          child: Text(
-                            'Select categories that apply (max 5 stars total)',
-                            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                          ),
-                        ),
-                        SizedBox(height: 20),
+                      SizedBox(height: 12),
+                      _buildInlineRatingCategory(
+                        'Clean',
+                        Icons.cleaning_services,
+                        clean,
+                        (rating) => setState(() => clean = rating),
+                      ),
+                      SizedBox(height: 12),
+                      _buildInlineRatingCategory(
+                        'Communicative',
+                        Icons.chat_bubble_outline,
+                        communicative,
+                        (rating) => setState(() => communicative = rating),
+                      ),
+                      SizedBox(height: 12),
+                      _buildInlineRatingCategory(
+                        'Safe',
+                        Icons.security,
+                        safe,
+                        (rating) => setState(() => safe = rating),
+                      ),
+                      SizedBox(height: 12),
+                      _buildInlineRatingCategory(
+                        'Punctual',
+                        Icons.schedule,
+                        punctual,
+                        (rating) => setState(() => punctual = rating),
+                      ),
+                      SizedBox(height: 20),
 
-                        // Category 1: Polite
-                        _buildInlineRatingCategory(
-                          'Polite',
-                          Icons.sentiment_satisfied_alt,
-                          polite,
-                          (rating) => setState(() => polite = rating),
-                        ),
-                        SizedBox(height: 12),
-
-                        // Category 2: Clean
-                        _buildInlineRatingCategory(
-                          'Clean',
-                          Icons.cleaning_services,
-                          clean,
-                          (rating) => setState(() => clean = rating),
-                        ),
-                        SizedBox(height: 12),
-
-                        // Category 3: Communicative
-                        _buildInlineRatingCategory(
-                          'Communicative',
-                          Icons.chat_bubble_outline,
-                          communicative,
-                          (rating) => setState(() => communicative = rating),
-                        ),
-                        SizedBox(height: 12),
-
-                        // Category 4: Safe
-                        _buildInlineRatingCategory(
-                          'Safe',
-                          Icons.security,
-                          safe,
-                          (rating) => setState(() => safe = rating),
-                        ),
-                        SizedBox(height: 12),
-
-                        // Category 5: Punctual
-                        _buildInlineRatingCategory(
-                          'Punctual',
-                          Icons.schedule,
-                          punctual,
-                          (rating) => setState(() => punctual = rating),
-                        ),
-                        SizedBox(height: 20),
-
-                        // Overall rating display
-                        if (canSubmit) ...[
-                          Container(
-                            padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                            decoration: BoxDecoration(
-                              color: Colors.amber[50],
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: Colors.amber, width: 2),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                ...List.generate(totalStars, (index) => 
-                                  Icon(Icons.star, color: Colors.amber, size: 20)
-                                ),
-                                ...List.generate(5 - totalStars, (index) => 
-                                  Icon(Icons.star_border, color: Colors.amber, size: 20)
-                                ),
-                                SizedBox(width: 8),
-                                Text(
-                                  '$totalStars / 5 stars',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF2E2E2E),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          SizedBox(height: 16),
-                          // Submit button
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: () {
-                                _submitDetailedRating(
-                                  booking,
-                                  isDriver,
-                                  otherUserName,
-                                  polite,
-                                  clean,
-                                  communicative,
-                                  safe,
-                                  punctual,
-                                );
-                                Navigator.pop(context);
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.amber,
-                                foregroundColor: Colors.white,
-                                padding: EdgeInsets.symmetric(vertical: 12),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              child: Text('Submit Rating'),
-                            ),
-                          ),
-                        ] else ...[
-                          Container(
-                            padding: EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Colors.grey[100],
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: Colors.grey[300]!),
-                            ),
-                            child: Center(
-                              child: Text(
-                                'Tap stars to rate (give at least 1 star)',
-                                style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                              ),
-                            ),
-                          ),
-                        ],
-                        SizedBox(height: 16),
-                        ], // Close the else block for rating interface
-                      ] else ...[
-                        // Message for future trips
-                        SizedBox(height: 16),
+                      // Total rating display
+                      if (ratedCount > 0) ...[
                         Container(
-                          padding: EdgeInsets.all(12),
+                          padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                           decoration: BoxDecoration(
-                            color: Colors.blue[50],
+                            color: Colors.amber[50],
                             borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.blue),
+                            border: Border.all(color: Colors.amber, width: 2),
                           ),
                           child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.info_outline, color: Colors.blue, size: 20),
+                              ...List.generate(
+                                averageRating.round(),
+                                (index) => Icon(Icons.star, color: Colors.amber, size: 20),
+                              ),
+                              ...List.generate(
+                                5 - averageRating.round(),
+                                (index) => Icon(Icons.star_border, color: Colors.amber, size: 20),
+                              ),
                               SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  'You can rate after the trip ends',
-                                  style: TextStyle(color: Colors.blue[900], fontSize: 12),
+                              Text(
+                                '${averageRating.toStringAsFixed(1)} / 5 stars',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF2E2E2E),
                                 ),
                               ),
                             ],
                           ),
                         ),
+                        if (!canSubmit)
+                          Padding(
+                            padding: EdgeInsets.only(top: 8),
+                            child: Text(
+                              'Please rate all ${5 - ratedCount} remaining categories',
+                              style: TextStyle(fontSize: 12, color: Colors.orange[700]),
+                            ),
+                          ),
                         SizedBox(height: 16),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: canSubmit ? () {
+                              _submitDetailedRating(
+                                booking,
+                                isDriver,
+                                otherUserName,
+                                polite,
+                                clean,
+                                communicative,
+                                safe,
+                                punctual,
+                              );
+                              Navigator.pop(context);
+                            } : null,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.amber,
+                              foregroundColor: Colors.white,
+                              padding: EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            child: Text('Submit Rating'),
+                          ),
+                        ),
                       ],
-
-                      // Action buttons
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          onPressed: () {
-                            Navigator.pop(context);
-                            _openMessaging(booking, isDriver, otherUserName, currentUser);
-                          },
-                          icon: Icon(Icons.chat_bubble_outline),
-                          label: Text('Message'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Color(0xFF2E2E2E),
-                            foregroundColor: Colors.white,
-                            padding: EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: 12),
-                      SizedBox(
-                        width: double.infinity,
-                        child: OutlinedButton.icon(
-                          onPressed: () {
-                            Navigator.pop(context);
-                            _showBlockDialog(otherUserName);
-                          },
-                          icon: Icon(Icons.block),
-                          label: Text('Block User'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.red,
-                            side: BorderSide(color: Colors.red),
-                            padding: EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                        ),
-                      ),
                       SizedBox(height: 12),
                       TextButton(
                         onPressed: () => Navigator.pop(context),
-                        style: TextButton.styleFrom(
-                          foregroundColor: Colors.grey[600],
-                        ),
-                        child: Text('Close'),
+                        child: Text('Cancel'),
                       ),
                     ],
                   ),
@@ -1319,14 +1109,20 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
             ),
           ),
         ),
-        // Single star for this category
-        GestureDetector(
-          onTap: () => onRatingChanged(currentRating == 1 ? 0 : 1),
-          child: Icon(
-            currentRating == 1 ? Icons.star : Icons.star_border,
-            color: Colors.amber,
-            size: 32,
-          ),
+        // 5 stars for this category
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: List.generate(5, (index) {
+            final starValue = index + 1;
+            return GestureDetector(
+              onTap: () => onRatingChanged(starValue),
+              child: Icon(
+                starValue <= currentRating ? Icons.star : Icons.star_border,
+                color: Colors.amber,
+                size: 24,
+              ),
+            );
+          }),
         ),
       ],
     );
@@ -1346,8 +1142,11 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
     if (currentUser == null) return;
 
     // Generate IDs
-    final ratingId = '${booking.id}_${currentUser.id}_${DateTime.now().millisecondsSinceEpoch}';
-    final otherUserId = isDriver ? booking.userId : '${booking.id}_rider_$otherUserName';
+    final ratingId =
+        '${booking.id}_${currentUser.id}_${DateTime.now().millisecondsSinceEpoch}';
+    final otherUserId = isDriver
+        ? booking.userId
+        : '${booking.id}_rider_$otherUserName';
 
     // Create rating
     final rating = TripRating(
@@ -1370,126 +1169,11 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
     // Show success message
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Rating submitted: ${rating.averageRating.toStringAsFixed(1)} stars for $otherUserName'),
+        content: Text(
+          'Rating submitted: ${rating.averageRating.toStringAsFixed(1)} stars for $otherUserName',
+        ),
         backgroundColor: Colors.green,
       ),
-    );
-  }
-
-  void _openMessaging(Booking booking, bool isTargetDriver, String otherUserName, currentUser) {
-    final l10n = AppLocalizations.of(context)!;
-    
-    // Check if current user is a rider trying to message another rider
-    final isCurrentUserDriver = booking.userRole.toLowerCase() == l10n.driver.toLowerCase();
-    
-    if (!isCurrentUserDriver && !isTargetDriver) {
-      // Rider trying to message another rider - not allowed
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('You can only message the driver'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    // Create or get conversation
-    final messagingService = MessagingService();
-
-    // For drivers: create conversation with specific rider
-    // For riders: create conversation with driver
-    final conversationId = isCurrentUserDriver 
-        ? '${booking.id}_$otherUserName' // Unique conversation per rider
-        : booking.id; // Single conversation with driver
-
-    var conversation = messagingService.getConversation(conversationId);
-
-    if (conversation == null) {
-      // Create new conversation
-      final driverId = isTargetDriver
-          ? 'driver_${booking.route.name}'
-          : currentUser.id;
-      final driverName = isTargetDriver ? otherUserName : currentUser.fullName;
-      final riderId = isTargetDriver ? currentUser.id : 'rider_${booking.id}';
-      final riderName = isTargetDriver ? currentUser.fullName : otherUserName;
-
-      conversation = Conversation(
-        id: conversationId,
-        bookingId: booking.id,
-        driverId: driverId,
-        driverName: driverName,
-        riderId: riderId,
-        riderName: riderName,
-        routeName: booking.route.name,
-        arrivalTime: booking.arrivalTime,
-        messages: [],
-      );
-
-      // Add to messaging service
-      final updatedConversations = [
-        ...messagingService.conversations.value,
-        conversation,
-      ];
-      messagingService.conversations.value = updatedConversations;
-    }
-
-    // Navigate to chat screen
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ChatScreen(conversation: conversation!),
-      ),
-    );
-  }
-
-  Future<void> _showBlockDialog(String userName) async {
-    final confirmed = await DialogHelper.showConfirmDialog(
-      context: context,
-      title: 'Block User',
-      content: 'Are you sure you want to block $userName? You will no longer be able to message each other.',
-      cancelText: 'Cancel',
-      confirmText: 'Block',
-      isDangerous: true,
-    );
-    
-    if (confirmed) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('$userName has been blocked')),
-      );
-    }
-  }
-
-  Widget _buildSeatLabel(String name, String rating) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Text(
-          name,
-          style: TextStyle(
-            color: Color(0xFF2E2E2E),
-            fontWeight: FontWeight.w600,
-            fontSize: 11,
-          ),
-        ),
-        SizedBox(height: 2),
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Icon(Icons.star, color: Colors.amber, size: 10),
-            SizedBox(width: 1),
-            Text(
-              rating,
-              style: TextStyle(
-                color: Color(0xFF2E2E2E),
-                fontWeight: FontWeight.w500,
-                fontSize: 11,
-              ),
-            ),
-          ],
-        ),
-      ],
     );
   }
 }
@@ -1557,6 +1241,15 @@ class _SectionHeaderDelegate extends SliverPersistentHeaderDelegate {
               children: [
                 Row(
                   children: [
+                    // Chevron icon for collapsible sections
+                    if (isCollapsible) ...[
+                      Icon(
+                        isExpanded ? Icons.expand_less : Icons.expand_more,
+                        size: 20,
+                        color: textColor,
+                      ),
+                      SizedBox(width: 4),
+                    ],
                     Text(
                       title,
                       style: TextStyle(
@@ -1664,393 +1357,303 @@ class _BookingCardState extends State<_BookingCard> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final shouldBeCollapsible = widget.isPast || widget.isCanceled;
 
     return Card(
       margin: EdgeInsets.only(bottom: 16),
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Route name and date
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Stack(
+        children: [
+          Padding(
+            padding: EdgeInsets.all(16),
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Text(
-                    widget.booking.route.name,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF2E2E2E),
-                    ),
-                  ),
-                ),
-                SizedBox(width: 8),
-                SizedBox(
-                  width: 85,
-                  child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Center(
+                // Route name and date
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
                       child: Text(
-                        _formatDate(context, widget.booking.departureTime),
+                        widget.booking.route.name,
                         style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            SizedBox(height: 16),
-
-            // Origin with departure time
-            Row(
-              children: [
-                Icon(Icons.location_on, color: Colors.green, size: 20),
-                SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    widget.booking.originName,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.black87,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-                SizedBox(
-                  width: 85,
-                  child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.green.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Center(
-                      child: Text(
-                        formatTimeHHmm(widget.booking.departureTime),
-                        style: TextStyle(
-                          fontSize: 14,
+                          fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: Colors.green[700],
+                          color: Color(0xFF2E2E2E),
                         ),
                       ),
                     ),
-                  ),
-                ),
-              ],
-            ),
-
-            SizedBox(height: 8),
-
-            // Destination with arrival time
-            Row(
-              children: [
-                Icon(Icons.flag, color: Colors.red, size: 20),
-                SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    widget.booking.destinationName,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.black87,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-                SizedBox(
-                  width: 85,
-                  child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.red.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Center(
-                      child: Text(
-                        formatTimeHHmm(widget.booking.arrivalTime),
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.red[700],
+                    SizedBox(width: 8),
+                    SizedBox(
+                      width: 85,
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
                         ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            // Miniature seat layout and status button
-            SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                // Miniature seat layout - show for upcoming/ongoing OR when expanded for past/canceled
-                if ((!widget.isPast && !widget.isCanceled) || widget.isOngoing)
-                  Expanded(
-                    child: widget.buildMiniatureSeatLayout(
-                      widget.booking.selectedSeats,
-                      widget.booking,
-                    ),
-                  )
-                else if (_isExpanded)
-                  Expanded(
-                    child: widget.buildMiniatureSeatLayout(
-                      widget.booking.selectedSeats,
-                      widget.booking,
-                    ),
-                  )
-                else if (shouldBeCollapsible)
-                  // Show expand button for past/canceled rides
-                  InkWell(
-                    onTap: () {
-                      setState(() {
-                        _isExpanded = true;
-                      });
-                    },
-                    child: Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[100],
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: Colors.grey[300]!),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.expand_more,
-                            size: 16,
-                            color: Colors.grey[700],
-                          ),
-                          SizedBox(width: 4),
-                          Text(
-                            'View seats',
+                        decoration: BoxDecoration(
+                          color: Colors.grey.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Center(
+                          child: Text(
+                            _formatDate(context, widget.booking.departureTime),
                             style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[700],
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black,
                             ),
                           ),
-                        ],
+                        ),
                       ),
                     ),
-                  )
-                else
-                  Spacer(),
+                  ],
+                ),
 
-                // Status button/label in bottom right
-                if (widget.isCanceled)
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      SizedBox(
-                        width: 85,
-                        child: GestureDetector(
-                          onTap: widget.onArchive,
-                          child: Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
+                SizedBox(height: 16),
+
+                // Origin with departure time
+                Row(
+                  children: [
+                    Icon(Icons.location_on, color: Colors.green, size: 20),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        widget.booking.originName,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.black87,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    SizedBox(
+                      width: 85,
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.green.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Center(
+                          child: Text(
+                            formatTimeHHmm(widget.booking.departureTime),
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green[700],
                             ),
-                            decoration: BoxDecoration(
-                              color: widget.isArchived
-                                  ? Colors.orange[600]
-                                  : Colors.blue[600],
-                              borderRadius: BorderRadius.circular(6),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                SizedBox(height: 8),
+
+                // Destination with arrival time
+                Row(
+                  children: [
+                    Icon(Icons.flag, color: Colors.red, size: 20),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        widget.booking.destinationName,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.black87,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    SizedBox(
+                      width: 85,
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Center(
+                          child: Text(
+                            formatTimeHHmm(widget.booking.arrivalTime),
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.red[700],
                             ),
-                            child: Center(
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    widget.isArchived
-                                        ? Icons.unarchive
-                                        : Icons.archive,
-                                    size: 16,
-                                    color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                // Miniature seat layout and status button
+                SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    // Miniature seat layout - hide for archived and canceled bookings (collapsible)
+                    if (!widget.isArchived && !widget.isCanceled)
+                      Expanded(
+                        child: widget.buildMiniatureSeatLayout(
+                          widget.booking.selectedSeats,
+                          widget.booking,
+                        ),
+                      )
+                    else if (_isExpanded)
+                      Expanded(
+                        child: widget.buildMiniatureSeatLayout(
+                          widget.booking.selectedSeats,
+                          widget.booking,
+                        ),
+                      )
+                    else
+                      // Show expand button for archived/canceled rides
+                      InkWell(
+                        onTap: () {
+                          setState(() {
+                            _isExpanded = true;
+                          });
+                        },
+                        child: Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[100],
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: Colors.grey[300]!),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.expand_more,
+                                size: 16,
+                                color: Colors.grey[700],
+                              ),
+                              SizedBox(width: 4),
+                              Text(
+                                'View seats',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[700],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                    // Status button/label in bottom right - removed, now at bottom of card
+                    SizedBox.shrink(),
+                  ],
+                ),
+
+                // Collapse button when expanded (for archived and canceled)
+                if (_isExpanded && (widget.isArchived || widget.isCanceled))
+                  Padding(
+                    padding: EdgeInsets.only(top: 8),
+                    child: Center(
+                      child: InkWell(
+                        onTap: () {
+                          setState(() {
+                            _isExpanded = false;
+                          });
+                        },
+                        child: Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[100],
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: Colors.grey[300]!),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.expand_less,
+                                size: 16,
+                                color: Colors.grey[700],
+                              ),
+                              SizedBox(width: 4),
+                              Text(
+                                'Hide seats',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[700],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                // Cancel/Archive button at the bottom (hidden for ongoing rides and archived items)
+                if (!widget.isOngoing && !widget.isArchived)
+                  Builder(
+                    builder: (context) {
+                      return Padding(
+                        padding: EdgeInsets.only(top: 12),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: widget.isCanceled || widget.isPast
+                              ? OutlinedButton.icon(
+                                  onPressed: widget.onArchive,
+                                  icon: Icon(
+                                    Icons.archive,
+                                    size: 18,
                                   ),
-                                  SizedBox(width: 4),
-                                  Flexible(
-                                    child: Text(
-                                      widget.isArchived
-                                          ? l10n.unarchive
-                                          : l10n.archive,
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
+                                  label: Text(l10n.archive),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: Colors.grey[700],
+                                    side: BorderSide(
+                                      color: Colors.grey[400]!,
+                                    ),
+                                    padding: EdgeInsets.symmetric(vertical: 12),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
                                     ),
                                   ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  )
-                else if (widget.isPast && !widget.isOngoing)
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      SizedBox(
-                        width: 85,
-                        child: GestureDetector(
-                          onTap: widget.onArchive,
-                          child: Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: widget.isArchived
-                                  ? Colors.orange[600]
-                                  : Colors.blue[600],
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Center(
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    widget.isArchived
-                                        ? Icons.unarchive
-                                        : Icons.archive,
-                                    size: 16,
-                                    color: Colors.white,
-                                  ),
-                                  SizedBox(width: 4),
-                                  Flexible(
-                                    child: Text(
-                                      widget.isArchived
-                                          ? l10n.unarchive
-                                          : l10n.archive,
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
+                                )
+                              : OutlinedButton.icon(
+                                  onPressed: widget.onCancel,
+                                  icon: Icon(Icons.close, size: 18),
+                                  label: Text(l10n.cancelRide),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: Colors.red[600],
+                                    side: BorderSide(color: Colors.red[300]!),
+                                    padding: EdgeInsets.symmetric(vertical: 12),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
                                     ),
                                   ),
-                                ],
-                              ),
-                            ),
-                          ),
+                                ),
                         ),
-                      ),
-                    ],
-                  )
-                else if (!widget.isOngoing &&
-                    !widget.isPast &&
-                    !widget.isCanceled)
-                  // Only show cancel button for upcoming rides (not ongoing)
-                  GestureDetector(
-                    onTap: widget.onCancel,
-                    child: Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 4,
-                      ),
-                      constraints: BoxConstraints(minWidth: 85),
-                      decoration: BoxDecoration(
-                        color: Colors.red[600],
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Center(
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.close, size: 16, color: Colors.white),
-                            SizedBox(width: 4),
-                            Text(
-                              l10n.cancel,
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  )
-                else
-                  // Ongoing rides: no badge, just empty space
-                  SizedBox.shrink(),
+                      );
+                    },
+                  ),
               ],
             ),
-
-            // Collapse button when expanded
-            if (_isExpanded && shouldBeCollapsible)
-              Padding(
-                padding: EdgeInsets.only(top: 8),
-                child: Center(
-                  child: InkWell(
-                    onTap: () {
-                      setState(() {
-                        _isExpanded = false;
-                      });
-                    },
-                    child: Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[100],
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: Colors.grey[300]!),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.expand_less,
-                            size: 16,
-                            color: Colors.grey[700],
-                          ),
-                          SizedBox(width: 4),
-                          Text(
-                            'Hide seats',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[700],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

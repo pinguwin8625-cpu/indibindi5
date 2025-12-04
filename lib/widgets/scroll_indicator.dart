@@ -16,6 +16,7 @@ class ScrollIndicator extends StatefulWidget {
 
 class _ScrollIndicatorState extends State<ScrollIndicator> {
   bool _showIndicator = false;
+  bool _hasScrollableContent = false;
 
   @override
   void initState() {
@@ -24,12 +25,33 @@ class _ScrollIndicatorState extends State<ScrollIndicator> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkInitialScroll();
     });
+    
+    // Also listen to the scroll controller for position changes
+    widget.scrollController?.addListener(_onScrollControllerChanged);
+  }
+
+  @override
+  void dispose() {
+    widget.scrollController?.removeListener(_onScrollControllerChanged);
+    super.dispose();
+  }
+
+  void _onScrollControllerChanged() {
+    final controller = widget.scrollController;
+    if (controller != null && controller.hasClients) {
+      _updateIndicatorVisibility(controller.position);
+    }
   }
 
   void _checkInitialScroll() {
     final controller = widget.scrollController;
     if (controller != null && controller.hasClients) {
       _updateIndicatorVisibility(controller.position);
+    } else {
+      // Retry after another frame if controller not ready
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _checkInitialScroll();
+      });
     }
   }
 
@@ -39,10 +61,13 @@ class _ScrollIndicatorState extends State<ScrollIndicator> {
     final maxScroll = metrics.maxScrollExtent;
     final currentScroll = metrics.pixels;
     
+    // Check if there's scrollable content at all
+    _hasScrollableContent = maxScroll > 0;
+    
     // Only show indicator if:
     // 1. There's actually scrollable content (maxScroll > 0)
     // 2. We're not at the bottom (currentScroll < maxScroll - 50)
-    final shouldShow = maxScroll > 0 && currentScroll < maxScroll - 50;
+    final shouldShow = _hasScrollableContent && currentScroll < maxScroll - 50;
     
     if (shouldShow != _showIndicator) {
       setState(() {
