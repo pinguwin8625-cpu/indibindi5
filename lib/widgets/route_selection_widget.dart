@@ -50,7 +50,7 @@ class RouteSelectionWidget extends StatelessWidget {
                   padding: EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: Colors.transparent,
-                    border: Border.all(color: isSelected ? Colors.green : Color(0xFFE0E0E0), width: isSelected ? 2 : 1),
+                    border: Border.all(color: isSelected ? Color(0xFF42A5F5) : Color(0xFFE0E0E0), width: isSelected ? 2 : 1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Column(
@@ -61,7 +61,7 @@ class RouteSelectionWidget extends StatelessWidget {
                         _getFormattedRouteName(route.name),
                         style: TextStyle(
                           fontSize: 16,
-                          color: isSelected ? Colors.green : Color(0xFF2E2E2E),
+                          color: isSelected ? Color(0xFF42A5F5) : Color(0xFF2E2E2E),
                           fontWeight: FontWeight.w600,
                         ),
                       ),

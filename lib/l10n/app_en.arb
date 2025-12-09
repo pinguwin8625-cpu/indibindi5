@@ -121,7 +121,7 @@
     "description": "Prompt to choose seats"
   },
 
-  "chooseYourRoute": "Choose Your Route",
+  "chooseYourRoute": "which route?",
   "@chooseYourRoute": {
     "description": "Title for route selection"
   },
@@ -146,9 +146,14 @@
     "description": "Instruction for rider to select a seat"
   },
 
-  "available": "available",
+  "available": "Available",
   "@available": {
     "description": "Word for available (used in brackets)"
+  },
+
+  "unavailable": "Unavailable",
+  "@unavailable": {
+    "description": "Word for unavailable seats"
   },
 
   "seatsAvailable": "{count} seat(s) available",
@@ -176,12 +181,12 @@
     "description": "Title for stops selection"
   },
 
-  "pickUpTime": "Pick-up Time",
+  "pickUpTime": "Pick-up",
   "@pickUpTime": {
-    "description": "Departure/pick-up time label"
+    "description": "Pick-up time label"
   },
 
-  "dropOffTime": "Drop-off Time",
+  "dropOffTime": "Drop-off",
   "@dropOffTime": {
     "description": "Arrival/drop-off time label"
   },
@@ -694,27 +699,27 @@
     "description": "Link text to suggest a new stop"
   },
 
-  "areYouDriverOrRider": "Are you driver or rider?",
+  "areYouDriverOrRider": "are you a driver or a rider today?",
   "@areYouDriverOrRider": {
     "description": "Question to choose role"
   },
 
-  "pickUpAndDropOff": "Choose Pick Up Point",
+  "pickUpAndDropOff": "from?",
   "@pickUpAndDropOff": {
     "description": "Title for pick up stop selection screen"
   },
 
-  "chooseDropOffPoint": "Choose Drop Off Point",
+  "chooseDropOffPoint": "to?",
   "@chooseDropOffPoint": {
     "description": "Title for drop off stop selection screen"
   },
 
-  "tapSeatsToChangeAvailability": "Tap Seats To Change Availability",
+  "tapSeatsToChangeAvailability": "tap seats to toggle",
   "@tapSeatsToChangeAvailability": {
     "description": "Hint text for driver seat selection"
   },
 
-  "setYourTime": "Set Your Time",
+  "setYourTime": "time?",
   "@setYourTime": {
     "description": "Title for time selection"
   },

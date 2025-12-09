@@ -255,7 +255,7 @@ class MyBookingsScreenState extends State<MyBookingsScreen>
                       (b.isArchived != true),
                 )
                 .toList()
-              ..sort((a, b) => a.departureTime.compareTo(b.departureTime));
+              ..sort((a, b) => b.departureTime.compareTo(a.departureTime));
 
         // Ongoing: departure time has passed but arrival time hasn't (strictly after now)
         final ongoingBookings =
@@ -268,7 +268,7 @@ class MyBookingsScreenState extends State<MyBookingsScreen>
                       (b.isArchived != true),
                 )
                 .toList()
-              ..sort((a, b) => a.departureTime.compareTo(b.departureTime));
+              ..sort((a, b) => b.departureTime.compareTo(a.departureTime));
         
         print('🔍 MyBookings: now=$now, ongoing=${ongoingBookings.length}');
 
@@ -282,18 +282,18 @@ class MyBookingsScreenState extends State<MyBookingsScreen>
                       (b.isArchived != true),
                 )
                 .toList()
-              ..sort((a, b) => a.departureTime.compareTo(b.departureTime));
+              ..sort((a, b) => b.departureTime.compareTo(a.departureTime));
 
         final canceledBookings =
             userBookings
                 .where((b) => b.isCanceled == true && (b.isArchived != true))
                 .toList()
-              ..sort((a, b) => a.departureTime.compareTo(b.departureTime));
+              ..sort((a, b) => b.departureTime.compareTo(a.departureTime));
 
         // Archived bookings
         final archivedBookings =
             userBookings.where((b) => b.isArchived == true).toList()
-              ..sort((a, b) => a.departureTime.compareTo(b.departureTime));
+              ..sort((a, b) => b.departureTime.compareTo(a.departureTime));
 
         // Recent completed bookings (for Completed section)
         final recentBookings = pastBookings;
@@ -1369,6 +1369,36 @@ class _BookingCardState extends State<_BookingCard> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Status note for archived items (at very top)
+                if (widget.isArchived)
+                  Padding(
+                    padding: EdgeInsets.only(bottom: 12),
+                    child: Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: widget.booking.isCanceled == true
+                            ? Colors.red.withOpacity(0.1)
+                            : Colors.green.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Center(
+                        child: Text(
+                          widget.booking.isCanceled == true
+                              ? l10n.canceled
+                              : l10n.completed,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: widget.booking.isCanceled == true
+                                ? Colors.red[700]
+                                : Colors.green[700],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+
                 // Route name and date
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1397,12 +1427,15 @@ class _BookingCardState extends State<_BookingCard> {
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Center(
-                          child: Text(
-                            _formatDate(context, widget.booking.departureTime),
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.black,
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              _formatDate(context, widget.booking.departureTime),
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black,
+                              ),
                             ),
                           ),
                         ),
@@ -1483,13 +1516,34 @@ class _BookingCardState extends State<_BookingCard> {
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Center(
-                          child: Text(
-                            formatTimeHHmm(widget.booking.arrivalTime),
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.red[700],
-                            ),
+                          child: Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              Text(
+                                formatTimeHHmm(widget.booking.arrivalTime),
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.red[700],
+                                ),
+                              ),
+                              // Show +1 at top right corner if arrival is on a different day than departure
+                              if (widget.booking.arrivalTime.day != widget.booking.departureTime.day ||
+                                  widget.booking.arrivalTime.month != widget.booking.departureTime.month ||
+                                  widget.booking.arrivalTime.year != widget.booking.departureTime.year)
+                                Positioned(
+                                  top: -2,
+                                  right: -14,
+                                  child: Text(
+                                    '+1',
+                                    style: TextStyle(
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.red[700],
+                                    ),
+                                  ),
+                                ),
+                            ],
                           ),
                         ),
                       ),
@@ -1498,113 +1552,88 @@ class _BookingCardState extends State<_BookingCard> {
                 ),
 
                 // Miniature seat layout and status button
-                SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    // Miniature seat layout - hide for archived and canceled bookings (collapsible)
-                    if (!widget.isArchived && !widget.isCanceled)
-                      Expanded(
-                        child: widget.buildMiniatureSeatLayout(
-                          widget.booking.selectedSeats,
-                          widget.booking,
-                        ),
-                      )
-                    else if (_isExpanded)
-                      Expanded(
-                        child: widget.buildMiniatureSeatLayout(
-                          widget.booking.selectedSeats,
-                          widget.booking,
-                        ),
-                      )
-                    else
-                      // Show expand button for archived/canceled rides
-                      InkWell(
-                        onTap: () {
-                          setState(() {
-                            _isExpanded = true;
-                          });
-                        },
-                        child: Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
+                // Hide seats entirely for canceled bookings
+                if (!widget.isCanceled) ...[
+                  SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      // Miniature seat layout - hide for archived bookings (collapsible)
+                      if (!widget.isArchived)
+                        Expanded(
+                          child: widget.buildMiniatureSeatLayout(
+                            widget.booking.selectedSeats,
+                            widget.booking,
                           ),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[100],
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(color: Colors.grey[300]!),
+                        )
+                      else if (_isExpanded)
+                        Expanded(
+                          child: widget.buildMiniatureSeatLayout(
+                            widget.booking.selectedSeats,
+                            widget.booking,
                           ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.expand_more,
-                                size: 16,
-                                color: Colors.grey[700],
-                              ),
-                              SizedBox(width: 4),
-                              Text(
-                                'View seats',
-                                style: TextStyle(
-                                  fontSize: 12,
+                        )
+                      else
+                        // Show expand button for archived rides
+                        Expanded(
+                          child: Center(
+                            child: InkWell(
+                              onTap: () {
+                                setState(() {
+                                  _isExpanded = true;
+                                });
+                              },
+                              child: Container(
+                                padding: EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[100],
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(color: Colors.grey[300]!),
+                                ),
+                                child: Icon(
+                                  Icons.expand_more,
+                                  size: 16,
                                   color: Colors.grey[700],
                                 ),
                               ),
-                            ],
+                            ),
                           ),
                         ),
-                      ),
 
-                    // Status button/label in bottom right - removed, now at bottom of card
-                    SizedBox.shrink(),
-                  ],
-                ),
+                      // Status button/label in bottom right - removed, now at bottom of card
+                      SizedBox.shrink(),
+                    ],
+                  ),
 
-                // Collapse button when expanded (for archived and canceled)
-                if (_isExpanded && (widget.isArchived || widget.isCanceled))
-                  Padding(
-                    padding: EdgeInsets.only(top: 8),
-                    child: Center(
-                      child: InkWell(
-                        onTap: () {
-                          setState(() {
-                            _isExpanded = false;
-                          });
-                        },
-                        child: Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[100],
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(color: Colors.grey[300]!),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.expand_less,
-                                size: 16,
-                                color: Colors.grey[700],
-                              ),
-                              SizedBox(width: 4),
-                              Text(
-                                'Hide seats',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey[700],
-                                ),
-                              ),
-                            ],
+                  // Collapse button when expanded (for archived)
+                  if (_isExpanded && widget.isArchived)
+                    Padding(
+                      padding: EdgeInsets.only(top: 8),
+                      child: Center(
+                        child: InkWell(
+                          onTap: () {
+                            setState(() {
+                              _isExpanded = false;
+                            });
+                          },
+                          child: Container(
+                            padding: EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[100],
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: Colors.grey[300]!),
+                            ),
+                            child: Icon(
+                              Icons.expand_less,
+                              size: 16,
+                              color: Colors.grey[700],
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
+                ],
 
                 // Cancel/Archive button at the bottom (hidden for ongoing rides and archived items)
                 if (!widget.isOngoing && !widget.isArchived)

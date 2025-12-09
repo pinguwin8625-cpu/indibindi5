@@ -81,7 +81,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get selectSeats => 'Choisir des Sièges';
 
   @override
-  String get chooseYourRoute => 'Choisissez Votre Itinéraire';
+  String get chooseYourRoute => 'quel itinéraire?';
 
   @override
   String get chooseYourSeats => 'Choisissez vos sièges';
@@ -96,7 +96,10 @@ class AppLocalizationsFr extends AppLocalizations {
   String get selectYourSeat => 'Sélectionnez votre siège';
 
   @override
-  String get available => 'disponible';
+  String get available => 'Disponible';
+
+  @override
+  String get unavailable => 'Indisponible';
 
   @override
   String seatsAvailable(int count) {
@@ -112,10 +115,10 @@ class AppLocalizationsFr extends AppLocalizations {
   String get chooseYourStops => 'Choisissez Vos Arrêts';
 
   @override
-  String get pickUpTime => 'Heure de Prise en Charge';
+  String get pickUpTime => 'Prise en Charge';
 
   @override
-  String get dropOffTime => 'Heure de Dépose';
+  String get dropOffTime => 'Dépose';
 
   @override
   String get today => 'Aujourd\'hui';
@@ -516,20 +519,20 @@ class AppLocalizationsFr extends AppLocalizations {
   String get suggestStop => 'Suggérer un nouvel arrêt';
 
   @override
-  String get areYouDriverOrRider => 'Êtes-vous conducteur ou passager?';
+  String get areYouDriverOrRider =>
+      'êtes-vous conducteur ou passager aujourd\'hui?';
 
   @override
-  String get pickUpAndDropOff => 'Choisir le Point de Prise en Charge';
+  String get pickUpAndDropOff => 'de?';
 
   @override
-  String get chooseDropOffPoint => 'Choisir le Point de Dépose';
+  String get chooseDropOffPoint => 'à?';
 
   @override
-  String get tapSeatsToChangeAvailability =>
-      'Appuyez sur les sièges pour modifier la disponibilité';
+  String get tapSeatsToChangeAvailability => 'touchez pour modifier';
 
   @override
-  String get setYourTime => 'Définir l\'Heure';
+  String get setYourTime => 'heure?';
 
   @override
   String get incompleteProfile => 'Profil Incomplet';

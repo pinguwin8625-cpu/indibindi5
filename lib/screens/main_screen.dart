@@ -61,8 +61,8 @@ class _MainScreenState extends State<MainScreen> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (index) {
-          // Reset search screen when navigating back to it from another screen
-          if (_currentIndex != 0 && index == 0) {
+          // Reset search screen when tapping search tab (either from another screen or while already on it)
+          if (index == 0) {
             _searchScreenKey.currentState?.resetBookingLayers();
           }
 

@@ -81,7 +81,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get selectSeats => '좌석 선택';
 
   @override
-  String get chooseYourRoute => '경로를 선택하세요';
+  String get chooseYourRoute => '어느 경로?';
 
   @override
   String get chooseYourSeats => '좌석을 선택하세요';
@@ -99,6 +99,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get available => '이용 가능';
 
   @override
+  String get unavailable => '이용 불가';
+
+  @override
   String seatsAvailable(int count) {
     return '석 이용 가능';
   }
@@ -112,10 +115,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get chooseYourStops => '정류장을 선택하세요';
 
   @override
-  String get pickUpTime => '탑승 시간';
+  String get pickUpTime => '탑승';
 
   @override
-  String get dropOffTime => '하차 시간';
+  String get dropOffTime => '하차';
 
   @override
   String get today => '오늘';
@@ -511,19 +514,19 @@ class AppLocalizationsKo extends AppLocalizations {
   String get suggestStop => '새 정류장 제안';
 
   @override
-  String get areYouDriverOrRider => '운전자입니까, 탑승자입니까?';
+  String get areYouDriverOrRider => '오늘 운전자? 탑승자?';
 
   @override
-  String get pickUpAndDropOff => '승차 지점 선택';
+  String get pickUpAndDropOff => '어디서?';
 
   @override
-  String get chooseDropOffPoint => '하차 지점 선택';
+  String get chooseDropOffPoint => '어디로?';
 
   @override
-  String get tapSeatsToChangeAvailability => '좌석을 탭하여 이용 가능 여부 변경';
+  String get tapSeatsToChangeAvailability => '탭하여 변경';
 
   @override
-  String get setYourTime => '시간 설정';
+  String get setYourTime => '시간?';
 
   @override
   String get incompleteProfile => '프로필 미완성';

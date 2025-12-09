@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../models/routes.dart';
 import '../utils/date_time_helpers.dart';
@@ -81,13 +82,22 @@ class RideDetailsBar extends StatelessWidget {
                   children: [
                     // Role icon
                     if (userRole != null) ...[
-                      Icon(
-                        userRole!.toLowerCase() == 'driver'
-                            ? Icons.directions_car
-                            : Icons.person,
-                        color: Color(0xFFDD2C00),
-                        size: 14,
-                      ),
+                      userRole!.toLowerCase() == 'driver'
+                          ? SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CustomPaint(
+                                size: Size(14, 14),
+                                painter: _SteeringWheelPainter(
+                                  color: Color(0xFFDD2C00),
+                                ),
+                              ),
+                            )
+                          : Icon(
+                              Icons.person,
+                              color: Color(0xFFDD2C00),
+                              size: 14,
+                            ),
                       SizedBox(width: 6),
                     ],
                     Flexible(
@@ -96,7 +106,7 @@ class RideDetailsBar extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFF2E2E2E),
+                          color: Color(0xFF42A5F5),
                         ),
                         overflow: TextOverflow.ellipsis,
                         textAlign: TextAlign.center,
@@ -190,13 +200,35 @@ class RideDetailsBar extends StatelessWidget {
                           ),
                         ),
                         if (arrivalTime != null)
-                          Text(
-                            ' ${formatTimeHHmm(arrivalTime!)}',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.red[700],
-                            ),
+                          Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              Text(
+                                ' ${formatTimeHHmm(arrivalTime!)}',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.red[700],
+                                ),
+                              ),
+                              // Show +1 at top right corner if arrival is on a different day than departure
+                              if (departureTime != null &&
+                                  (arrivalTime!.day != departureTime!.day ||
+                                   arrivalTime!.month != departureTime!.month ||
+                                   arrivalTime!.year != departureTime!.year))
+                                Positioned(
+                                  top: -1,
+                                  right: -10,
+                                  child: Text(
+                                    '+1',
+                                    style: TextStyle(
+                                      fontSize: 7,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.red[700],
+                                    ),
+                                  ),
+                                ),
+                            ],
                           ),
                       ],
                     ),
@@ -240,5 +272,45 @@ class RideDetailsBar extends StatelessWidget {
     
     // Just truncate
     return '${name.substring(0, 12)}...';
+  }
+}
+
+// Custom painter for steering wheel icon
+class _SteeringWheelPainter extends CustomPainter {
+  final Color color;
+
+  _SteeringWheelPainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5;
+
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2 - 1;
+
+    // Draw outer circle (steering wheel rim)
+    canvas.drawCircle(center, radius, paint);
+
+    // Draw inner circle (hub)
+    final hubRadius = radius * 0.25;
+    canvas.drawCircle(center, hubRadius, paint);
+
+    // Draw three spokes at 120 degrees apart
+    for (int i = 0; i < 3; i++) {
+      final angle = (i * 120 - 90) * math.pi / 180; // Start from top
+      final startX = center.dx + hubRadius * math.cos(angle);
+      final startY = center.dy + hubRadius * math.sin(angle);
+      final endX = center.dx + radius * math.cos(angle);
+      final endY = center.dy + radius * math.sin(angle);
+      canvas.drawLine(Offset(startX, startY), Offset(endX, endY), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _SteeringWheelPainter oldDelegate) {
+    return oldDelegate.color != color;
   }
 }

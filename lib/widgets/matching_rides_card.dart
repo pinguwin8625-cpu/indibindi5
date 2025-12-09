@@ -501,13 +501,34 @@ class _MatchingRideCardState extends State<MatchingRideCard>
                                   color: Colors.red.withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(6),
                                 ),
-                                child: Text(
-                                  _formatTime(widget.ride.arrivalTime),
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.red[700],
-                                  ),
+                                child: Stack(
+                                  clipBehavior: Clip.none,
+                                  children: [
+                                    Text(
+                                      _formatTime(widget.ride.arrivalTime),
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.red[700],
+                                      ),
+                                    ),
+                                    // Show +1 at top right corner if arrival is on a different day than departure
+                                    if (widget.ride.arrivalTime.day != widget.ride.departureTime.day ||
+                                        widget.ride.arrivalTime.month != widget.ride.departureTime.month ||
+                                        widget.ride.arrivalTime.year != widget.ride.departureTime.year)
+                                      Positioned(
+                                        top: -2,
+                                        right: -14,
+                                        child: Text(
+                                          '+1',
+                                          style: TextStyle(
+                                            fontSize: 9,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.red[700],
+                                          ),
+                                        ),
+                                      ),
+                                  ],
                                 ),
                               ),
                             ],

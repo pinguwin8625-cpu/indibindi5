@@ -81,7 +81,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get selectSeats => '座席を選択';
 
   @override
-  String get chooseYourRoute => 'ルートを選択';
+  String get chooseYourRoute => 'どのルート？';
 
   @override
   String get chooseYourSeats => '座席を選択してください';
@@ -99,6 +99,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get available => '空き';
 
   @override
+  String get unavailable => '利用不可';
+
+  @override
   String seatsAvailable(int count) {
     return '席空き';
   }
@@ -112,10 +115,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get chooseYourStops => '停留所を選択';
 
   @override
-  String get pickUpTime => '乗車時刻';
+  String get pickUpTime => '乗車';
 
   @override
-  String get dropOffTime => '降車時刻';
+  String get dropOffTime => '降車';
 
   @override
   String get today => '今日';
@@ -511,19 +514,19 @@ class AppLocalizationsJa extends AppLocalizations {
   String get suggestStop => '新しい停留所を提案';
 
   @override
-  String get areYouDriverOrRider => 'ドライバーですか、ライダーですか？';
+  String get areYouDriverOrRider => '今日はドライバー？ライダー？';
 
   @override
-  String get pickUpAndDropOff => '乗車地点を選択';
+  String get pickUpAndDropOff => 'どこから？';
 
   @override
-  String get chooseDropOffPoint => '降車地点を選択';
+  String get chooseDropOffPoint => 'どこまで？';
 
   @override
-  String get tapSeatsToChangeAvailability => '座席をタップして空き状況を変更';
+  String get tapSeatsToChangeAvailability => 'タップして変更';
 
   @override
-  String get setYourTime => '時間を設定';
+  String get setYourTime => '時間？';
 
   @override
   String get incompleteProfile => 'プロフィール未完了';

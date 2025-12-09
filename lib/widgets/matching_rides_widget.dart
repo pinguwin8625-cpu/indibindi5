@@ -303,7 +303,8 @@ class _MatchingRidesWidgetState extends State<MatchingRidesWidget> {
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.w600,
-                      color: Colors.green[700],
+                      color: Color(0xFF5D4037),
+                      letterSpacing: 0.5,
                     ),
                   ),
                 ),

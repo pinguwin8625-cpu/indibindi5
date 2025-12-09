@@ -130,17 +130,22 @@ class _StopsLayerWidgetState extends State<StopsLayerWidget> {
           onBack: widget.isActionCompleted ? null : widget.onBack,
         ),
 
-        // Header with title only
+        // Header with title only - hide when both stops are selected (time label shown above picker)
         Builder(
           builder: (context) {
             final l10n = AppLocalizations.of(context)!;
-            String headerText;
+            // Don't show header when both stops are selected
             if (localOriginIndex != null && localDestinationIndex != null) {
-              headerText = l10n.setYourTime;
-            } else if (localOriginIndex != null) {
+              return SizedBox.shrink();
+            }
+            String headerText;
+            Color headerColor;
+            if (localOriginIndex != null) {
               headerText = l10n.chooseDropOffPoint;
+              headerColor = Color(0xFFDD2C00); // Red for drop off
             } else {
               headerText = l10n.pickUpAndDropOff;
+              headerColor = Color(0xFF4CAF50); // Green for pick up
             }
             return Container(
               padding: EdgeInsets.fromLTRB(16, 8, 16, 16),
@@ -150,7 +155,7 @@ class _StopsLayerWidgetState extends State<StopsLayerWidget> {
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.w600,
-                    color: Colors.black,
+                    color: headerColor,
                     letterSpacing: 0.5,
                   ),
                 ),
@@ -222,17 +227,32 @@ class _StopsLayerWidgetState extends State<StopsLayerWidget> {
                         Expanded(
                           flex: 2,
                           child: localOriginIndex != null && localDestinationIndex != null
-                              ? TimeSelectionWidget(
-                                  userRole: widget.userRole,
-                                  selectedRoute: widget.selectedRoute,
-                                  originIndex: localOriginIndex!,
-                                  destinationIndex: localDestinationIndex,
-                                  hideUnusedStops: localOriginIndex != null && localDestinationIndex != null,
-                                  onDateTimeSelected: (hasSelected) {
-                                    // Only set localHasSelectedDateTime if user actually picked time
-                                    // Don't set it on automatic time calculations
-                                    if (hasSelected) {
-                                      setState(() {
+                              ? Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    // "time?" label aligned to the right
+                                    Padding(
+                                      padding: EdgeInsets.only(bottom: 8),
+                                      child: Text(
+                                        AppLocalizations.of(context)!.setYourTime,
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                          color: Color(0xFFFF6D00),
+                                        ),
+                                      ),
+                                    ),
+                                    TimeSelectionWidget(
+                                      userRole: widget.userRole,
+                                      selectedRoute: widget.selectedRoute,
+                                      originIndex: localOriginIndex!,
+                                      destinationIndex: localDestinationIndex,
+                                      hideUnusedStops: localOriginIndex != null && localDestinationIndex != null,
+                                      onDateTimeSelected: (hasSelected) {
+                                        // Only set localHasSelectedDateTime if user actually picked time
+                                        // Don't set it on automatic time calculations
+                                        if (hasSelected) {
+                                          setState(() {
                                         localHasSelectedDateTime = hasSelected;
                                       });
                                       // Also notify parent when user actually selects time
@@ -281,6 +301,8 @@ class _StopsLayerWidgetState extends State<StopsLayerWidget> {
                                     );
                                     // Don't auto-navigate on initial time setup
                                   },
+                                ),
+                                  ],
                                 )
                               : Container(),
                         ),

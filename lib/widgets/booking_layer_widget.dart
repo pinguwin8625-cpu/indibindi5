@@ -76,66 +76,30 @@ class _BookingLayerWidgetState extends State<BookingLayerWidget> {
           child: widget.hasSelectedDateTime && widget.userRole.toLowerCase() == 'driver'
               // Driver seat selection - evenly distributed
               ? Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     // Title section
-                    Expanded(
-                      flex: 1,
-                      child: Center(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 16),
-                          child: Text(
-                            l10n.tapSeatsToChangeAvailability,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF2E2E2E),
-                              letterSpacing: 0.5,
-                            ),
-                          ),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16),
+                      child: Text(
+                        l10n.tapSeatsToChangeAvailability,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF5D4037),
+                          letterSpacing: 0.5,
                         ),
                       ),
                     ),
-                    // Seat layout section
-                    Expanded(
-                      flex: 2,
-                      child: Center(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 16),
-                          child: SeatPlanningSectionWidget(
-                            userRole: widget.userRole,
-                            selectedSeats: widget.selectedSeats,
-                            isDisabled: widget.isActionCompleted,
-                            onSeatsSelected: widget.onSeatsSelected,
-                          ),
-                        ),
-                      ),
-                    ),
-                    // Available seats count section
-                    Expanded(
-                      flex: 1,
-                      child: Center(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              '${widget.selectedSeats.length} ',
-                              style: TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFFDD2C00),
-                              ),
-                            ),
-                            Text(
-                              l10n.availableSeats,
-                              style: TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF8E8E8E),
-                              ),
-                            ),
-                          ],
-                        ),
+                    // Seat layout section (includes availability summary)
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16),
+                      child: SeatPlanningSectionWidget(
+                        userRole: widget.userRole,
+                        selectedSeats: widget.selectedSeats,
+                        isDisabled: widget.isActionCompleted,
+                        onSeatsSelected: widget.onSeatsSelected,
                       ),
                     ),
                   ],

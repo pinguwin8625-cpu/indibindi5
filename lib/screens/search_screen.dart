@@ -113,6 +113,7 @@ class SearchScreenState extends State<SearchScreen>
       ),
       body: TabBarView(
         controller: _tabController!,
+        physics: NeverScrollableScrollPhysics(), // Disable swipe to change mode
         children: [
           LayeredBookingWidget(
             key: _driverBookingKey,

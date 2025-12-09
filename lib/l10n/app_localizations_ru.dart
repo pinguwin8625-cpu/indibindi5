@@ -81,7 +81,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get selectSeats => 'Выбрать Места';
 
   @override
-  String get chooseYourRoute => 'Выберите Ваш Маршрут';
+  String get chooseYourRoute => 'какой маршрут?';
 
   @override
   String get chooseYourSeats => 'Выберите свои места';
@@ -96,7 +96,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get selectYourSeat => 'Выберите место';
 
   @override
-  String get available => 'свободно';
+  String get available => 'Свободно';
+
+  @override
+  String get unavailable => 'Недоступно';
 
   @override
   String seatsAvailable(int count) {
@@ -112,10 +115,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get chooseYourStops => 'Выберите Ваши Остановки';
 
   @override
-  String get pickUpTime => 'Время Посадки';
+  String get pickUpTime => 'Посадка';
 
   @override
-  String get dropOffTime => 'Время Высадки';
+  String get dropOffTime => 'Высадка';
 
   @override
   String get today => 'Сегодня';
@@ -515,20 +518,19 @@ class AppLocalizationsRu extends AppLocalizations {
   String get suggestStop => 'Предложить новую остановку';
 
   @override
-  String get areYouDriverOrRider => 'Вы водитель или пассажир?';
+  String get areYouDriverOrRider => 'вы водитель или пассажир сегодня?';
 
   @override
-  String get pickUpAndDropOff => 'Выберите Точку Посадки';
+  String get pickUpAndDropOff => 'откуда?';
 
   @override
-  String get chooseDropOffPoint => 'Выберите Точку Высадки';
+  String get chooseDropOffPoint => 'куда?';
 
   @override
-  String get tapSeatsToChangeAvailability =>
-      'Нажмите на места, чтобы изменить доступность';
+  String get tapSeatsToChangeAvailability => 'нажмите для изменения';
 
   @override
-  String get setYourTime => 'Установите Время';
+  String get setYourTime => 'время?';
 
   @override
   String get incompleteProfile => 'Незавершенный Профиль';

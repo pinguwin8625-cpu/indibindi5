@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'dart:io';
 import '../l10n/app_localizations.dart';
 import '../services/auth_service.dart';
 import '../services/mock_users.dart';
@@ -48,55 +47,81 @@ class SeatPlanningSectionWidget extends StatelessWidget {
       return null;
     }
 
+    // Calculate available and unavailable seats
+    int availableCount = 0;
+    int unavailableCount = 0;
+    for (int i = 0; i < 4; i++) {
+      if (userRole.toLowerCase() == 'driver') {
+        // For driver: selectedSeats are available
+        if (selectedSeats.contains(i)) {
+          availableCount++;
+        } else {
+          unavailableCount++;
+        }
+      } else {
+        // For rider: selectedSeats are occupied (unavailable)
+        if (selectedSeats.contains(i)) {
+          unavailableCount++;
+        } else {
+          availableCount++;
+        }
+      }
+    }
+
     return Center(
-      child: Row(
+      child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Left column - Back seats (1, 2, 3)
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Row(
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Left column - Back seats (1, 2, 3)
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  _buildSeatLabel(getRiderName(1), getRiderRating(1)),
-                  SizedBox(width: 4),
-                  _buildMiniSeat(
-                    context: context,
-                    seatIndex: 1,
-                    isSelected: selectedSeats.contains(1),
-                    passengerName: getRiderName(1),
+                  Row(
+                    children: [
+                      _buildSeatLabel(getRiderName(1), getRiderRating(1)),
+                      SizedBox(width: 4),
+                      _buildMiniSeat(
+                        context: context,
+                        seatIndex: 1,
+                        isSelected: selectedSeats.contains(1),
+                        passengerName: getRiderName(1),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 4),
+                  Row(
+                    children: [
+                      _buildSeatLabel(getRiderName(3), getRiderRating(3)),
+                      SizedBox(width: 4),
+                      _buildMiniSeat(
+                        context: context,
+                        seatIndex: 3,
+                        isSelected: selectedSeats.contains(3),
+                        passengerName: getRiderName(3),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 4),
+                  Row(
+                    children: [
+                      _buildSeatLabel(getRiderName(2), getRiderRating(2)),
+                      SizedBox(width: 4),
+                      _buildMiniSeat(
+                        context: context,
+                        seatIndex: 2,
+                        isSelected: selectedSeats.contains(2),
+                        passengerName: getRiderName(2),
+                      ),
+                    ],
                   ),
                 ],
               ),
-              SizedBox(height: 4),
-              Row(
-                children: [
-                  _buildSeatLabel(getRiderName(3), getRiderRating(3)),
-                  SizedBox(width: 4),
-                  _buildMiniSeat(
-                    context: context,
-                    seatIndex: 3,
-                    isSelected: selectedSeats.contains(3),
-                    passengerName: getRiderName(3),
-                  ),
-                ],
-              ),
-              SizedBox(height: 4),
-              Row(
-                children: [
-                  _buildSeatLabel(getRiderName(2), getRiderRating(2)),
-                  SizedBox(width: 4),
-                  _buildMiniSeat(
-                    context: context,
-                    seatIndex: 2,
-                    isSelected: selectedSeats.contains(2),
-                    passengerName: getRiderName(2),
-                  ),
-                ],
-              ),
-            ],
-          ),
 
           SizedBox(width: 12),
 
@@ -127,6 +152,81 @@ class SeatPlanningSectionWidget extends StatelessWidget {
                   ),
                   SizedBox(width: 4),
                   _buildSeatLabel(getRiderName(0), getRiderRating(0)),
+                ],
+              ),
+            ],
+          ),
+        ],
+            ),
+          ),
+          // Availability summary below seats (stacked vertically)
+          SizedBox(height: 32),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Available row
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '${l10n.available}: ',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  TweenAnimationBuilder<double>(
+                    key: ValueKey('available-$availableCount'),
+                    tween: Tween<double>(begin: 2.0, end: 1.0),
+                    duration: Duration(milliseconds: 600),
+                    curve: Curves.elasticOut,
+                    builder: (context, scale, child) {
+                      return Transform.scale(
+                        scale: scale,
+                        child: Text(
+                          '$availableCount',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF00C853),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+              SizedBox(height: 4),
+              // Unavailable row
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '${l10n.unavailable}: ',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  TweenAnimationBuilder<double>(
+                    key: ValueKey('unavailable-$unavailableCount'),
+                    tween: Tween<double>(begin: 2.0, end: 1.0),
+                    duration: Duration(milliseconds: 600),
+                    curve: Curves.elasticOut,
+                    builder: (context, scale, child) {
+                      return Transform.scale(
+                        scale: scale,
+                        child: Text(
+                          '$unavailableCount',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFFDD2C00),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                 ],
               ),
             ],
@@ -195,38 +295,6 @@ class SeatPlanningSectionWidget extends StatelessWidget {
                   ? _buildDriverPhoto(context)
                   : Icon(Icons.person, size: 28, color: Colors.grey[700]),
             ),
-            // Show +/- icon for clickable seats
-            if (isClickable && seatIndex != null)
-              Positioned(
-                left: -9,
-                top: -9,
-                child: Container(
-                  width: 18,
-                  height: 18,
-                  decoration: BoxDecoration(
-                    color: isAvailable ? Colors.red : Color(0xFF00C853),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Center(
-                    child: isAvailable
-                        ? Container(
-                            // Minus sign
-                            width: 9,
-                            height: 2,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(2),
-                            ),
-                          )
-                        : Icon(
-                            // Plus sign
-                            Icons.add,
-                            color: Colors.white,
-                            size: 12,
-                          ),
-                  ),
-                ),
-              ),
           ],
         ),
       ),
@@ -262,20 +330,9 @@ class SeatPlanningSectionWidget extends StatelessWidget {
               },
             ),
           );
-        } else {
-          final photoFile = File(currentUser.profilePhotoUrl!);
-          if (photoFile.existsSync()) {
-            return ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Image.file(
-                photoFile,
-                width: 54,
-                height: 54,
-                fit: BoxFit.cover,
-              ),
-            );
-          }
         }
+        // Note: File-based photos (non-asset paths) are not supported on web
+        // On native platforms, photos should be stored as assets or network URLs
       }
     }
 

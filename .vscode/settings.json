@@ -3,5 +3,6 @@
   "dart.sdkPath": "/opt/homebrew/share/flutter/bin/cache/dart-sdk",
   "dart.flutterSdkPaths": ["/opt/homebrew/share/flutter"],
   "dart.enableSdkFormatter": true,
-  "dart.lineLength": 120
+  "dart.lineLength": 120,
+  "terminal.integrated.gpuAcceleration": "auto"
 }

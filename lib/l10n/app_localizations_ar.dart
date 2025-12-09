@@ -81,7 +81,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get selectSeats => 'اختر المقاعد';
 
   @override
-  String get chooseYourRoute => 'اختر مسارك';
+  String get chooseYourRoute => 'أي طريق؟';
 
   @override
   String get chooseYourSeats => 'اختر مقاعدك';
@@ -99,6 +99,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get available => 'متاح';
 
   @override
+  String get unavailable => 'غير متاح';
+
+  @override
   String seatsAvailable(int count) {
     return 'مقاعد متاحة';
   }
@@ -112,10 +115,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get chooseYourStops => 'اختر محطاتك';
 
   @override
-  String get pickUpTime => 'وقت الاستلام';
+  String get pickUpTime => 'الاستلام';
 
   @override
-  String get dropOffTime => 'وقت التسليم';
+  String get dropOffTime => 'التسليم';
 
   @override
   String get today => 'اليوم';
@@ -512,19 +515,19 @@ class AppLocalizationsAr extends AppLocalizations {
   String get suggestStop => 'اقتراح محطة جديدة';
 
   @override
-  String get areYouDriverOrRider => 'هل أنت سائق أم راكب؟';
+  String get areYouDriverOrRider => 'هل أنت سائق أم راكب اليوم؟';
 
   @override
-  String get pickUpAndDropOff => 'اختر نقطة الصعود';
+  String get pickUpAndDropOff => 'من أين؟';
 
   @override
-  String get chooseDropOffPoint => 'اختر نقطة النزول';
+  String get chooseDropOffPoint => 'إلى أين؟';
 
   @override
-  String get tapSeatsToChangeAvailability => 'اضغط على المقاعد لتغيير التوفر';
+  String get tapSeatsToChangeAvailability => 'اضغط للتغيير';
 
   @override
-  String get setYourTime => 'حدد وقتك';
+  String get setYourTime => 'الوقت؟';
 
   @override
   String get incompleteProfile => 'ملف شخصي غير مكتمل';

@@ -81,7 +81,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get selectSeats => '选择座位';
 
   @override
-  String get chooseYourRoute => '选择您的路线';
+  String get chooseYourRoute => '哪条路线？';
 
   @override
   String get chooseYourSeats => '选择您的座位';
@@ -99,6 +99,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get available => '可用';
 
   @override
+  String get unavailable => '不可用';
+
+  @override
   String seatsAvailable(int count) {
     return '个座位可用';
   }
@@ -112,10 +115,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chooseYourStops => '选择您的站点';
 
   @override
-  String get pickUpTime => '上车时间';
+  String get pickUpTime => '上车';
 
   @override
-  String get dropOffTime => '下车时间';
+  String get dropOffTime => '下车';
 
   @override
   String get today => '今天';
@@ -511,19 +514,19 @@ class AppLocalizationsZh extends AppLocalizations {
   String get suggestStop => '建议新站点';
 
   @override
-  String get areYouDriverOrRider => '您是司机还是乘客？';
+  String get areYouDriverOrRider => '今天是司机还是乘客？';
 
   @override
-  String get pickUpAndDropOff => '选择上车点';
+  String get pickUpAndDropOff => '从哪？';
 
   @override
-  String get chooseDropOffPoint => '选择下车点';
+  String get chooseDropOffPoint => '到哪？';
 
   @override
-  String get tapSeatsToChangeAvailability => '点击座位更改可用状态';
+  String get tapSeatsToChangeAvailability => '点击更改';
 
   @override
-  String get setYourTime => '设置时间';
+  String get setYourTime => '时间？';
 
   @override
   String get incompleteProfile => '资料不完整';

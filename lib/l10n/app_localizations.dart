@@ -265,7 +265,7 @@ abstract class AppLocalizations {
   /// Title for route selection
   ///
   /// In en, this message translates to:
-  /// **'Choose Your Route'**
+  /// **'which route?'**
   String get chooseYourRoute;
 
   /// Title for seat selection
@@ -295,8 +295,14 @@ abstract class AppLocalizations {
   /// Word for available (used in brackets)
   ///
   /// In en, this message translates to:
-  /// **'available'**
+  /// **'Available'**
   String get available;
+
+  /// Word for unavailable seats
+  ///
+  /// In en, this message translates to:
+  /// **'Unavailable'**
+  String get unavailable;
 
   /// Number of seats available for driver
   ///
@@ -316,16 +322,16 @@ abstract class AppLocalizations {
   /// **'Choose Your Stops'**
   String get chooseYourStops;
 
-  /// Departure/pick-up time label
+  /// Pick-up time label
   ///
   /// In en, this message translates to:
-  /// **'Pick-up Time'**
+  /// **'Pick-up'**
   String get pickUpTime;
 
   /// Arrival/drop-off time label
   ///
   /// In en, this message translates to:
-  /// **'Drop-off Time'**
+  /// **'Drop-off'**
   String get dropOffTime;
 
   /// Today label
@@ -1105,31 +1111,31 @@ abstract class AppLocalizations {
   /// Question to choose role
   ///
   /// In en, this message translates to:
-  /// **'Are you driver or rider?'**
+  /// **'are you a driver or a rider today?'**
   String get areYouDriverOrRider;
 
   /// Title for pick up stop selection screen
   ///
   /// In en, this message translates to:
-  /// **'Choose Pick Up Point'**
+  /// **'from?'**
   String get pickUpAndDropOff;
 
   /// Title for drop off stop selection screen
   ///
   /// In en, this message translates to:
-  /// **'Choose Drop Off Point'**
+  /// **'to?'**
   String get chooseDropOffPoint;
 
   /// Hint text for driver seat selection
   ///
   /// In en, this message translates to:
-  /// **'Tap Seats To Change Availability'**
+  /// **'tap seats to toggle'**
   String get tapSeatsToChangeAvailability;
 
   /// Title for time selection
   ///
   /// In en, this message translates to:
-  /// **'Set Your Time'**
+  /// **'time?'**
   String get setYourTime;
 
   /// Dialog title for incomplete profile

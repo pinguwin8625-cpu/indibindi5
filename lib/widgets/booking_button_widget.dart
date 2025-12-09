@@ -131,23 +131,19 @@ class _BookingButtonWidgetState extends State<BookingButtonWidget> {
     final isMobileWeb = _isMobileWeb(context);
     final fontSize = isMobileWeb ? 15.0 : 16.0;
     
-    return Positioned(
-      bottom: 0,
-      left: 0,
-      right: 0,
-      child: Container(
-        padding: EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 8,
-              offset: Offset(0, -2),
-            ),
-          ],
-        ),
-        child: SafeArea(
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: Offset(0, -2),
+          ),
+        ],
+      ),
+      child: SafeArea(
           top: false,
           child: Center(
             child: FloatingActionButton.extended(
@@ -163,17 +159,10 @@ class _BookingButtonWidgetState extends State<BookingButtonWidget> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              icon: Icon(
-                widget.userRole.toLowerCase() == 'driver' 
-                    ? Icons.directions_car 
-                    : Icons.check,
-                color: textColor,
-              ),
             ),
           ),
         ),
-      ),
-    );
+      );
   }
 
   void _performAction() {

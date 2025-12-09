@@ -15,7 +15,7 @@ class BookingProgressBar extends StatefulWidget {
 }
 
 class _BookingProgressBarState extends State<BookingProgressBar>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   AnimationController? _autoMoveController;
 
   @override
@@ -60,7 +60,8 @@ class _BookingProgressBarState extends State<BookingProgressBar>
       setState(() {});
     });
     
-    _autoMoveController!.forward();
+    // Loop the animation until ride is posted
+    _autoMoveController!.repeat();
   }
 
   void _stopAutoMove() {

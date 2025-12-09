@@ -81,7 +81,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get selectSeats => 'Koltuk Seçin';
 
   @override
-  String get chooseYourRoute => 'Rotanızı Seçin';
+  String get chooseYourRoute => 'hangi rota?';
 
   @override
   String get chooseYourSeats => 'Koltuklarınızı seçin';
@@ -96,7 +96,10 @@ class AppLocalizationsTr extends AppLocalizations {
   String get selectYourSeat => 'Koltuğunuzu seçin';
 
   @override
-  String get available => 'müsait';
+  String get available => 'Müsait';
+
+  @override
+  String get unavailable => 'Müsait Değil';
 
   @override
   String seatsAvailable(int count) {
@@ -112,10 +115,10 @@ class AppLocalizationsTr extends AppLocalizations {
   String get chooseYourStops => 'Duraklarınızı Seçin';
 
   @override
-  String get pickUpTime => 'Biniş Saati';
+  String get pickUpTime => 'Biniş';
 
   @override
-  String get dropOffTime => 'İniş Saati';
+  String get dropOffTime => 'İniş';
 
   @override
   String get today => 'Bugün';
@@ -505,7 +508,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get completed => 'Tamamlanan';
 
   @override
-  String get canceled => 'İptal Edildi';
+  String get canceled => 'İptal Edilen';
 
   @override
   String get suggestRoute => 'Yeni güzergah öner';
@@ -514,20 +517,19 @@ class AppLocalizationsTr extends AppLocalizations {
   String get suggestStop => 'Yeni durak öner';
 
   @override
-  String get areYouDriverOrRider => 'Sürücü müsünüz yoksa yolcu mu?';
+  String get areYouDriverOrRider => 'bugün sürücü müsün yoksa yolcu mu?';
 
   @override
-  String get pickUpAndDropOff => 'Biniş Noktası Seçin';
+  String get pickUpAndDropOff => 'nereden?';
 
   @override
-  String get chooseDropOffPoint => 'İniş Noktası Seçin';
+  String get chooseDropOffPoint => 'nereye?';
 
   @override
-  String get tapSeatsToChangeAvailability =>
-      'Müsaitliği değiştirmek için koltuklara dokunun';
+  String get tapSeatsToChangeAvailability => 'koltukları düzenlemek için dokun';
 
   @override
-  String get setYourTime => 'Saatinizi Belirleyin';
+  String get setYourTime => 'saat?';
 
   @override
   String get incompleteProfile => 'Eksik Profil';
