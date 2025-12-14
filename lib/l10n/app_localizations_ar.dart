@@ -591,4 +591,42 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get cancelRide => 'إلغاء الرحلة';
+
+  @override
+  String get archived => 'مؤرشف';
+
+  @override
+  String get message => 'Message';
+
+  @override
+  String get rate => 'Rate';
+
+  @override
+  String get yourRating => 'Your Rating:';
+
+  @override
+  String rateUser(String userName) {
+    return 'Rate $userName';
+  }
+
+  @override
+  String get selectQualitiesThatApply => 'Select the qualities that apply';
+
+  @override
+  String get submitRating => 'Submit Rating';
+
+  @override
+  String get safe => 'Safe';
+
+  @override
+  String get punctual => 'Punctual';
+
+  @override
+  String get clean => 'Clean';
+
+  @override
+  String get polite => 'Polite';
+
+  @override
+  String get communicative => 'Communicative';
 }

@@ -1257,6 +1257,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Cancel Ride'**
   String get cancelRide;
+
+  /// Label for archived messages section
+  ///
+  /// In en, this message translates to:
+  /// **'Archived'**
+  String get archived;
+
+  /// Message button text
+  ///
+  /// In en, this message translates to:
+  /// **'Message'**
+  String get message;
+
+  /// Rate button text
+  ///
+  /// In en, this message translates to:
+  /// **'Rate'**
+  String get rate;
+
+  /// Label for user's given rating
+  ///
+  /// In en, this message translates to:
+  /// **'Your Rating:'**
+  String get yourRating;
+
+  /// Title for rating dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Rate {userName}'**
+  String rateUser(String userName);
+
+  /// Subtitle for rating selection
+  ///
+  /// In en, this message translates to:
+  /// **'Select the qualities that apply'**
+  String get selectQualitiesThatApply;
+
+  /// Submit rating button text
+  ///
+  /// In en, this message translates to:
+  /// **'Submit Rating'**
+  String get submitRating;
+
+  /// Safe rating category
+  ///
+  /// In en, this message translates to:
+  /// **'Safe'**
+  String get safe;
+
+  /// Punctual rating category
+  ///
+  /// In en, this message translates to:
+  /// **'Punctual'**
+  String get punctual;
+
+  /// Clean rating category
+  ///
+  /// In en, this message translates to:
+  /// **'Clean'**
+  String get clean;
+
+  /// Polite rating category
+  ///
+  /// In en, this message translates to:
+  /// **'Polite'**
+  String get polite;
+
+  /// Communicative rating category
+  ///
+  /// In en, this message translates to:
+  /// **'Communicative'**
+  String get communicative;
 }
 
 class _AppLocalizationsDelegate

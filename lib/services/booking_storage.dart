@@ -83,12 +83,13 @@ class BookingStorage {
     
     // Auto-archive completed rides older than 3 days
     _autoArchiveOldBookings();
+    _autoHideOldArchivedBookings();
   }
 
-  // Auto-archive completed and canceled bookings older than 3 days
+  // Auto-archive completed and canceled bookings older than 3 days from arrival time
   void _autoArchiveOldBookings() {
     final now = DateTime.now();
-    final cutoffDate = now.subtract(Duration(days: 3));
+    final archiveCutoff = now.subtract(Duration(days: 3));
     bool hasChanges = false;
     
     final updatedBookings = bookings.value.map((booking) {
@@ -97,23 +98,11 @@ class BookingStorage {
         return booking;
       }
       
-      // For canceled rides: auto-archive if booking date is older than 3 days
-      if (booking.isCanceled == true) {
-        if (booking.bookingDate.isBefore(cutoffDate)) {
-          hasChanges = true;
-          if (kDebugMode) {
-            print('📚 Auto-archiving old canceled booking: ${booking.id} (booked ${booking.bookingDate})');
-          }
-          return booking.copyWith(isArchived: true, archivedAt: now);
-        }
-        return booking;
-      }
-      
-      // For completed rides: auto-archive if arrival time is older than 3 days
-      if (booking.arrivalTime.isBefore(cutoffDate)) {
+      // For both completed and canceled rides: auto-archive if arrival time is older than 3 days
+      if (booking.arrivalTime.isBefore(archiveCutoff)) {
         hasChanges = true;
         if (kDebugMode) {
-          print('📚 Auto-archiving old completed booking: ${booking.id} (arrived ${booking.arrivalTime})');
+          print('📚 Auto-archiving old booking: ${booking.id} (arrived ${booking.arrivalTime}, canceled: ${booking.isCanceled})');
         }
         return booking.copyWith(isArchived: true, archivedAt: now);
       }
@@ -126,6 +115,39 @@ class BookingStorage {
       _saveBookings();
       if (kDebugMode) {
         print('📚 Auto-archive complete');
+      }
+    }
+  }
+
+  // Auto-hide archived bookings older than 7 days from arrival time
+  void _autoHideOldArchivedBookings() {
+    final now = DateTime.now();
+    final hideCutoff = now.subtract(Duration(days: 7));
+    bool hasChanges = false;
+    
+    final updatedBookings = bookings.value.map((booking) {
+      // Skip if already hidden
+      if (booking.isHidden == true) {
+        return booking;
+      }
+      
+      // Only hide archived bookings whose arrival time is older than 7 days
+      if (booking.isArchived == true && booking.arrivalTime.isBefore(hideCutoff)) {
+        hasChanges = true;
+        if (kDebugMode) {
+          print('📚 Auto-hiding old archived booking: ${booking.id} (arrived ${booking.arrivalTime})');
+        }
+        return booking.copyWith(isHidden: true, hiddenAt: now);
+      }
+      
+      return booking;
+    }).toList();
+    
+    if (hasChanges) {
+      bookings.value = updatedBookings;
+      _saveBookings();
+      if (kDebugMode) {
+        print('📚 Auto-hide complete');
       }
     }
   }

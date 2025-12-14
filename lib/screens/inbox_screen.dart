@@ -20,6 +20,7 @@ class InboxScreen extends StatefulWidget {
 class _InboxScreenState extends State<InboxScreen> with WidgetsBindingObserver {
   final MessagingService _messagingService = MessagingService();
   String? _lastUserId;
+  bool _showArchived = false; // Whether to show archived conversations section
 
   @override
   void initState() {
@@ -117,9 +118,47 @@ class _InboxScreenState extends State<InboxScreen> with WidgetsBindingObserver {
 
       return Scaffold(
         appBar: AppBar(
-          leading: IconButton(
-            icon: Icon(Icons.support_agent, color: Colors.white),
-            onPressed: _sendSupportEmail,
+          leading: Padding(
+            padding: EdgeInsets.only(left: 12),
+            child: GestureDetector(
+              onTap: _sendSupportEmail,
+              child: Center(
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: Colors.white, width: 1),
+                      ),
+                      child: Text(
+                        '?',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                    // Speech bubble tail
+                    Positioned(
+                      bottom: -4,
+                      left: 4,
+                      child: CustomPaint(
+                        size: Size(6, 5),
+                        painter: _SpeechBubbleTailPainter(
+                          fillColor: Colors.white.withOpacity(0.2),
+                          borderColor: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
           title: Text(
             l10n.inbox,
@@ -155,13 +194,18 @@ class _InboxScreenState extends State<InboxScreen> with WidgetsBindingObserver {
             final allUserConversations = _messagingService.getConversationsForUser(
               currentUser.id,
             );
-            final userConversations = allUserConversations
-                .where((c) => c.isVisible)
+            
+            // Split into active (messaging allowed) and archived (3-7 days after arrival)
+            final activeConversations = allUserConversations
+                .where((c) => c.isVisible && !c.isArchived)
+                .toList();
+            final archivedConversations = allUserConversations
+                .where((c) => c.isArchived)
                 .toList();
 
-            print('📬 InboxScreen: Found ${userConversations.length} visible conversations (${allUserConversations.length} total)');
+            print('📬 InboxScreen: Found ${activeConversations.length} active, ${archivedConversations.length} archived conversations');
 
-            if (userConversations.isEmpty) {
+            if (activeConversations.isEmpty && archivedConversations.isEmpty) {
               return Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -182,12 +226,72 @@ class _InboxScreenState extends State<InboxScreen> with WidgetsBindingObserver {
               );
             }
 
-            return ListView.builder(
-              itemCount: userConversations.length,
-              itemBuilder: (context, index) {
-                final conversation = userConversations[index];
-                return _buildConversationTile(conversation, currentUser.id, index);
-              },
+            return ListView(
+              children: [
+                // Active conversations
+                ...activeConversations.asMap().entries.map((entry) {
+                  return _buildConversationTile(entry.value, currentUser.id, entry.key, isArchived: false);
+                }),
+                
+                // Archived section header (if there are archived conversations)
+                if (archivedConversations.isNotEmpty) ...[
+                  InkWell(
+                    onTap: () {
+                      setState(() {
+                        _showArchived = !_showArchived;
+                      });
+                    },
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      color: Colors.grey[200],
+                      child: Row(
+                        children: [
+                          Icon(
+                            _showArchived ? Icons.expand_less : Icons.expand_more,
+                            color: Colors.grey[600],
+                          ),
+                          SizedBox(width: 8),
+                          Icon(
+                            Icons.archive_outlined,
+                            color: Colors.grey[600],
+                            size: 20,
+                          ),
+                          SizedBox(width: 8),
+                          Text(
+                            l10n.archived,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey[700],
+                              fontSize: 14,
+                            ),
+                          ),
+                          SizedBox(width: 8),
+                          Container(
+                            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[400],
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              '${archivedConversations.length}',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  // Archived conversations (if expanded)
+                  if (_showArchived)
+                    ...archivedConversations.asMap().entries.map((entry) {
+                      return _buildConversationTile(entry.value, currentUser.id, entry.key, isArchived: true);
+                    }),
+                ],
+              ],
             );
           },
         ),
@@ -208,8 +312,9 @@ class _InboxScreenState extends State<InboxScreen> with WidgetsBindingObserver {
   Widget _buildConversationTile(
     Conversation conversation,
     String currentUserId,
-    int index,
-  ) {
+    int index, {
+    bool isArchived = false,
+  }) {
     // Simple logic: show the OTHER person (not yourself)
     // If you are the driver, show the rider. If you are the rider, show the driver.
     final bool amITheDriver = conversation.driverId == currentUserId;
@@ -237,8 +342,10 @@ class _InboxScreenState extends State<InboxScreen> with WidgetsBindingObserver {
     
     final profilePhotoUrl = otherUser?.profilePhotoUrl;
 
-    // Darker color for unread messages
-    final cardColor = unreadCount > 0 ? Colors.blue[100] : Colors.blue[50];
+    // Different colors for archived vs active, and unread vs read
+    final cardColor = isArchived 
+        ? Colors.grey[100] 
+        : (unreadCount > 0 ? Colors.blue[100] : Colors.blue[50]);
 
     return InkWell(
       onTap: () {
@@ -277,15 +384,18 @@ class _InboxScreenState extends State<InboxScreen> with WidgetsBindingObserver {
                           children: [
                             _buildAvatar(profilePhotoUrl),
                             SizedBox(height: 4),
-                            Text(
-                              otherUserName,
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
+                            SizedBox(
+                              width: 70,
+                              child: Text(
+                                otherUserName,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                textAlign: TextAlign.center,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              textAlign: TextAlign.center,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
                             ),
                             if (otherUser?.rating != null) ...[
                               SizedBox(height: 3),
@@ -650,6 +760,44 @@ class _BubbleTailPainterRight extends CustomPainter {
       size.width * 0.7, size.height * 0.7,
       0, size.height,
     );
+    canvas.drawPath(borderPath, borderPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+// Custom painter for speech bubble tail (support button)
+class _SpeechBubbleTailPainter extends CustomPainter {
+  final Color fillColor;
+  final Color borderColor;
+  
+  _SpeechBubbleTailPainter({required this.fillColor, required this.borderColor});
+  
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = fillColor
+      ..style = PaintingStyle.fill;
+
+    final borderPaint = Paint()
+      ..color = borderColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1;
+
+    final path = Path();
+    // Triangle pointing down-left
+    path.moveTo(0, 0);
+    path.lineTo(size.width, 0);
+    path.lineTo(0, size.height);
+    path.close();
+
+    canvas.drawPath(path, paint);
+    
+    // Draw border on the outer edges
+    final borderPath = Path();
+    borderPath.moveTo(size.width, 0);
+    borderPath.lineTo(0, size.height);
     canvas.drawPath(borderPath, borderPaint);
   }
 

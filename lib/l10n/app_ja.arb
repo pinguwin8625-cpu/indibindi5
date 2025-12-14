@@ -203,5 +203,6 @@
   "startConversation": "会話を始めましょう！",
   "pleaseLoginToViewMessages": "メッセージを見るにはログインしてください",
   "bookARide": "乗車を予約",
-  "cancelRide": "乗車をキャンセル"
+  "cancelRide": "乗車をキャンセル",
+  "archived": "アーカイブ済み"
 }

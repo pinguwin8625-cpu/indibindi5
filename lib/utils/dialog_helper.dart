@@ -5,6 +5,7 @@ class DialogHelper {
   /// [cancelText] defaults to 'Cancel' and uses GREEN color (safer option)
   /// [confirmText] defaults to 'OK' and uses GREEN color by default
   /// [isDangerous] if true, confirm button is RED (for destructive actions)
+  /// [isCancelDangerous] if true, cancel button is RED (cancel is the dangerous option)
   /// Returns true if confirmed, false if cancelled
   static Future<bool> showConfirmDialog({
     required BuildContext context,
@@ -13,6 +14,7 @@ class DialogHelper {
     String? cancelText,
     String? confirmText,
     bool isDangerous = false, // If true, confirm button is red (for destructive actions)
+    bool isCancelDangerous = false, // If true, cancel button is red (cancel is dangerous)
   }) async {
     final result = await showDialog<bool>(
       context: context,
@@ -27,12 +29,12 @@ class DialogHelper {
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),
               style: TextButton.styleFrom(
-                foregroundColor: Colors.green,
+                foregroundColor: isCancelDangerous ? Colors.red : Colors.green,
               ),
               child: Text(
                 cancelText ?? 'Cancel',
                 style: TextStyle(
-                  color: Colors.green,
+                  color: isCancelDangerous ? Colors.red : Colors.green,
                   fontWeight: FontWeight.w600,
                 ),
               ),

@@ -203,5 +203,6 @@
   "startConversation": "대화를 시작하세요!",
   "pleaseLoginToViewMessages": "메시지를 보려면 로그인하세요",
   "bookARide": "탑승 예약",
-  "cancelRide": "탑승 취소"
+  "cancelRide": "탑승 취소",
+  "archived": "보관됨"
 }

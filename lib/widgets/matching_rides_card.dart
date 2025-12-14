@@ -12,13 +12,15 @@ import '../services/mock_users.dart';
 class MatchingRideCard extends StatefulWidget {
   final RideInfo ride;
   final VoidCallback? onBookingCompleted;
-  final Function(bool hasPending, VoidCallback? confirmAction)? onPendingChanged;
+  final Function(String rideId, bool hasPending, VoidCallback? confirmAction)? onPendingChanged;
+  final String? activeRideId; // Which ride currently has pending seats
 
   const MatchingRideCard({
     super.key,
     required this.ride,
     this.onBookingCompleted,
     this.onPendingChanged,
+    this.activeRideId,
   });
 
   @override
@@ -46,6 +48,23 @@ class _MatchingRideCardState extends State<MatchingRideCard>
     _scaleAnimation = Tween<double>(begin: 1.0, end: 1.1).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
+  }
+
+  @override
+  void didUpdateWidget(MatchingRideCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // If another ride became active, clear our pending and selected seats
+    if (widget.activeRideId != null && 
+        widget.activeRideId != widget.ride.id && 
+        (pendingSeats.isNotEmpty || selectedSeats.isNotEmpty)) {
+      setState(() {
+        // Clear both pending and selected seats - user is now on another ride
+        pendingSeats.clear();
+        selectedSeats.clear();
+        lastTappedSeat = null;
+        buttonPosition = null;
+      });
+    }
   }
 
   @override
@@ -108,26 +127,55 @@ class _MatchingRideCardState extends State<MatchingRideCard>
     // Only toggle if seat is not occupied or booked
     if (!isOccupied && !bookedSeats.contains(seatIndex)) {
       setState(() {
-        if (selectedSeats.contains(seatIndex)) {
-          // Deselecting the seat
+        // Check if tapping a pending seat (to deselect it)
+        if (pendingSeats.contains(seatIndex)) {
+          // Deselecting a pending seat - clear pending state entirely
+          pendingSeats.remove(seatIndex);
+          if (pendingSeats.isEmpty) {
+            // Notify parent that pending state is cleared
+            widget.onPendingChanged?.call(widget.ride.id, false, null);
+          }
+        } else if (selectedSeats.contains(seatIndex)) {
+          // Deselecting a selected seat
           selectedSeats.remove(seatIndex);
           buttonPosition = null; // Hide button when deselecting
         } else {
+          // Selecting a new seat
           // ONE SEAT PER USER RESTRICTION:
-          // Clear any previously selected seats before selecting a new one
+          
+          // Check if we had pending seats
+          bool hadPending = pendingSeats.isNotEmpty;
+          
+          // Clear previously selected seats
           selectedSeats.clear();
           
-          // Select the new seat
-          selectedSeats.add(seatIndex);
-          lastTappedSeat = seatIndex;
-
-          // Convert global position to local position relative to the card
-          final RenderBox? cardBox =
-              _cardKey.currentContext?.findRenderObject() as RenderBox?;
-          if (cardBox != null) {
-            final localPosition = cardBox.globalToLocal(tapPosition);
-            buttonPosition = localPosition;
+          if (hadPending) {
+            // User is changing seat within same car - keep photo on old seat
+            // Don't clear pendingSeats yet - only clear when they tap Book on new seat
+            // Just select the new seat (blue, no photo, Book button shows)
+            selectedSeats.add(seatIndex);
+            
+            // Set button position for the Book button to show
+            final RenderBox? cardBox =
+                _cardKey.currentContext?.findRenderObject() as RenderBox?;
+            if (cardBox != null) {
+              final localPosition = cardBox.globalToLocal(tapPosition);
+              buttonPosition = localPosition;
+            }
+          } else {
+            // Normal selection - show as green with Book button
+            selectedSeats.add(seatIndex);
+            
+            // Convert global position to local position relative to the card
+            final RenderBox? cardBox =
+                _cardKey.currentContext?.findRenderObject() as RenderBox?;
+            if (cardBox != null) {
+              final localPosition = cardBox.globalToLocal(tapPosition);
+              buttonPosition = localPosition;
+            }
           }
+          
+          lastTappedSeat = seatIndex;
 
           // Trigger animation
           _animationController.forward().then((_) {
@@ -191,7 +239,7 @@ class _MatchingRideCardState extends State<MatchingRideCard>
         pendingSeats.clear();
       });
       // Notify parent that pending state is cleared
-      widget.onPendingChanged?.call(false, null);
+      widget.onPendingChanged?.call(widget.ride.id, false, null);
       return;
     }
 
@@ -281,7 +329,7 @@ class _MatchingRideCardState extends State<MatchingRideCard>
     });
 
     // Notify parent that pending state is cleared
-    widget.onPendingChanged?.call(false, null);
+    widget.onPendingChanged?.call(widget.ride.id, false, null);
 
     // Navigate to My Bookings screen after frame is complete
     if (widget.onBookingCompleted != null) {
@@ -545,8 +593,8 @@ class _MatchingRideCardState extends State<MatchingRideCard>
                 ),
               ),
             ),
-            // Floating book button at pointer position
-            if (selectedSeats.isNotEmpty && buttonPosition != null && pendingSeats.isEmpty)
+            // Floating book button at pointer position (when there's a selected seat)
+            if (selectedSeats.isNotEmpty && buttonPosition != null)
               Positioned(
                 left: buttonPosition!.dx - 80, // Center the button horizontally
                 top: buttonPosition!.dy - 60, // Position above the pointer
@@ -588,6 +636,8 @@ class _MatchingRideCardState extends State<MatchingRideCard>
 
   void _moveToPending() {
     setState(() {
+      // Clear any existing pending seats (photo moves from old seat to new seat)
+      pendingSeats.clear();
       // Move selected seats to pending
       pendingSeats.addAll(selectedSeats);
       selectedSeats.clear();
@@ -598,7 +648,7 @@ class _MatchingRideCardState extends State<MatchingRideCard>
     // Notify parent about pending state change
     print('🔔 _moveToPending called, notifying parent with pendingSeats: $pendingSeats');
     print('🔔 onPendingChanged is null: ${widget.onPendingChanged == null}');
-    widget.onPendingChanged?.call(true, _confirmBooking);
+    widget.onPendingChanged?.call(widget.ride.id, true, _confirmBooking);
   }
 
   Widget _buildMiniatureSeatLayout() {
@@ -847,7 +897,6 @@ class _MatchingRideCardState extends State<MatchingRideCard>
           (!isDriver &&
               !isOccupied &&
               !isBooked &&
-              !isPending &&
               !isNotOffered &&
               seatIndex != null)
           ? (details) => _toggleSeat(seatIndex, details.globalPosition)

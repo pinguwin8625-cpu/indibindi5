@@ -89,6 +89,7 @@ class _RouteLayerWidgetState extends State<RouteLayerWidget> {
           : l10n.completePersonalInfoForBooking,
       cancelText: l10n.cancel,
       confirmText: l10n.completeProfile,
+      isCancelDangerous: true,
     );
 
     if (confirmed) {
@@ -108,6 +109,7 @@ class _RouteLayerWidgetState extends State<RouteLayerWidget> {
       content: l10n.completeVehicleInfoForPosting,
       cancelText: l10n.cancel,
       confirmText: l10n.addVehicle,
+      isCancelDangerous: true,
     );
 
     if (confirmed) {
@@ -151,12 +153,20 @@ class _RouteLayerWidgetState extends State<RouteLayerWidget> {
                   children: [
                     // Driver Button
                       GestureDetector(
-                        onTap: () {
+                        onTap: () async {
                           setState(() {
                             _selectedRole = 'driver';
                           });
                           widget.tabController?.animateTo(0); // Switch to driver tab
                           widget.onRoleSelected?.call('driver');
+
+                          // Check vehicle info after selecting driver role
+                          final currentUser = AuthService.currentUser;
+                          if (currentUser != null && !currentUser.hasVehicle) {
+                            // Small delay to let the UI update first
+                            await Future.delayed(Duration(milliseconds: 100));
+                            _showIncompleteVehicleInfoDialog();
+                          }
                         },
                         child: Container(
                           padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
@@ -198,12 +208,20 @@ class _RouteLayerWidgetState extends State<RouteLayerWidget> {
                       SizedBox(width: 20),
                       // Rider Button
                       GestureDetector(
-                        onTap: () {
+                        onTap: () async {
                           setState(() {
                             _selectedRole = 'rider';
                           });
                           widget.tabController?.animateTo(1); // Switch to rider tab
                           widget.onRoleSelected?.call('rider');
+
+                          // Check personal info after selecting rider role
+                          final currentUser = AuthService.currentUser;
+                          if (currentUser != null && !currentUser.hasCompletePersonalInfo) {
+                            // Small delay to let the UI update first
+                            await Future.delayed(Duration(milliseconds: 100));
+                            _showIncompletePersonalInfoDialog(isDriver: false);
+                          }
                         },
                         child: Container(
                           padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),

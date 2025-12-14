@@ -190,5 +190,6 @@
   "startConversation": "Bir sohbet başlatın!",
   "pleaseLoginToViewMessages": "Mesajları görmek için giriş yapın",
   "bookARide": "Yolculuk Rezerve Et",
-  "cancelRide": "Yolculuğu İptal Et"
+  "cancelRide": "Yolculuğu İptal Et",
+  "archived": "Arşivlenmiş"
 }

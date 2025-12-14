@@ -5,6 +5,7 @@ import '../services/auth_service.dart';
 import '../services/mock_users.dart';
 import '../utils/date_time_helpers.dart';
 import '../l10n/app_localizations.dart';
+import '../widgets/ride_details_bar.dart';
 import 'dart:io';
 
 class ChatScreen extends StatefulWidget {
@@ -160,38 +161,42 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
               SizedBox(width: 12),
               // Name and rating
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    otherUserName,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      otherUserName,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                  if (otherUser?.rating != null)
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.star,
-                          size: 14,
-                          color: Colors.amber,
-                        ),
-                        SizedBox(width: 4),
-                        Text(
-                          (otherUser?.rating ?? 0.0).toStringAsFixed(1),
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
+                    if (otherUser?.rating != null)
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.star,
+                            size: 14,
+                            color: Colors.amber,
                           ),
-                        ),
-                      ],
-                    ),
-                ],
+                          SizedBox(width: 4),
+                          Text(
+                            (otherUser?.rating ?? 0.0).toStringAsFixed(1),
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -200,6 +205,15 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
         body: Column(
           children: [
+            // Ride details card (only show for non-support conversations)
+            if (!widget.conversation.id.startsWith('support_'))
+              RideDetailsBar(
+                routeName: widget.conversation.routeName,
+                originName: widget.conversation.originName,
+                destinationName: widget.conversation.destinationName,
+                departureTime: widget.conversation.departureTime,
+                arrivalTime: widget.conversation.arrivalTime,
+              ),
             if (isExpired)
               Container(
                 padding: EdgeInsets.all(12),

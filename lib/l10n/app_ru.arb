@@ -203,5 +203,6 @@
   "startConversation": "Начните разговор!",
   "pleaseLoginToViewMessages": "Войдите, чтобы просмотреть сообщения",
   "bookARide": "Забронировать Поездку",
-  "cancelRide": "Отменить Поездку"
+  "cancelRide": "Отменить Поездку",
+  "archived": "Архив"
 }

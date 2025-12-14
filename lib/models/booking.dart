@@ -54,8 +54,10 @@ class Booking {
   final String? driverUserId; // Driver's user ID (for rider bookings)
   final double? driverRating; // Driver's rating (0.0 to 5.0)
   final bool? isCanceled; // Whether the booking has been canceled
-  final bool? isArchived; // Whether the booking has been archived
-  final DateTime? archivedAt; // When the booking was archived (for 7-day unarchive limit)
+  final bool? isArchived; // Whether the booking has been archived (3 days after arrival)
+  final DateTime? archivedAt; // When the booking was archived
+  final bool? isHidden; // Whether the booking is hidden from UI (7 days after arrival)
+  final DateTime? hiddenAt; // When the booking was hidden
   final List<RiderInfo>?
   riders; // List of riders who booked seats (for driver bookings)
 
@@ -76,6 +78,8 @@ class Booking {
     this.isCanceled = false,
     this.isArchived = false,
     this.archivedAt,
+    this.isHidden = false,
+    this.hiddenAt,
     this.riders,
   });
 
@@ -113,6 +117,8 @@ class Booking {
     bool? isCanceled,
     bool? isArchived,
     DateTime? archivedAt,
+    bool? isHidden,
+    DateTime? hiddenAt,
     List<RiderInfo>? riders,
   }) {
     return Booking(
@@ -132,6 +138,8 @@ class Booking {
       isCanceled: isCanceled ?? this.isCanceled,
       isArchived: isArchived ?? this.isArchived,
       archivedAt: archivedAt ?? this.archivedAt,
+      isHidden: isHidden ?? this.isHidden,
+      hiddenAt: hiddenAt ?? this.hiddenAt,
       riders: riders ?? this.riders,
     );
   }
@@ -155,6 +163,8 @@ class Booking {
       'isCanceled': isCanceled,
       'isArchived': isArchived,
       'archivedAt': archivedAt?.toIso8601String(),
+      'isHidden': isHidden,
+      'hiddenAt': hiddenAt?.toIso8601String(),
       'riders': riders?.map((r) => r.toJson()).toList(),
     };
   }
@@ -188,6 +198,10 @@ class Booking {
       isArchived: json['isArchived'] as bool?,
       archivedAt: json['archivedAt'] != null
           ? DateTime.parse(json['archivedAt'] as String)
+          : null,
+      isHidden: json['isHidden'] as bool?,
+      hiddenAt: json['hiddenAt'] != null
+          ? DateTime.parse(json['hiddenAt'] as String)
           : null,
       riders: json['riders'] != null
           ? (json['riders'] as List)

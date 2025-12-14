@@ -290,9 +290,9 @@ class MyBookingsScreenState extends State<MyBookingsScreen>
                 .toList()
               ..sort((a, b) => b.departureTime.compareTo(a.departureTime));
 
-        // Archived bookings
+        // Archived bookings (exclude hidden ones - those are completely hidden from UI)
         final archivedBookings =
-            userBookings.where((b) => b.isArchived == true).toList()
+            userBookings.where((b) => b.isArchived == true && b.isHidden != true).toList()
               ..sort((a, b) => b.departureTime.compareTo(a.departureTime));
 
         // Recent completed bookings (for Completed section)
@@ -702,6 +702,15 @@ class MyBookingsScreenState extends State<MyBookingsScreen>
     final now = DateTime.now();
     final ratingAllowedTime = booking.arrivalTime.add(Duration(hours: 1));
     final canRate = now.isAfter(ratingAllowedTime);
+
+    // Check if user has already rated this person for this trip
+    final hasAlreadyRated = otherUserId.isNotEmpty
+        ? RatingService().hasRated(booking.id, currentUser.id, otherUserId)
+        : false;
+    final existingRating = hasAlreadyRated
+        ? RatingService().getRating(booking.id, currentUser.id, otherUserId)
+        : null;
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -756,7 +765,7 @@ class MyBookingsScreenState extends State<MyBookingsScreen>
                       _navigateToChat(booking, isDriver, riderSeatIndex);
                     },
                     icon: Icon(Icons.message),
-                    label: Text('Message'),
+                    label: Text(l10n.message),
                     style: ElevatedButton.styleFrom(
                       minimumSize: Size(double.infinity, 48),
                       backgroundColor: Theme.of(context).primaryColor,
@@ -765,22 +774,56 @@ class MyBookingsScreenState extends State<MyBookingsScreen>
                   ),
                 
                 if (canMessage) SizedBox(height: 12),
-                
-                if (!isSelf && canRate)
+
+                // Show rate button or existing rating
+                if (!isSelf && canRate && !hasAlreadyRated)
                   ElevatedButton.icon(
                     onPressed: () {
                       Navigator.of(context).pop();
                       _showSimpleRatingDialog(booking, isDriver, otherUserName);
                     },
                     icon: Icon(Icons.star_rate),
-                    label: Text('Rate'),
+                    label: Text(l10n.rate),
                     style: ElevatedButton.styleFrom(
                       minimumSize: Size(double.infinity, 48),
                       backgroundColor: Colors.amber,
                       foregroundColor: Colors.white,
                     ),
                   ),
-                
+
+                // Show the rating the user gave
+                if (!isSelf && hasAlreadyRated && existingRating != null)
+                  Container(
+                    height: 48,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: Colors.amber,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          l10n.yourRating,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                        SizedBox(width: 8),
+                        ...List.generate(
+                          existingRating.averageRating.toInt(),
+                          (index) => Icon(Icons.star, color: Colors.white, size: 20),
+                        ),
+                        ...List.generate(
+                          5 - existingRating.averageRating.toInt(),
+                          (index) => Icon(Icons.star_border, color: Colors.white, size: 20),
+                        ),
+                      ],
+                    ),
+                  ),
+
                 if (!isSelf && canRate) SizedBox(height: 12),
                 
                 TextButton(
@@ -890,6 +933,8 @@ class MyBookingsScreenState extends State<MyBookingsScreen>
     final currentUser = AuthService.currentUser;
     if (currentUser == null) return;
 
+    final l10n = AppLocalizations.of(context)!;
+
     // Get the actual other user ID to check for self-rating
     String otherUserId;
     if (isDriver) {
@@ -934,14 +979,9 @@ class MyBookingsScreenState extends State<MyBookingsScreen>
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (context, setState) {
-            // Count how many categories have been rated
-            final ratedCount = [polite, clean, communicative, safe, punctual]
-                .where((r) => r > 0)
-                .length;
-            // Calculate average rating (only from rated categories)
+            // Calculate total stars (sum of selected categories)
             final totalStars = polite + clean + communicative + safe + punctual;
-            final averageRating = ratedCount > 0 ? totalStars / ratedCount : 0.0;
-            final canSubmit = ratedCount == 5; // All categories must be rated
+            final canSubmit = totalStars > 0; // At least one category must be selected
 
             return Dialog(
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -952,7 +992,7 @@ class MyBookingsScreenState extends State<MyBookingsScreen>
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        'Rate $otherUserName',
+                        l10n.rateUser(otherUserName),
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
@@ -961,122 +1001,96 @@ class MyBookingsScreenState extends State<MyBookingsScreen>
                       ),
                       SizedBox(height: 8),
                       Text(
-                        'Rate each category from 1 to 5 stars',
+                        l10n.selectQualitiesThatApply,
                         style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                         textAlign: TextAlign.center,
                       ),
                       SizedBox(height: 20),
 
-                      // Rating categories
+                      // Rating categories - reordered: Safe, Punctual, Clean, Polite, Communicative
                       _buildInlineRatingCategory(
-                        'Polite',
-                        Icons.sentiment_satisfied_alt,
-                        polite,
-                        (rating) => setState(() => polite = rating),
-                      ),
-                      SizedBox(height: 12),
-                      _buildInlineRatingCategory(
-                        'Clean',
-                        Icons.cleaning_services,
-                        clean,
-                        (rating) => setState(() => clean = rating),
-                      ),
-                      SizedBox(height: 12),
-                      _buildInlineRatingCategory(
-                        'Communicative',
-                        Icons.chat_bubble_outline,
-                        communicative,
-                        (rating) => setState(() => communicative = rating),
-                      ),
-                      SizedBox(height: 12),
-                      _buildInlineRatingCategory(
-                        'Safe',
+                        l10n.safe,
                         Icons.security,
                         safe,
                         (rating) => setState(() => safe = rating),
                       ),
-                      SizedBox(height: 12),
+                      SizedBox(height: 8),
                       _buildInlineRatingCategory(
-                        'Punctual',
+                        l10n.punctual,
                         Icons.schedule,
                         punctual,
                         (rating) => setState(() => punctual = rating),
                       ),
+                      SizedBox(height: 8),
+                      _buildInlineRatingCategory(
+                        l10n.clean,
+                        Icons.cleaning_services,
+                        clean,
+                        (rating) => setState(() => clean = rating),
+                      ),
+                      SizedBox(height: 8),
+                      _buildInlineRatingCategory(
+                        l10n.polite,
+                        Icons.sentiment_satisfied_alt,
+                        polite,
+                        (rating) => setState(() => polite = rating),
+                      ),
+                      SizedBox(height: 8),
+                      _buildInlineRatingCategory(
+                        l10n.communicative,
+                        Icons.chat_bubble_outline,
+                        communicative,
+                        (rating) => setState(() => communicative = rating),
+                      ),
                       SizedBox(height: 20),
 
-                      // Total rating display
-                      if (ratedCount > 0) ...[
-                        Container(
-                          padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                          decoration: BoxDecoration(
-                            color: Colors.amber[50],
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.amber, width: 2),
+                      // Submit button with stars display
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: canSubmit ? () {
+                            _submitDetailedRating(
+                              booking,
+                              isDriver,
+                              otherUserName,
+                              polite,
+                              clean,
+                              communicative,
+                              safe,
+                              punctual,
+                            );
+                            Navigator.pop(context);
+                          } : null,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.amber,
+                            foregroundColor: Colors.white,
+                            padding: EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              ...List.generate(
-                                averageRating.round(),
-                                (index) => Icon(Icons.star, color: Colors.amber, size: 20),
-                              ),
-                              ...List.generate(
-                                5 - averageRating.round(),
-                                (index) => Icon(Icons.star_border, color: Colors.amber, size: 20),
-                              ),
-                              SizedBox(width: 8),
                               Text(
-                                '${averageRating.toStringAsFixed(1)} / 5 stars',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF2E2E2E),
-                                ),
+                                l10n.submitRating,
+                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                               ),
+                              if (totalStars > 0) ...[
+                                SizedBox(width: 12),
+                                ...List.generate(
+                                  totalStars,
+                                  (index) => Icon(Icons.star, size: 20),
+                                ),
+                              ],
                             ],
                           ),
                         ),
-                        if (!canSubmit)
-                          Padding(
-                            padding: EdgeInsets.only(top: 8),
-                            child: Text(
-                              'Please rate all ${5 - ratedCount} remaining categories',
-                              style: TextStyle(fontSize: 12, color: Colors.orange[700]),
-                            ),
-                          ),
-                        SizedBox(height: 16),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: canSubmit ? () {
-                              _submitDetailedRating(
-                                booking,
-                                isDriver,
-                                otherUserName,
-                                polite,
-                                clean,
-                                communicative,
-                                safe,
-                                punctual,
-                              );
-                              Navigator.pop(context);
-                            } : null,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.amber,
-                              foregroundColor: Colors.white,
-                              padding: EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                            child: Text('Submit Rating'),
-                          ),
-                        ),
-                      ],
+                      ),
                       SizedBox(height: 12),
                       TextButton(
                         onPressed: () => Navigator.pop(context),
-                        child: Text('Cancel'),
+                        child: Text(l10n.cancel),
                       ),
                     ],
                   ),
@@ -1095,36 +1109,46 @@ class MyBookingsScreenState extends State<MyBookingsScreen>
     int currentRating,
     Function(int) onRatingChanged,
   ) {
-    return Row(
-      children: [
-        Icon(icon, size: 18, color: Color(0xFF2E2E2E)),
-        SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            title,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: Color(0xFF2E2E2E),
-            ),
+    final isSelected = currentRating == 1;
+
+    return GestureDetector(
+      onTap: () => onRatingChanged(isSelected ? 0 : 1),
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.amber[50] : Colors.grey[50],
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isSelected ? Colors.amber : Colors.grey[300]!,
+            width: 2,
           ),
         ),
-        // 5 stars for this category
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: List.generate(5, (index) {
-            final starValue = index + 1;
-            return GestureDetector(
-              onTap: () => onRatingChanged(starValue),
-              child: Icon(
-                starValue <= currentRating ? Icons.star : Icons.star_border,
-                color: Colors.amber,
-                size: 24,
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              size: 20,
+              color: isSelected ? Colors.amber[700] : Colors.grey[600],
+            ),
+            SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: isSelected ? Color(0xFF2E2E2E) : Colors.grey[700],
+                ),
               ),
-            );
-          }),
+            ),
+            Icon(
+              isSelected ? Icons.star : Icons.star_border,
+              color: Colors.amber,
+              size: 28,
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 
@@ -1141,12 +1165,23 @@ class MyBookingsScreenState extends State<MyBookingsScreen>
     final currentUser = AuthService.currentUser;
     if (currentUser == null) return;
 
-    // Generate IDs
+    // Get the actual other user ID (same logic as in _showSimpleRatingDialog)
+    String otherUserId;
+    if (isDriver) {
+      // Rating the driver
+      otherUserId = booking.driverUserId ?? booking.userId;
+    } else {
+      // Rating a rider - need to find by name
+      final rider = booking.riders?.firstWhere(
+        (r) => r.name == otherUserName,
+        orElse: () => RiderInfo(userId: '', name: '', rating: 0.0, seatIndex: -1),
+      );
+      otherUserId = rider?.userId ?? '';
+    }
+
+    // Generate rating ID
     final ratingId =
         '${booking.id}_${currentUser.id}_${DateTime.now().millisecondsSinceEpoch}';
-    final otherUserId = isDriver
-        ? booking.userId
-        : '${booking.id}_rider_$otherUserName';
 
     // Create rating
     final rating = TripRating(
@@ -1559,47 +1594,13 @@ class _BookingCardState extends State<_BookingCard> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      // Miniature seat layout - hide for archived bookings (collapsible)
-                      if (!widget.isArchived)
-                        Expanded(
-                          child: widget.buildMiniatureSeatLayout(
-                            widget.booking.selectedSeats,
-                            widget.booking,
-                          ),
-                        )
-                      else if (_isExpanded)
-                        Expanded(
-                          child: widget.buildMiniatureSeatLayout(
-                            widget.booking.selectedSeats,
-                            widget.booking,
-                          ),
-                        )
-                      else
-                        // Show expand button for archived rides
-                        Expanded(
-                          child: Center(
-                            child: InkWell(
-                              onTap: () {
-                                setState(() {
-                                  _isExpanded = true;
-                                });
-                              },
-                              child: Container(
-                                padding: EdgeInsets.all(6),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[100],
-                                  borderRadius: BorderRadius.circular(6),
-                                  border: Border.all(color: Colors.grey[300]!),
-                                ),
-                                child: Icon(
-                                  Icons.expand_more,
-                                  size: 16,
-                                  color: Colors.grey[700],
-                                ),
-                              ),
-                            ),
-                          ),
+                      // Miniature seat layout - always show for all bookings
+                      Expanded(
+                        child: widget.buildMiniatureSeatLayout(
+                          widget.booking.selectedSeats,
+                          widget.booking,
                         ),
+                      ),
 
                       // Status button/label in bottom right - removed, now at bottom of card
                       SizedBox.shrink(),

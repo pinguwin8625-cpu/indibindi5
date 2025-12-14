@@ -203,5 +203,6 @@
   "startConversation": "Inizia una conversazione!",
   "pleaseLoginToViewMessages": "Accedi per visualizzare i messaggi",
   "bookARide": "Prenota una Corsa",
-  "cancelRide": "Annulla Corsa"
+  "cancelRide": "Annulla Corsa",
+  "archived": "Archiviati"
 }

@@ -822,5 +822,70 @@
   "cancelRide": "Cancel Ride",
   "@cancelRide": {
     "description": "Button to cancel a ride booking"
+  },
+
+  "archived": "Archived",
+  "@archived": {
+    "description": "Label for archived messages section"
+  },
+
+  "message": "Message",
+  "@message": {
+    "description": "Message button text"
+  },
+
+  "rate": "Rate",
+  "@rate": {
+    "description": "Rate button text"
+  },
+
+  "yourRating": "Your Rating:",
+  "@yourRating": {
+    "description": "Label for user's given rating"
+  },
+
+  "rateUser": "Rate {userName}",
+  "@rateUser": {
+    "description": "Title for rating dialog",
+    "placeholders": {
+      "userName": {
+        "type": "String"
+      }
+    }
+  },
+
+  "selectQualitiesThatApply": "Select the qualities that apply",
+  "@selectQualitiesThatApply": {
+    "description": "Subtitle for rating selection"
+  },
+
+  "submitRating": "Submit Rating",
+  "@submitRating": {
+    "description": "Submit rating button text"
+  },
+
+  "safe": "Safe",
+  "@safe": {
+    "description": "Safe rating category"
+  },
+
+  "punctual": "Punctual",
+  "@punctual": {
+    "description": "Punctual rating category"
+  },
+
+  "clean": "Clean",
+  "@clean": {
+    "description": "Clean rating category"
+  },
+
+  "polite": "Polite",
+  "@polite": {
+    "description": "Polite rating category"
+  },
+
+  "communicative": "Communicative",
+  "@communicative": {
+    "description": "Communicative rating category"
   }
 }

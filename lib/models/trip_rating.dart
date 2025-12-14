@@ -8,7 +8,7 @@ class TripRating {
   final String toUserId; // User being rated
   final String toUserName; // Name of user being rated
   
-  // 5-point rating categories (1-5 stars each)
+  // Rating categories (0 or 1 star each, max 5 total)
   final int polite; // Was the person polite and respectful?
   final int clean; // Was the person/vehicle clean and tidy?
   final int communicative; // Did they communicate well?
@@ -33,14 +33,14 @@ class TripRating {
     required this.ratedAt,
   });
   
-  // Calculate average rating (overall score)
+  // Calculate total rating (sum of selected categories, 0-5 stars)
   double get averageRating {
-    return (polite + clean + communicative + safe + punctual) / 5.0;
+    return (polite + clean + communicative + safe + punctual).toDouble();
   }
   
-  // Check if all categories are rated
+  // Check if at least one category is selected
   bool get isComplete {
-    return polite > 0 && clean > 0 && communicative > 0 && safe > 0 && punctual > 0;
+    return (polite + clean + communicative + safe + punctual) > 0;
   }
   
   // Convert to JSON for storage

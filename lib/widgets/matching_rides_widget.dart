@@ -36,6 +36,7 @@ class MatchingRidesWidget extends StatefulWidget {
 class _MatchingRidesWidgetState extends State<MatchingRidesWidget> {
   bool _hasPendingSeats = false;
   VoidCallback? _confirmAction;
+  String? _activeRideId; // Track which ride has pending seats
 
   List<RideInfo> _getMatchingRides(BuildContext context) {
     try {
@@ -235,13 +236,21 @@ class _MatchingRidesWidgetState extends State<MatchingRidesWidget> {
     }
   }
 
-  void _onPendingChanged(bool hasPending, VoidCallback? confirmAction) {
-    print('🔔 _onPendingChanged called: hasPending=$hasPending, confirmAction=${confirmAction != null}');
+  void _onPendingChanged(String rideId, bool hasPending, VoidCallback? confirmAction) {
+    print('🔔 _onPendingChanged called: rideId=$rideId, hasPending=$hasPending, confirmAction=${confirmAction != null}');
     setState(() {
-      _hasPendingSeats = hasPending;
-      _confirmAction = confirmAction;
+      if (hasPending) {
+        _hasPendingSeats = true;
+        _confirmAction = confirmAction;
+        _activeRideId = rideId;
+      } else if (_activeRideId == rideId) {
+        // Only clear if this is the active ride
+        _hasPendingSeats = false;
+        _confirmAction = null;
+        _activeRideId = null;
+      }
     });
-    print('🔔 State updated: _hasPendingSeats=$_hasPendingSeats, _confirmAction=${_confirmAction != null}');
+    print('🔔 State updated: _hasPendingSeats=$_hasPendingSeats, _activeRideId=$_activeRideId');
   }
 
   @override
@@ -352,6 +361,7 @@ class _MatchingRidesWidgetState extends State<MatchingRidesWidget> {
                             ride: ride,
                             onBookingCompleted: widget.onBookingCompleted,
                             onPendingChanged: _onPendingChanged,
+                            activeRideId: _activeRideId,
                           );
                         },
                       ),
@@ -359,7 +369,7 @@ class _MatchingRidesWidgetState extends State<MatchingRidesWidget> {
 
               // Debug: Show button state
               Builder(builder: (context) {
-                print('🎯 Build: _hasPendingSeats=$_hasPendingSeats, _confirmAction=${_confirmAction != null}');
+                print('🎯 Build: _hasPendingSeats=$_hasPendingSeats, _activeRideId=$_activeRideId');
                 return SizedBox.shrink();
               }),
 

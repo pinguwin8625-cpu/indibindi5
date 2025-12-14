@@ -14,6 +14,11 @@ class RideDetailsBar extends StatelessWidget {
   final String? userRole;
   final String? riderTimeChoice; // 'departure' or 'arrival' for riders
   final VoidCallback? onBack;
+  
+  // Alternative string-based parameters (for when RouteInfo is not available)
+  final String? routeName;
+  final String? originName;
+  final String? destinationName;
 
   const RideDetailsBar({
     super.key,
@@ -26,16 +31,33 @@ class RideDetailsBar extends StatelessWidget {
     this.userRole,
     this.riderTimeChoice,
     this.onBack,
+    this.routeName,
+    this.originName,
+    this.destinationName,
   });
 
   @override
   Widget build(BuildContext context) {
-    // Don't show if no data is selected
-    if (selectedRoute == null &&
+    // Don't show if no data is selected (check both RouteInfo and string-based params)
+    final hasRouteData = selectedRoute != null || routeName != null;
+    if (!hasRouteData &&
         departureTime == null &&
         selectedSeats == null) {
       return SizedBox.shrink();
     }
+    
+    // Get route name from either source
+    final displayRouteName = selectedRoute?.name ?? routeName ?? '';
+    
+    // Get origin name from either source
+    final displayOriginName = (selectedRoute != null && originIndex != null)
+        ? selectedRoute!.stops[originIndex!].name
+        : originName;
+    
+    // Get destination name from either source
+    final displayDestinationName = (selectedRoute != null && destinationIndex != null)
+        ? selectedRoute!.stops[destinationIndex!].name
+        : destinationName;
 
     return Container(
       margin: EdgeInsets.fromLTRB(16, 8, 16, 8),
@@ -102,7 +124,7 @@ class RideDetailsBar extends StatelessWidget {
                     ],
                     Flexible(
                       child: Text(
-                        selectedRoute?.name ?? '',
+                        displayRouteName,
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
@@ -134,7 +156,7 @@ class RideDetailsBar extends StatelessWidget {
                 ),
                 
                 // Origin only (when pick up is selected but not drop off)
-                if (originIndex != null && destinationIndex == null)
+                if (displayOriginName != null && displayDestinationName == null)
                   Padding(
                     padding: EdgeInsets.only(top: 4),
                     child: Row(
@@ -146,7 +168,7 @@ class RideDetailsBar extends StatelessWidget {
                         SizedBox(width: 2),
                         Flexible(
                           child: Text(
-                            _shortenStopName(selectedRoute!.stops[originIndex!].name),
+                            _shortenStopName(displayOriginName),
                             style: TextStyle(fontSize: 11, color: Colors.grey[700]),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -156,7 +178,7 @@ class RideDetailsBar extends StatelessWidget {
                   ),
 
                 // Origin → Destination with times (compact single row)
-                if (originIndex != null && destinationIndex != null)
+                if (displayOriginName != null && displayDestinationName != null)
                   Padding(
                     padding: EdgeInsets.only(top: 4),
                     child: Row(
@@ -168,7 +190,7 @@ class RideDetailsBar extends StatelessWidget {
                         SizedBox(width: 2),
                         Flexible(
                           child: Text(
-                            _shortenStopName(selectedRoute!.stops[originIndex!].name),
+                            _shortenStopName(displayOriginName),
                             style: TextStyle(fontSize: 11, color: Colors.grey[700]),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -194,7 +216,7 @@ class RideDetailsBar extends StatelessWidget {
                         SizedBox(width: 2),
                         Flexible(
                           child: Text(
-                            _shortenStopName(selectedRoute!.stops[destinationIndex!].name),
+                            _shortenStopName(displayDestinationName),
                             style: TextStyle(fontSize: 11, color: Colors.grey[700]),
                             overflow: TextOverflow.ellipsis,
                           ),

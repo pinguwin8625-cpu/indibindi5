@@ -203,5 +203,6 @@
   "startConversation": "ابدأ محادثة!",
   "pleaseLoginToViewMessages": "يرجى تسجيل الدخول لعرض الرسائل",
   "bookARide": "حجز رحلة",
-  "cancelRide": "إلغاء الرحلة"
+  "cancelRide": "إلغاء الرحلة",
+  "archived": "مؤرشف"
 }

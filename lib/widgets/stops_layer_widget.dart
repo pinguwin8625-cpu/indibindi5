@@ -130,35 +130,82 @@ class _StopsLayerWidgetState extends State<StopsLayerWidget> {
           onBack: widget.isActionCompleted ? null : widget.onBack,
         ),
 
-        // Header with title only - hide when both stops are selected (time label shown above picker)
+        // Header with title(s)
         Builder(
           builder: (context) {
             final l10n = AppLocalizations.of(context)!;
-            // Don't show header when both stops are selected
-            if (localOriginIndex != null && localDestinationIndex != null) {
-              return SizedBox.shrink();
-            }
-            String headerText;
-            Color headerColor;
-            if (localOriginIndex != null) {
-              headerText = l10n.chooseDropOffPoint;
-              headerColor = Color(0xFFDD2C00); // Red for drop off
-            } else {
-              headerText = l10n.pickUpAndDropOff;
-              headerColor = Color(0xFF4CAF50); // Green for pick up
-            }
+            
             return Container(
               padding: EdgeInsets.fromLTRB(16, 8, 16, 16),
-              child: Center(
-                child: Text(
-                  headerText,
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w600,
-                    color: headerColor,
-                    letterSpacing: 0.5,
+              child: Row(
+                children: [
+                  // Left column - "from?" (flex: 3 to match stops column)
+                  Expanded(
+                    flex: 3,
+                    child: Row(
+                      children: [
+                        // "from?" on the left side
+                        Expanded(
+                          child: localOriginIndex == null
+                              ? Center(
+                                  child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    child: Text(
+                                      l10n.pickUpAndDropOff,
+                                      style: TextStyle(
+                                        fontSize: 28,
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFF4CAF50), // Green for from
+                                        letterSpacing: 0.5,
+                                      ),
+                                      maxLines: 1,
+                                    ),
+                                  ),
+                                )
+                              : SizedBox.shrink(),
+                        ),
+                        // "to?" in the middle
+                        Expanded(
+                          child: (localOriginIndex != null && localDestinationIndex == null)
+                              ? Center(
+                                  child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    child: Text(
+                                      l10n.chooseDropOffPoint,
+                                      style: TextStyle(
+                                        fontSize: 28,
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFFDD2C00), // Red for to
+                                        letterSpacing: 0.5,
+                                      ),
+                                      maxLines: 1,
+                                    ),
+                                  ),
+                                )
+                              : SizedBox.shrink(),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
+                  SizedBox(width: 24),
+                  // Right column - "time?" (flex: 2 to match time picker column)
+                  Expanded(
+                    flex: 2,
+                    child: (localOriginIndex != null && localDestinationIndex != null)
+                        ? Center(
+                            child: Text(
+                              l10n.setYourTime,
+                              style: TextStyle(
+                                fontSize: 28,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFFFF6D00), // Orange for time
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          )
+                        : SizedBox.shrink(),
+                  ),
+                ],
               ),
             );
           },
@@ -227,22 +274,7 @@ class _StopsLayerWidgetState extends State<StopsLayerWidget> {
                         Expanded(
                           flex: 2,
                           child: localOriginIndex != null && localDestinationIndex != null
-                              ? Column(
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: [
-                                    // "time?" label aligned to the right
-                                    Padding(
-                                      padding: EdgeInsets.only(bottom: 8),
-                                      child: Text(
-                                        AppLocalizations.of(context)!.setYourTime,
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w600,
-                                          color: Color(0xFFFF6D00),
-                                        ),
-                                      ),
-                                    ),
-                                    TimeSelectionWidget(
+                              ? TimeSelectionWidget(
                                       userRole: widget.userRole,
                                       selectedRoute: widget.selectedRoute,
                                       originIndex: localOriginIndex!,
@@ -301,8 +333,6 @@ class _StopsLayerWidgetState extends State<StopsLayerWidget> {
                                     );
                                     // Don't auto-navigate on initial time setup
                                   },
-                                ),
-                                  ],
                                 )
                               : Container(),
                         ),

@@ -89,7 +89,7 @@ class MockUsers {
       id: '5',
       name: 'Yuki',
       surname: 'Tanaka',
-      email: 'yuki.tanaka@example.com',
+      email: '',
       phoneNumber: '9012345678',
       countryCode: '+81',
       profilePhotoUrl: 'assets/images/profile_yuki.jpeg',

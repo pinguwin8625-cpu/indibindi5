@@ -204,5 +204,6 @@
   "startConversation": "Starten Sie ein Gespräch!",
   "pleaseLoginToViewMessages": "Bitte melden Sie sich an, um Nachrichten zu sehen",
   "bookARide": "Fahrt Buchen",
-  "cancelRide": "Fahrt Stornieren"
+  "cancelRide": "Fahrt Stornieren",
+  "archived": "Archiviert"
 }

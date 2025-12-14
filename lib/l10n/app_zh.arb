@@ -203,5 +203,6 @@
   "startConversation": "开始对话！",
   "pleaseLoginToViewMessages": "请登录以查看消息",
   "bookARide": "预订行程",
-  "cancelRide": "取消行程"
+  "cancelRide": "取消行程",
+  "archived": "已归档"
 }

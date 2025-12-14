@@ -204,5 +204,6 @@
   "startConversation": "Démarrez une conversation!",
   "pleaseLoginToViewMessages": "Veuillez vous connecter pour voir les messages",
   "bookARide": "Réserver un Trajet",
-  "cancelRide": "Annuler le Trajet"
+  "cancelRide": "Annuler le Trajet",
+  "archived": "Archivés"
 }

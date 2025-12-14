@@ -82,11 +82,26 @@ class Conversation {
     return now.isBefore(cutoffTime);
   }
 
+  // Check if conversation is archived (3-7 days after arrival - no messaging but still visible)
+  bool get isArchived {
+    final now = DateTime.now();
+    final archiveCutoff = arrivalTime.add(Duration(days: 3));
+    final hideCutoff = arrivalTime.add(Duration(days: 7));
+    return now.isAfter(archiveCutoff) && now.isBefore(hideCutoff);
+  }
+
   // Check if conversation should be visible in inbox (within 7 days after arrival)
   bool get isVisible {
     final now = DateTime.now();
     final cutoffTime = arrivalTime.add(Duration(days: 7));
     return now.isBefore(cutoffTime);
+  }
+
+  // Check if conversation is hidden (more than 7 days after arrival)
+  bool get isHidden {
+    final now = DateTime.now();
+    final cutoffTime = arrivalTime.add(Duration(days: 7));
+    return now.isAfter(cutoffTime);
   }
 
   // Get the other user's name based on current user

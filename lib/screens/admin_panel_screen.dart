@@ -214,9 +214,39 @@ class _UsersTab extends StatelessWidget {
                     (booking) => Card(
                       margin: EdgeInsets.only(bottom: 8),
                       child: ListTile(
-                        title: Text(
-                          booking.route.name,
-                          style: TextStyle(fontSize: 14),
+                        title: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                booking.route.name,
+                                style: TextStyle(fontSize: 14),
+                              ),
+                            ),
+                            if (booking.isHidden == true)
+                              Container(
+                                margin: EdgeInsets.only(left: 4),
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.purple[100],
+                                  borderRadius: BorderRadius.circular(4),
+                                  border: Border.all(
+                                    color: Colors.purple[300]!,
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Text(
+                                  'Hidden',
+                                  style: TextStyle(
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.purple[700],
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
                         subtitle: Text(
                           booking.departureTime.toString().substring(0, 16),
@@ -397,9 +427,33 @@ class _BookingsTab extends StatelessWidget {
             color: Colors.white,
           ),
         ),
-        title: Text(
-          booking.route.name,
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+        title: Row(
+          children: [
+            Expanded(
+              child: Text(
+                booking.route.name,
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+              ),
+            ),
+            if (booking.isHidden == true)
+              Container(
+                margin: EdgeInsets.only(left: 4),
+                padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.purple[100],
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(color: Colors.purple[300]!, width: 1),
+                ),
+                child: Text(
+                  'Hidden',
+                  style: TextStyle(
+                    fontSize: 9,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.purple[700],
+                  ),
+                ),
+              ),
+          ],
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -487,9 +541,33 @@ class _MessagesTab extends StatelessWidget {
                     color: Colors.white,
                   ),
                 ),
-                title: Text(
-                  conversation.routeName,
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                title: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        conversation.routeName,
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                      ),
+                    ),
+                    if (conversation.isHidden)
+                      Container(
+                        margin: EdgeInsets.only(left: 4),
+                        padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.purple[100],
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: Colors.purple[300]!, width: 1),
+                        ),
+                        child: Text(
+                          'Hidden',
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.purple[700],
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
                 subtitle: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
