@@ -102,7 +102,7 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
           SizedBox(
             height: widget.hideUnusedStops
                 ? intermediateStopsCount *
-                      24.0 // Each intermediate stop is 24px in compact view
+                      30.0 // Each intermediate stop is 30px in compact view
                 : (widget.destinationIndex! - widget.originIndex - 1) * 42.0,
           ),
 
@@ -131,7 +131,7 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
     bool compact = false,
     double? fixedWidth,
   }) {
-    final double boxHeight = compact ? 24.0 : 42.0;
+    final double boxHeight = compact ? 30.0 : 42.0;
     final double fontSize = 12.0; // Same size for both compact and normal
     final double iconSize = 20.0; // Same size for both compact and normal
 

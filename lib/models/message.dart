@@ -8,6 +8,11 @@ class Message {
   final String content;
   final DateTime timestamp;
   final bool isRead;
+  final bool isSystemMessage; // System notifications (ride updates, cancellations, etc.)
+
+  // System sender ID for system messages
+  static const String systemSenderId = 'system';
+  static const String systemSenderName = 'System';
 
   Message({
     required this.id,
@@ -19,6 +24,7 @@ class Message {
     required this.content,
     required this.timestamp,
     this.isRead = false,
+    this.isSystemMessage = false,
   });
 
   Message copyWith({
@@ -31,6 +37,7 @@ class Message {
     String? content,
     DateTime? timestamp,
     bool? isRead,
+    bool? isSystemMessage,
   }) {
     return Message(
       id: id ?? this.id,
@@ -42,6 +49,7 @@ class Message {
       content: content ?? this.content,
       timestamp: timestamp ?? this.timestamp,
       isRead: isRead ?? this.isRead,
+      isSystemMessage: isSystemMessage ?? this.isSystemMessage,
     );
   }
 }
@@ -59,6 +67,8 @@ class Conversation {
   final DateTime departureTime;
   final DateTime arrivalTime;
   final List<Message> messages;
+  final bool isManuallyArchived; // User manually archived this conversation
+  final bool isDeleted; // User deleted this conversation
 
   Conversation({
     required this.id,
@@ -73,6 +83,8 @@ class Conversation {
     required this.departureTime,
     required this.arrivalTime,
     this.messages = const [],
+    this.isManuallyArchived = false,
+    this.isDeleted = false,
   });
 
   // Check if messaging is still allowed (within 3 days after arrival)
@@ -115,8 +127,20 @@ class Conversation {
   }
 
   // Get unread message count for a specific user
+  // Only counts messages visible to the user (same visibility logic as getLastMessageForUser)
   int getUnreadCount(String userId) {
-    return messages.where((m) => m.receiverId == userId && !m.isRead).length;
+    return messages.where((m) {
+      // Must be unread
+      if (m.isRead) return false;
+      // Apply same visibility rules as getLastMessageForUser:
+      // - Regular messages: visible to all, but only count if addressed to this user
+      // - System messages: only visible/counted if receiverId matches
+      if (m.isSystemMessage) {
+        return m.receiverId == userId;
+      }
+      // For regular messages, count if addressed to this user
+      return m.receiverId == userId;
+    }).length;
   }
 
   // Get last message
@@ -124,6 +148,25 @@ class Conversation {
     try {
       if (messages.isEmpty) return null;
       return messages.reduce(
+        (a, b) => a.timestamp.isAfter(b.timestamp) ? a : b,
+      );
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Get last message visible to a specific user
+  // For system messages, only show if receiverId matches the user
+  // For regular messages, show all
+  Message? getLastMessageForUser(String userId) {
+    try {
+      if (messages.isEmpty) return null;
+      final visibleMessages = messages.where((m) {
+        if (!m.isSystemMessage) return true;
+        return m.receiverId == userId;
+      }).toList();
+      if (visibleMessages.isEmpty) return null;
+      return visibleMessages.reduce(
         (a, b) => a.timestamp.isAfter(b.timestamp) ? a : b,
       );
     } catch (e) {
@@ -144,6 +187,8 @@ class Conversation {
     DateTime? departureTime,
     DateTime? arrivalTime,
     List<Message>? messages,
+    bool? isManuallyArchived,
+    bool? isDeleted,
   }) {
     return Conversation(
       id: id ?? this.id,
@@ -158,6 +203,8 @@ class Conversation {
       departureTime: departureTime ?? this.departureTime,
       arrivalTime: arrivalTime ?? this.arrivalTime,
       messages: messages ?? this.messages,
+      isManuallyArchived: isManuallyArchived ?? this.isManuallyArchived,
+      isDeleted: isDeleted ?? this.isDeleted,
     );
   }
 }

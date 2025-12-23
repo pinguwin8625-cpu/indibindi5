@@ -4,7 +4,6 @@ import '../services/messaging_service.dart';
 import '../services/auth_service.dart';
 import '../services/mock_users.dart';
 import '../models/message.dart';
-import '../widgets/language_selector.dart';
 import '../l10n/app_localizations.dart';
 import '../utils/dialog_helper.dart';
 import 'chat_screen.dart';
@@ -101,14 +100,38 @@ class _InboxScreenState extends State<InboxScreen> with WidgetsBindingObserver {
       print('Error in _sendSupportEmail: $e');
       print('Stack trace: $stackTrace');
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error opening support chat: ${e.toString()}'),
+            content: Text(l10n.snackbarErrorOpeningChat(e.toString())),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
           ),
         );
       }
     }
+  }
+
+  OverlayEntry? _overlayEntry;
+
+  void _showCustomSnackbar(String message, {String? undoLabel, VoidCallback? onUndo}) {
+    // Remove any existing overlay
+    _overlayEntry?.remove();
+    _overlayEntry = null;
+
+    _overlayEntry = OverlayEntry(
+      builder: (context) => _CustomSnackbar(
+        message: message,
+        undoLabel: undoLabel,
+        onUndo: onUndo,
+        onDismiss: () {
+          _overlayEntry?.remove();
+          _overlayEntry = null;
+        },
+      ),
+    );
+
+    Overlay.of(context).insert(_overlayEntry!);
   }
 
   @override
@@ -172,9 +195,30 @@ class _InboxScreenState extends State<InboxScreen> with WidgetsBindingObserver {
           backgroundColor: Theme.of(context).primaryColor,
           automaticallyImplyLeading: false,
           actions: [
+            // Archive toggle button (icon only)
             Padding(
               padding: EdgeInsets.only(right: 12),
-              child: LanguageSelector(isDarkBackground: true),
+              child: GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _showArchived = !_showArchived;
+                  });
+                },
+                child: Container(
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: _showArchived
+                        ? Colors.white.withOpacity(0.3)
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Icon(
+                    _showArchived ? Icons.archive : Icons.archive_outlined,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                ),
+              ),
             ),
           ],
         ),
@@ -194,32 +238,35 @@ class _InboxScreenState extends State<InboxScreen> with WidgetsBindingObserver {
             final allUserConversations = _messagingService.getConversationsForUser(
               currentUser.id,
             );
-            
-            // Split into active (messaging allowed) and archived (3-7 days after arrival)
+
+            // Split into active (messaging allowed) and archived (3-7 days after arrival or manually archived)
+            // Exclude deleted conversations from both lists
             final activeConversations = allUserConversations
-                .where((c) => c.isVisible && !c.isArchived)
+                .where((c) => c.isVisible && !c.isArchived && !c.isManuallyArchived && !c.isDeleted)
                 .toList();
             final archivedConversations = allUserConversations
-                .where((c) => c.isArchived)
+                .where((c) => (c.isArchived || c.isManuallyArchived) && !c.isDeleted)
                 .toList();
 
             print('📬 InboxScreen: Found ${activeConversations.length} active, ${archivedConversations.length} archived conversations');
 
-            if (activeConversations.isEmpty && archivedConversations.isEmpty) {
+            // Show either active or archived based on toggle
+            final conversationsToShow = _showArchived ? archivedConversations : activeConversations;
+
+            if (conversationsToShow.isEmpty) {
               return Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.mail_outline, size: 80, color: Colors.grey[400]),
+                    Icon(
+                      _showArchived ? Icons.archive_outlined : Icons.mail_outline,
+                      size: 80,
+                      color: Colors.grey[400],
+                    ),
                     SizedBox(height: 16),
                     Text(
-                      l10n.noMessagesYet,
+                      _showArchived ? l10n.archived : l10n.noMessagesYet,
                       style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      l10n.messagesWillAppear,
-                      style: TextStyle(fontSize: 14, color: Colors.grey[500]),
                     ),
                   ],
                 ),
@@ -228,69 +275,9 @@ class _InboxScreenState extends State<InboxScreen> with WidgetsBindingObserver {
 
             return ListView(
               children: [
-                // Active conversations
-                ...activeConversations.asMap().entries.map((entry) {
-                  return _buildConversationTile(entry.value, currentUser.id, entry.key, isArchived: false);
+                ...conversationsToShow.asMap().entries.map((entry) {
+                  return _buildConversationTile(entry.value, currentUser.id, entry.key, isArchived: _showArchived);
                 }),
-                
-                // Archived section header (if there are archived conversations)
-                if (archivedConversations.isNotEmpty) ...[
-                  InkWell(
-                    onTap: () {
-                      setState(() {
-                        _showArchived = !_showArchived;
-                      });
-                    },
-                    child: Container(
-                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      color: Colors.grey[200],
-                      child: Row(
-                        children: [
-                          Icon(
-                            _showArchived ? Icons.expand_less : Icons.expand_more,
-                            color: Colors.grey[600],
-                          ),
-                          SizedBox(width: 8),
-                          Icon(
-                            Icons.archive_outlined,
-                            color: Colors.grey[600],
-                            size: 20,
-                          ),
-                          SizedBox(width: 8),
-                          Text(
-                            l10n.archived,
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.grey[700],
-                              fontSize: 14,
-                            ),
-                          ),
-                          SizedBox(width: 8),
-                          Container(
-                            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: Colors.grey[400],
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Text(
-                              '${archivedConversations.length}',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  // Archived conversations (if expanded)
-                  if (_showArchived)
-                    ...archivedConversations.asMap().entries.map((entry) {
-                      return _buildConversationTile(entry.value, currentUser.id, entry.key, isArchived: true);
-                    }),
-                ],
               ],
             );
           },
@@ -315,13 +302,27 @@ class _InboxScreenState extends State<InboxScreen> with WidgetsBindingObserver {
     int index, {
     bool isArchived = false,
   }) {
+    final l10n = AppLocalizations.of(context)!;
+    final isSupport = conversation.id.startsWith('support_');
+    final currentUser = AuthService.currentUser;
+    final isAdmin = currentUser?.isAdmin ?? false;
+
     // Simple logic: show the OTHER person (not yourself)
     // If you are the driver, show the rider. If you are the rider, show the driver.
     final bool amITheDriver = conversation.driverId == currentUserId;
-    
+
     final String otherUserId = amITheDriver ? conversation.riderId : conversation.driverId;
-    final String otherUserName = amITheDriver ? conversation.riderName : conversation.driverName;
     final unreadCount = conversation.getUnreadCount(currentUserId);
+
+    final otherUser = MockUsers.getUserById(otherUserId);
+
+    // Use live user data for name, fall back to conversation stored name
+    // Format: "FirstName S." (name + surname initial)
+    final String otherUserName = (isSupport && !isAdmin)
+        ? l10n.support
+        : (otherUser != null
+            ? '${otherUser.name} ${otherUser.surname.isNotEmpty ? '${otherUser.surname[0]}.' : ''}'
+            : (amITheDriver ? conversation.riderName : conversation.driverName));
 
     print('📧 Inbox tile for conversation ${conversation.id}:');
     print('   currentUserId: $currentUserId');
@@ -330,24 +331,49 @@ class _InboxScreenState extends State<InboxScreen> with WidgetsBindingObserver {
     print('   amITheDriver: $amITheDriver');
     print('   otherUserId: $otherUserId');
     print('   otherUserName: $otherUserName');
-    
-    final otherUser = MockUsers.getUserById(otherUserId);
-    
+
     if (otherUser == null) {
       print('❌ Inbox: User not found for ID: "$otherUserId"');
       print('   Available user IDs: ${MockUsers.users.map((u) => u.id).join(", ")}');
     } else {
       print('✅ Found user: ${otherUser.name} ${otherUser.surname}');
     }
-    
+
     final profilePhotoUrl = otherUser?.profilePhotoUrl;
 
     // Different colors for archived vs active, and unread vs read
-    final cardColor = isArchived 
-        ? Colors.grey[100] 
+    final cardColor = isArchived
+        ? Colors.grey[100]
         : (unreadCount > 0 ? Colors.blue[100] : Colors.blue[50]);
 
-    return InkWell(
+    return _SwipeableConversationTile(
+      key: Key('conversation_${conversation.id}'),
+      isArchived: isArchived || conversation.isManuallyArchived,
+      onArchive: () {
+        final message = (isArchived || conversation.isManuallyArchived)
+            ? l10n.snackbarConversationRestored
+            : l10n.conversationArchived;
+        final showUndo = !(isArchived || conversation.isManuallyArchived);
+        final conversationIdToRestore = conversation.id;
+        final undoLabel = l10n.undo;
+
+        // Perform the archive/unarchive action
+        if (isArchived || conversation.isManuallyArchived) {
+          _messagingService.unarchiveConversation(conversation.id);
+        } else {
+          _messagingService.archiveConversation(conversation.id);
+        }
+
+        // Show custom overlay snackbar - independent of scaffold rebuilds
+        _showCustomSnackbar(
+          message,
+          undoLabel: showUndo ? undoLabel : null,
+          onUndo: showUndo ? () {
+            _messagingService.unarchiveConversation(conversationIdToRestore);
+          } : null,
+        );
+      },
+      child: InkWell(
       onTap: () {
         Navigator.push(
           context,
@@ -372,6 +398,9 @@ class _InboxScreenState extends State<InboxScreen> with WidgetsBindingObserver {
               ),
               child: Column(
                 children: [
+                  // Top: Date and times (or support type for support conversations)
+                  _buildConversationTopRow(conversation),
+                  SizedBox(height: 6),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -382,7 +411,15 @@ class _InboxScreenState extends State<InboxScreen> with WidgetsBindingObserver {
                           mainAxisSize: MainAxisSize.min,
                           mainAxisAlignment: MainAxisAlignment.start,
                           children: [
-                            _buildAvatar(profilePhotoUrl),
+                            // Show support icon for support conversations (only for non-admin users)
+                            if (isSupport && !isAdmin)
+                              CircleAvatar(
+                                radius: 20,
+                                backgroundColor: Colors.red,
+                                child: Icon(Icons.support_agent, size: 22, color: Colors.white),
+                              )
+                            else
+                              _buildAvatar(profilePhotoUrl),
                             SizedBox(height: 4),
                             SizedBox(
                               width: 70,
@@ -397,7 +434,8 @@ class _InboxScreenState extends State<InboxScreen> with WidgetsBindingObserver {
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            if (otherUser?.rating != null) ...[
+                            // Don't show rating for support conversations (except for admins)
+                            if ((!isSupport || isAdmin) && otherUser?.rating != null) ...[
                               SizedBox(height: 3),
                               Row(
                                 mainAxisSize: MainAxisSize.min,
@@ -425,99 +463,9 @@ class _InboxScreenState extends State<InboxScreen> with WidgetsBindingObserver {
                       // Message preview - takes all remaining space with high flex
                       Expanded(
                         flex: 100,
-                        child: conversation.lastMessage != null
+                        child: conversation.getLastMessageForUser(currentUserId) != null
                             ? _buildMessagePreview(conversation, currentUserId)
                             : SizedBox.shrink(),
-                      ),
-                    ],
-                  ),
-                  // Bottom: Date and times
-                  SizedBox(height: 6),
-                  Row(
-                    children: [
-                      // Date
-                      Container(
-                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          _formatDate(conversation.departureTime),
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: 8),
-                      // Departure: icon + time + stop name
-                      Expanded(
-                        child: Row(
-                          children: [
-                            Icon(Icons.location_on, color: Colors.green, size: 14),
-                            SizedBox(width: 2),
-                            Container(
-                              padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: Colors.green.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                formatTimeHHmm(conversation.departureTime),
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.green[700],
-                                ),
-                              ),
-                            ),
-                            SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                conversation.originName,
-                                style: TextStyle(fontSize: 11, color: Colors.black87),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(width: 8),
-                      // Arrival: icon + time + stop name
-                      Expanded(
-                        child: Row(
-                          children: [
-                            Icon(Icons.flag, color: Colors.red, size: 14),
-                            SizedBox(width: 2),
-                            Container(
-                              padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: Colors.red.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                formatTimeHHmm(conversation.arrivalTime),
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.red[700],
-                                ),
-                              ),
-                            ),
-                            SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                conversation.destinationName,
-                                style: TextStyle(fontSize: 11, color: Colors.black87),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
                       ),
                     ],
                   ),
@@ -527,12 +475,164 @@ class _InboxScreenState extends State<InboxScreen> with WidgetsBindingObserver {
           ],
         ),
       ),
+      ),
+    );
+  }
+
+  Widget _buildConversationTopRow(Conversation conversation) {
+    final l10n = AppLocalizations.of(context)!;
+    final isSupport = conversation.id.startsWith('support_');
+
+    if (isSupport) {
+      // For support conversations, show the support type
+      final routeName = conversation.routeName;
+      String supportType;
+      Color typeColor;
+      IconData typeIcon;
+
+      if (routeName.startsWith('Suggestion')) {
+        supportType = l10n.suggestion;
+        typeColor = Colors.green;
+        typeIcon = Icons.lightbulb_outline;
+      } else if (routeName.startsWith('Complaint')) {
+        supportType = l10n.complaint;
+        typeColor = Colors.red;
+        typeIcon = Icons.report_problem_outlined;
+      } else if (routeName.startsWith('New Route Suggestion')) {
+        supportType = l10n.newRouteSuggestion;
+        typeColor = Colors.blue;
+        typeIcon = Icons.add_road;
+      } else if (routeName.startsWith('New Stop Suggestion')) {
+        supportType = l10n.newStopSuggestion;
+        typeColor = Colors.teal;
+        typeIcon = Icons.add_location;
+      } else {
+        supportType = l10n.support;
+        typeColor = Colors.amber;
+        typeIcon = Icons.support_agent;
+      }
+
+      return Container(
+        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: typeColor.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(color: typeColor.withOpacity(0.3), width: 0.5),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(typeIcon, color: typeColor, size: 14),
+            SizedBox(width: 6),
+            Text(
+              supportType,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: typeColor,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // For regular conversations, show date and times
+    return Row(
+      children: [
+        // Date
+        Container(
+          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+          decoration: BoxDecoration(
+            color: Colors.grey.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Text(
+            _formatDate(conversation.departureTime),
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+        ),
+        SizedBox(width: 8),
+        // Departure: icon + time + stop name
+        Expanded(
+          child: Row(
+            children: [
+              Icon(Icons.location_on, color: Colors.green, size: 14),
+              SizedBox(width: 2),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.green.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  formatTimeHHmm(conversation.departureTime),
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green[700],
+                  ),
+                ),
+              ),
+              SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  conversation.originName,
+                  style: TextStyle(fontSize: 11, color: Colors.black87),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ),
+        SizedBox(width: 8),
+        // Arrival: icon + time + stop name
+        Expanded(
+          child: Row(
+            children: [
+              Icon(Icons.flag, color: Colors.red, size: 14),
+              SizedBox(width: 2),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  formatTimeHHmm(conversation.arrivalTime),
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.red[700],
+                  ),
+                ),
+              ),
+              SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  conversation.destinationName,
+                  style: TextStyle(fontSize: 11, color: Colors.black87),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
   Widget _buildMessagePreview(Conversation conversation, String currentUserId) {
-    final lastMessage = conversation.lastMessage!;
-    final isFromCurrentUser = lastMessage.senderId == currentUserId;
+    final lastMessage = conversation.getLastMessageForUser(currentUserId)!;
+    // For system messages, they're never "from" the current user
+    // For regular messages, check senderId
+    final isFromCurrentUser = !lastMessage.isSystemMessage && lastMessage.senderId == currentUserId;
     
     // Use consistent light color for both, just change tail direction
     final bubbleColor = Colors.white;
@@ -771,9 +871,9 @@ class _BubbleTailPainterRight extends CustomPainter {
 class _SpeechBubbleTailPainter extends CustomPainter {
   final Color fillColor;
   final Color borderColor;
-  
+
   _SpeechBubbleTailPainter({required this.fillColor, required this.borderColor});
-  
+
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
@@ -793,7 +893,7 @@ class _SpeechBubbleTailPainter extends CustomPainter {
     path.close();
 
     canvas.drawPath(path, paint);
-    
+
     // Draw border on the outer edges
     final borderPath = Path();
     borderPath.moveTo(size.width, 0);
@@ -803,4 +903,224 @@ class _SpeechBubbleTailPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+// Swipeable conversation tile that reveals archive button
+class _SwipeableConversationTile extends StatefulWidget {
+  final Widget child;
+  final bool isArchived;
+  final VoidCallback onArchive;
+
+  const _SwipeableConversationTile({
+    super.key,
+    required this.child,
+    required this.isArchived,
+    required this.onArchive,
+  });
+
+  @override
+  State<_SwipeableConversationTile> createState() => _SwipeableConversationTileState();
+}
+
+class _SwipeableConversationTileState extends State<_SwipeableConversationTile> {
+  double _dragExtent = 0;
+  static const double _archiveButtonWidth = 80.0;
+
+  void _handleDragUpdate(DragUpdateDetails details) {
+    setState(() {
+      _dragExtent += details.delta.dx;
+      // Only allow dragging to the right (positive direction)
+      _dragExtent = _dragExtent.clamp(0.0, _archiveButtonWidth);
+    });
+  }
+
+  void _handleDragEnd(DragEndDetails details) {
+    // If dragged more than half the button width, snap open, otherwise snap closed
+    if (_dragExtent > _archiveButtonWidth / 2) {
+      setState(() {
+        _dragExtent = _archiveButtonWidth;
+      });
+    } else {
+      setState(() {
+        _dragExtent = 0;
+      });
+    }
+  }
+
+  void _closeSwipe() {
+    setState(() {
+      _dragExtent = 0;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
+    return ClipRect(
+      child: Stack(
+        children: [
+          // Archive button - positioned behind, only visible when content slides
+          Positioned(
+            left: 0,
+            top: 0,
+            bottom: 0,
+            width: _dragExtent, // Width matches how far content has slid
+            child: GestureDetector(
+              onTap: _dragExtent > 0 ? () {
+                widget.onArchive();
+                _closeSwipe();
+              } : null,
+              child: Container(
+                margin: EdgeInsets.symmetric(vertical: 4, horizontal: 4),
+                decoration: BoxDecoration(
+                  color: widget.isArchived ? Colors.green : Colors.orange,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: _dragExtent >= _archiveButtonWidth * 0.5
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              widget.isArchived ? Icons.unarchive : Icons.archive,
+                              color: Colors.white,
+                              size: 24,
+                            ),
+                            SizedBox(height: 2),
+                            Text(
+                              widget.isArchived ? l10n.unarchive : l10n.archive,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : null,
+              ),
+            ),
+          ),
+          // Main content that slides
+          GestureDetector(
+            onHorizontalDragUpdate: _handleDragUpdate,
+            onHorizontalDragEnd: _handleDragEnd,
+            child: AnimatedContainer(
+              duration: Duration(milliseconds: 100),
+              transform: Matrix4.translationValues(_dragExtent, 0, 0),
+              child: widget.child,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// Custom snackbar using Overlay - completely independent of Scaffold rebuilds
+class _CustomSnackbar extends StatefulWidget {
+  final String message;
+  final String? undoLabel;
+  final VoidCallback? onUndo;
+  final VoidCallback onDismiss;
+
+  const _CustomSnackbar({
+    required this.message,
+    this.undoLabel,
+    this.onUndo,
+    required this.onDismiss,
+  });
+
+  @override
+  State<_CustomSnackbar> createState() => _CustomSnackbarState();
+}
+
+class _CustomSnackbarState extends State<_CustomSnackbar> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+    );
+    _animation = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
+    _controller.forward();
+
+    // Auto-dismiss after 3 seconds
+    Future.delayed(const Duration(seconds: 3), () {
+      if (mounted) {
+        _dismiss();
+      }
+    });
+  }
+
+  void _dismiss() {
+    _controller.reverse().then((_) {
+      widget.onDismiss();
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      bottom: MediaQuery.of(context).padding.bottom + 70, // Above bottom nav
+      left: 16,
+      right: 16,
+      child: FadeTransition(
+        opacity: _animation,
+        child: SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(0, 1),
+            end: Offset.zero,
+          ).animate(_animation),
+          child: Material(
+            elevation: 6,
+            borderRadius: BorderRadius.circular(8),
+            color: Colors.grey[850],
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      widget.message,
+                      style: const TextStyle(color: Colors.white, fontSize: 14),
+                    ),
+                  ),
+                  if (widget.undoLabel != null && widget.onUndo != null) ...[
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: () {
+                        widget.onUndo!();
+                        _dismiss();
+                      },
+                      child: Text(
+                        widget.undoLabel!,
+                        style: TextStyle(
+                          color: Colors.amber[300],
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }

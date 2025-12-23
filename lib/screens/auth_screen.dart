@@ -1,11 +1,6 @@
 import 'package:flutter/material.dart';
-import 'dart:io';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import '../services/auth_service.dart';
-import '../services/booking_storage.dart';
-import '../services/messaging_service.dart';
 import '../widgets/scroll_indicator.dart';
-import '../widgets/language_selector.dart';
 import '../utils/phone_formatter.dart';
 import '../utils/dialog_helper.dart';
 import 'main_screen.dart';
@@ -27,35 +22,14 @@ class _AuthScreenState extends State<AuthScreen> {
   bool _isLoading = false;
   String? _errorMessage;
   bool _isSignUp = false; // Toggle between sign in and sign up
-  String _selectedCountryIso = 'US'; // Default to US
+  String _selectedCountryIso = 'TR'; // Default to Turkey for admin login
 
   @override
   void initState() {
     super.initState();
-    _detectCountryFromLocale();
-    // Auto-fill password for testing (only in sign in mode)
+    // Auto-fill admin credentials for sign in
+    _phoneController.text = '555 000 00 00';
     _passwordController.text = AuthService.defaultPassword;
-  }
-
-  void _detectCountryFromLocale() {
-    // Get the device's locale
-    final locale = kIsWeb
-        ? 'en_US'
-        : Platform.localeName; // e.g., 'en_US', 'en_GB', 'es_ES'
-
-    // Extract country code (last 2 characters after underscore)
-    String countryCode = 'US'; // Default to US
-    if (locale.contains('_')) {
-      countryCode = locale.split('_').last.toUpperCase();
-    }
-
-    // Check if the country code exists in our list
-    final countryExists = _countryCodes.any((c) => c['iso'] == countryCode);
-    if (countryExists) {
-      setState(() {
-        _selectedCountryIso = countryCode;
-      });
-    }
   }
 
   final List<Map<String, String>> _countryCodes = [
@@ -402,6 +376,7 @@ class _AuthScreenState extends State<AuthScreen> {
   String _getCountryCode() {
     return _countryCodes.firstWhere(
       (c) => c['iso'] == _selectedCountryIso,
+      orElse: () => {'code': '+90', 'country': 'Turkey', 'flag': '🇹🇷', 'iso': 'TR'},
     )['code']!;
   }
 
@@ -565,90 +540,13 @@ class _AuthScreenState extends State<AuthScreen> {
     }
   }
 
-  void _quickLogin(String userId, String name) async {
-    print('🔑 Quick login attempt: userId=$userId, name=$name');
-    
-    if (_isLoading) {
-      print('🔑 Already loading, ignoring duplicate tap');
-      return;
-    }
-    
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-
-    try {
-      final success = AuthService.loginWithId(userId);
-      print('🔑 Login result: success=$success');
-
-      if (success) {
-        // Check if logged in user is admin
-        final currentUser = AuthService.currentUser;
-        print('🔑 Current user after login: ${currentUser?.fullName}, isAdmin: ${currentUser?.isAdmin}');
-        
-        if (!mounted) {
-          print('🔑 Widget not mounted, canceling navigation');
-          return;
-        }
-        
-        if (currentUser?.isAdmin == true) {
-          // Navigate to account tab (index 3) for admin
-          print('🔑 Navigating to admin screen');
-          await Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => MainScreen(initialIndex: 3))
-          );
-        } else {
-          // Navigate to main screen for regular users
-          print('🔑 Navigating to main screen');
-          await Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => MainScreen())
-          );
-        }
-      } else {
-        print('🔑 Login failed, showing error');
-        if (mounted) {
-          setState(() {
-            _errorMessage = 'Login failed - user not found';
-            _isLoading = false;
-          });
-        }
-      }
-    } catch (e, stackTrace) {
-      print('🔑 Error during quick login: $e');
-      print('🔑 Stack trace: $stackTrace');
-      if (mounted) {
-        setState(() {
-          _errorMessage = 'Login error: ${e.toString()}';
-          _isLoading = false;
-        });
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final testUsers = AuthService.getTestUsers();
-    print('📋 Test users: ${testUsers.length} users');
-    for (var user in testUsers) {
-      print('   - ${user['id']}: ${user['name']} (${user['email']})');
-    }
-    // Show only admin user in quick login
-    final adminUser = testUsers.where((user) => user['id'] == 'admin').toList();
-    final regularUsers = testUsers.where((user) => user['id'] != 'admin').toList();
-    print('📋 Admin users: ${adminUser.length}, Regular users: ${regularUsers.length}');
-
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        actions: [
-          Padding(
-            padding: EdgeInsets.only(right: 12),
-            child: LanguageSelector(isDarkBackground: false),
-          ),
-        ],
       ),
       body: SafeArea(
         maintainBottomViewPadding: true,
@@ -1066,212 +964,6 @@ class _AuthScreenState extends State<AuthScreen> {
                     ),
                   ),
                 ),
-
-                // Show quick login only in sign in mode
-                if (!_isSignUp) ...[
-                  SizedBox(height: 32),
-
-                  // Clear All Bookings button (for testing)
-                  ElevatedButton.icon(
-                    onPressed: () async {
-                      final confirmed = await showDialog<bool>(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return AlertDialog(
-                            title: Text('Clear All Bookings?'),
-                            content: Text(
-                              'This will permanently delete ALL bookings from ALL users. This action cannot be undone.',
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () =>
-                                    Navigator.of(context).pop(false),
-                                child: Text('Cancel'),
-                              ),
-                              ElevatedButton(
-                                onPressed: () =>
-                                    Navigator.of(context).pop(true),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.red,
-                                ),
-                                child: Text(
-                                  'Clear All',
-                                  style: TextStyle(color: Colors.white),
-                                ),
-                              ),
-                            ],
-                          );
-                        },
-                      );
-
-                      if (confirmed == true) {
-                        BookingStorage().clearAllBookings();
-                        MessagingService.clearAllConversations();
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('All bookings and conversations have been cleared'),
-                            ),
-                          );
-                        }
-                      }
-                    },
-                    icon: Icon(Icons.delete_sweep),
-                    label: Text('Clear All Bookings'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.orange[700],
-                      foregroundColor: Colors.white,
-                      minimumSize: Size(double.infinity, 48),
-                    ),
-                  ),
-
-                  SizedBox(height: 24),
-
-                  // Divider
-                  Row(
-                    children: [
-                      Expanded(child: Divider()),
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16),
-                        child: Text(
-                          'Quick Login (Testing)',
-                          style: TextStyle(color: Colors.grey[600]),
-                        ),
-                      ),
-                      Expanded(child: Divider()),
-                    ],
-                  ),
-
-                  SizedBox(height: 24),
-
-                  // Test users list - admin first, then other test users
-                  ...adminUser.map((user) {
-                    return Padding(
-                      padding: EdgeInsets.only(bottom: 12),
-                      child: GestureDetector(
-                        onTap: _isLoading
-                            ? null
-                            : () => _quickLogin(user['id']!, user['name']!),
-                        child: Container(
-                          padding: EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[50],
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.grey[300]!),
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 48,
-                                height: 48,
-                                decoration: BoxDecoration(
-                                  color: Colors.blue.withOpacity(0.1),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(Icons.person, color: Colors.blue),
-                              ),
-                              SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      user['name']!,
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                    SizedBox(height: 4),
-                                    Text(
-                                      user['email']!,
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: Colors.grey[600],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  }),
-
-                  // Regular test users
-                  ...regularUsers.map((user) {
-                    return Padding(
-                      padding: EdgeInsets.only(bottom: 12),
-                      child: GestureDetector(
-                        onTap: _isLoading
-                            ? null
-                            : () => _quickLogin(user['id']!, user['name']!),
-                        child: Container(
-                          padding: EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[50],
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.grey[300]!),
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 48,
-                                height: 48,
-                                decoration: BoxDecoration(
-                                  color: Colors.blue.withOpacity(0.1),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(Icons.person, color: Colors.blue),
-                              ),
-                              SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      user['name']!,
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                    SizedBox(height: 4),
-                                    Text(
-                                      user['email']!,
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: Colors.grey[600],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  }),
-
-                  SizedBox(height: 24),
-
-                  // Password hint
-                  Container(
-                    padding: EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.blue[50],
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      '💡 All test accounts use password: ${AuthService.defaultPassword}',
-                      style: TextStyle(fontSize: 12, color: Colors.blue[700]),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ],
               ],
             ),
           ),

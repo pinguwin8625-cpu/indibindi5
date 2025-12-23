@@ -15,7 +15,6 @@ import '../services/mock_users.dart';
 import '../utils/dialog_helper.dart';
 import '../models/user.dart';
 import '../widgets/scroll_indicator.dart';
-import '../widgets/language_selector.dart';
 
 class AccountScreen extends StatefulWidget {
   const AccountScreen({super.key});
@@ -90,12 +89,6 @@ class _AccountScreenState extends State<AccountScreen> {
         ),
         backgroundColor: Theme.of(context).primaryColor,
         automaticallyImplyLeading: false,
-        actions: [
-          Padding(
-            padding: EdgeInsets.only(right: 12),
-            child: LanguageSelector(isDarkBackground: true),
-          ),
-        ],
       ),
       body: ScrollIndicator(
         scrollController: _scrollController,
@@ -217,10 +210,9 @@ class _AccountScreenState extends State<AccountScreen> {
                                     setState(() {});
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
-                                        content: Text(
-                                          'Switched to ${testUser.fullName}',
-                                        ),
-                                        duration: Duration(seconds: 1),
+                                        content: Text(l10n.snackbarSwitchedToUser(testUser.fullName)),
+                                        duration: Duration(seconds: 2),
+                                        behavior: SnackBarBehavior.floating,
                                       ),
                                     );
                                   },
@@ -381,7 +373,9 @@ class _AccountScreenState extends State<AccountScreen> {
                       if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text('All bookings have been cleared'),
+                            content: Text(l10n.snackbarBookingsCleared),
+                            duration: Duration(seconds: 3),
+                            behavior: SnackBarBehavior.floating,
                           ),
                         );
                       }
@@ -410,7 +404,9 @@ class _AccountScreenState extends State<AccountScreen> {
                       if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text('All conversations have been cleared'),
+                            content: Text(l10n.snackbarConversationsCleared),
+                            duration: Duration(seconds: 3),
+                            behavior: SnackBarBehavior.floating,
                           ),
                         );
                       }
@@ -439,7 +435,9 @@ class _AccountScreenState extends State<AccountScreen> {
                       if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text('All ratings have been cleared'),
+                            content: Text(l10n.snackbarRatingsCleared),
+                            duration: Duration(seconds: 3),
+                            behavior: SnackBarBehavior.floating,
                           ),
                         );
                       }

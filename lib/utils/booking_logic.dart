@@ -8,9 +8,10 @@ class BookingLogic {
     int? destinationIndex,
   ) {
     List<int> greyedStops = [];
-    if (selectedRoute != null &&
-        originIndex != null &&
-        destinationIndex != null) {
+    if (selectedRoute == null) return greyedStops;
+
+    if (originIndex != null && destinationIndex != null) {
+      // Both selected: grey out stops outside the range
       int start = originIndex < destinationIndex
           ? originIndex
           : destinationIndex;
@@ -19,6 +20,12 @@ class BookingLogic {
         if (i < start || i > end) {
           greyedStops.add(i);
         }
+      }
+    } else if (originIndex != null && destinationIndex == null) {
+      // Origin selected, waiting for destination: grey out stops at or before origin
+      // (user cannot select these as destination)
+      for (int i = 0; i <= originIndex; i++) {
+        greyedStops.add(i);
       }
     }
     return greyedStops;

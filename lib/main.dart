@@ -38,9 +38,6 @@ class IndibindiApp extends StatelessWidget {
     );
 
     return MaterialApp(
-      key: ValueKey(
-        localeProvider.locale.languageCode,
-      ), // Force rebuild on locale change
       title: 'indibindi',
       theme: ThemeData(
         brightness: Brightness.light,
@@ -59,6 +56,9 @@ class IndibindiApp extends StatelessWidget {
           enabledBorder: UnderlineInputBorder(
             borderSide: BorderSide(color: Colors.grey, width: 1),
           ),
+        ),
+        snackBarTheme: SnackBarThemeData(
+          behavior: SnackBarBehavior.floating,
         ),
       ),
       darkTheme: ThemeData(
@@ -80,6 +80,9 @@ class IndibindiApp extends StatelessWidget {
           enabledBorder: UnderlineInputBorder(
             borderSide: BorderSide(color: Colors.grey, width: 1),
           ),
+        ),
+        snackBarTheme: SnackBarThemeData(
+          behavior: SnackBarBehavior.floating,
         ),
       ),
       themeMode: ThemeMode.system, // Follow system theme

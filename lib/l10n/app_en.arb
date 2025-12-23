@@ -887,5 +887,251 @@
   "communicative": "Communicative",
   "@communicative": {
     "description": "Communicative rating category"
+  },
+
+  "suggestion": "Suggestion",
+  "@suggestion": {
+    "description": "Support message type - suggestion"
+  },
+
+  "complaint": "Complaint",
+  "@complaint": {
+    "description": "Support message type - complaint"
+  },
+
+  "delete": "Delete",
+  "@delete": {
+    "description": "Delete action"
+  },
+
+  "conversationArchived": "Conversation archived",
+  "@conversationArchived": {
+    "description": "Message when conversation is archived"
+  },
+
+  "conversationDeleted": "Conversation deleted",
+  "@conversationDeleted": {
+    "description": "Message when conversation is deleted"
+  },
+
+  "undo": "Undo",
+  "@undo": {
+    "description": "Undo action"
+  },
+
+  "newRouteSuggestion": "New Route Suggestion",
+  "@newRouteSuggestion": {
+    "description": "Support message type - new route suggestion"
+  },
+
+  "newStopSuggestion": "New Stop Suggestion",
+  "@newStopSuggestion": {
+    "description": "Support message type - new stop suggestion"
+  },
+
+  "hintRoleSelection": "do you want to post a ride? choose driver! or do you want to get on a ride? choose rider!",
+  "@hintRoleSelection": {
+    "description": "Hint for role selection screen"
+  },
+
+  "hintRouteSelection": "select the route you'll be traveling on",
+  "@hintRouteSelection": {
+    "description": "Hint for route selection"
+  },
+
+  "hintOriginSelection": "where will you start your journey?",
+  "@hintOriginSelection": {
+    "description": "Hint for origin stop selection"
+  },
+
+  "hintDestinationSelection": "where will you end your journey?",
+  "@hintDestinationSelection": {
+    "description": "Hint for destination stop selection"
+  },
+
+  "hintTimeSelection": "when do you plan to travel?",
+  "@hintTimeSelection": {
+    "description": "Hint for time selection"
+  },
+
+  "hintSeatSelectionDriver": "tap seats to mark them available for riders",
+  "@hintSeatSelectionDriver": {
+    "description": "Hint for driver seat selection"
+  },
+
+  "hintSeatSelectionRider": "tap a seat to reserve your spot",
+  "@hintSeatSelectionRider": {
+    "description": "Hint for rider seat selection"
+  },
+
+  "hintMatchingRides": "these drivers match your route and time",
+  "@hintMatchingRides": {
+    "description": "Hint for matching rides list"
+  },
+
+  "hintPostRide": "review and confirm your ride details",
+  "@hintPostRide": {
+    "description": "Hint for posting a ride"
+  },
+
+  "systemNotificationDriverCanceled": "{driverName} has canceled the ride on {routeName}",
+  "@systemNotificationDriverCanceled": {
+    "description": "System notification when driver cancels a ride",
+    "placeholders": {
+      "driverName": {
+        "type": "String"
+      },
+      "routeName": {
+        "type": "String"
+      }
+    }
+  },
+
+  "systemNotificationRiderCanceled": "{riderName} has canceled their booking",
+  "@systemNotificationRiderCanceled": {
+    "description": "System notification when rider cancels their booking",
+    "placeholders": {
+      "riderName": {
+        "type": "String"
+      }
+    }
+  },
+
+  "systemNotificationNewRider": "{riderName} has booked a seat on your ride",
+  "@systemNotificationNewRider": {
+    "description": "System notification when a new rider books a seat",
+    "placeholders": {
+      "riderName": {
+        "type": "String"
+      }
+    }
+  },
+
+  "systemNotificationRiderBooked": "You booked a seat on {driverName}'s ride",
+  "@systemNotificationRiderBooked": {
+    "description": "System notification shown to rider after booking a seat",
+    "placeholders": {
+      "driverName": {
+        "type": "String"
+      }
+    }
+  },
+
+  "snackbarAdminViewOnly": "Admins can only view messages, not send them",
+  "@snackbarAdminViewOnly": {
+    "description": "Snackbar shown when admin tries to send message in view mode"
+  },
+
+  "snackbarMessagingExpired": "Messaging period has expired (3 days after arrival)",
+  "@snackbarMessagingExpired": {
+    "description": "Snackbar shown when messaging period has expired"
+  },
+
+  "snackbarPleaseLoginToSuggestStop": "Please login to suggest a stop",
+  "@snackbarPleaseLoginToSuggestStop": {
+    "description": "Snackbar shown when user tries to suggest stop without login"
+  },
+
+  "snackbarPleaseLoginToSuggestRoute": "Please login to suggest a route",
+  "@snackbarPleaseLoginToSuggestRoute": {
+    "description": "Snackbar shown when user tries to suggest route without login"
+  },
+
+  "snackbarCannotBookOwnRideDetail": "You cannot book a seat on your own ride. This is against our regulations.",
+  "@snackbarCannotBookOwnRideDetail": {
+    "description": "Detailed snackbar when trying to book own ride"
+  },
+
+  "snackbarAlreadyBookedThisRide": "You have already booked this ride",
+  "@snackbarAlreadyBookedThisRide": {
+    "description": "Snackbar when user has already booked the same ride"
+  },
+
+  "snackbarConflictingBooking": "You have a conflicting booking at this time: {routeName}",
+  "@snackbarConflictingBooking": {
+    "description": "Snackbar when booking conflicts with another",
+    "placeholders": {
+      "routeName": {
+        "type": "String"
+      }
+    }
+  },
+
+  "snackbarSwitchedToUser": "Switched to {userName}",
+  "@snackbarSwitchedToUser": {
+    "description": "Snackbar when switching test user",
+    "placeholders": {
+      "userName": {
+        "type": "String"
+      }
+    }
+  },
+
+  "snackbarBookingsCleared": "All bookings have been cleared",
+  "@snackbarBookingsCleared": {
+    "description": "Snackbar after clearing all bookings"
+  },
+
+  "snackbarConversationsCleared": "All conversations have been cleared",
+  "@snackbarConversationsCleared": {
+    "description": "Snackbar after clearing all conversations"
+  },
+
+  "snackbarRatingsCleared": "All ratings have been cleared",
+  "@snackbarRatingsCleared": {
+    "description": "Snackbar after clearing all ratings"
+  },
+
+  "snackbarAlreadyRated": "You have already rated {userName} for this trip",
+  "@snackbarAlreadyRated": {
+    "description": "Snackbar when user already rated someone",
+    "placeholders": {
+      "userName": {
+        "type": "String"
+      }
+    }
+  },
+
+  "snackbarRatingSubmitted": "Rating submitted: {rating} stars for {userName}",
+  "@snackbarRatingSubmitted": {
+    "description": "Snackbar after submitting rating",
+    "placeholders": {
+      "rating": {
+        "type": "String"
+      },
+      "userName": {
+        "type": "String"
+      }
+    }
+  },
+
+  "snackbarCopiedToClipboard": "{label} copied to clipboard",
+  "@snackbarCopiedToClipboard": {
+    "description": "Snackbar when text is copied",
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+
+  "snackbarCannotMessageYourself": "Cannot message yourself",
+  "@snackbarCannotMessageYourself": {
+    "description": "Snackbar when trying to message yourself"
+  },
+
+  "snackbarErrorOpeningChat": "Error opening support chat: {error}",
+  "@snackbarErrorOpeningChat": {
+    "description": "Snackbar when chat fails to open",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+
+  "snackbarConversationRestored": "Conversation restored",
+  "@snackbarConversationRestored": {
+    "description": "Snackbar when conversation is unarchived"
   }
 }

@@ -1329,6 +1329,234 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Communicative'**
   String get communicative;
+
+  /// Support message type - suggestion
+  ///
+  /// In en, this message translates to:
+  /// **'Suggestion'**
+  String get suggestion;
+
+  /// Support message type - complaint
+  ///
+  /// In en, this message translates to:
+  /// **'Complaint'**
+  String get complaint;
+
+  /// Delete action
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get delete;
+
+  /// Message when conversation is archived
+  ///
+  /// In en, this message translates to:
+  /// **'Conversation archived'**
+  String get conversationArchived;
+
+  /// Message when conversation is deleted
+  ///
+  /// In en, this message translates to:
+  /// **'Conversation deleted'**
+  String get conversationDeleted;
+
+  /// Undo action
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get undo;
+
+  /// Support message type - new route suggestion
+  ///
+  /// In en, this message translates to:
+  /// **'New Route Suggestion'**
+  String get newRouteSuggestion;
+
+  /// Support message type - new stop suggestion
+  ///
+  /// In en, this message translates to:
+  /// **'New Stop Suggestion'**
+  String get newStopSuggestion;
+
+  /// Hint for role selection screen
+  ///
+  /// In en, this message translates to:
+  /// **'do you want to post a ride? choose driver! or do you want to get on a ride? choose rider!'**
+  String get hintRoleSelection;
+
+  /// Hint for route selection
+  ///
+  /// In en, this message translates to:
+  /// **'select the route you\'ll be traveling on'**
+  String get hintRouteSelection;
+
+  /// Hint for origin stop selection
+  ///
+  /// In en, this message translates to:
+  /// **'where will you start your journey?'**
+  String get hintOriginSelection;
+
+  /// Hint for destination stop selection
+  ///
+  /// In en, this message translates to:
+  /// **'where will you end your journey?'**
+  String get hintDestinationSelection;
+
+  /// Hint for time selection
+  ///
+  /// In en, this message translates to:
+  /// **'when do you plan to travel?'**
+  String get hintTimeSelection;
+
+  /// Hint for driver seat selection
+  ///
+  /// In en, this message translates to:
+  /// **'tap seats to mark them available for riders'**
+  String get hintSeatSelectionDriver;
+
+  /// Hint for rider seat selection
+  ///
+  /// In en, this message translates to:
+  /// **'tap a seat to reserve your spot'**
+  String get hintSeatSelectionRider;
+
+  /// Hint for matching rides list
+  ///
+  /// In en, this message translates to:
+  /// **'these drivers match your route and time'**
+  String get hintMatchingRides;
+
+  /// Hint for posting a ride
+  ///
+  /// In en, this message translates to:
+  /// **'review and confirm your ride details'**
+  String get hintPostRide;
+
+  /// System notification when driver cancels a ride
+  ///
+  /// In en, this message translates to:
+  /// **'{driverName} has canceled the ride on {routeName}'**
+  String systemNotificationDriverCanceled(String driverName, String routeName);
+
+  /// System notification when rider cancels their booking
+  ///
+  /// In en, this message translates to:
+  /// **'{riderName} has canceled their booking'**
+  String systemNotificationRiderCanceled(String riderName);
+
+  /// System notification when a new rider books a seat
+  ///
+  /// In en, this message translates to:
+  /// **'{riderName} has booked a seat on your ride'**
+  String systemNotificationNewRider(String riderName);
+
+  /// System notification shown to rider after booking a seat
+  ///
+  /// In en, this message translates to:
+  /// **'You booked a seat on {driverName}\'s ride'**
+  String systemNotificationRiderBooked(String driverName);
+
+  /// Snackbar shown when admin tries to send message in view mode
+  ///
+  /// In en, this message translates to:
+  /// **'Admins can only view messages, not send them'**
+  String get snackbarAdminViewOnly;
+
+  /// Snackbar shown when messaging period has expired
+  ///
+  /// In en, this message translates to:
+  /// **'Messaging period has expired (3 days after arrival)'**
+  String get snackbarMessagingExpired;
+
+  /// Snackbar shown when user tries to suggest stop without login
+  ///
+  /// In en, this message translates to:
+  /// **'Please login to suggest a stop'**
+  String get snackbarPleaseLoginToSuggestStop;
+
+  /// Snackbar shown when user tries to suggest route without login
+  ///
+  /// In en, this message translates to:
+  /// **'Please login to suggest a route'**
+  String get snackbarPleaseLoginToSuggestRoute;
+
+  /// Detailed snackbar when trying to book own ride
+  ///
+  /// In en, this message translates to:
+  /// **'You cannot book a seat on your own ride. This is against our regulations.'**
+  String get snackbarCannotBookOwnRideDetail;
+
+  /// Snackbar when user has already booked the same ride
+  ///
+  /// In en, this message translates to:
+  /// **'You have already booked this ride'**
+  String get snackbarAlreadyBookedThisRide;
+
+  /// Snackbar when booking conflicts with another
+  ///
+  /// In en, this message translates to:
+  /// **'You have a conflicting booking at this time: {routeName}'**
+  String snackbarConflictingBooking(String routeName);
+
+  /// Snackbar when switching test user
+  ///
+  /// In en, this message translates to:
+  /// **'Switched to {userName}'**
+  String snackbarSwitchedToUser(String userName);
+
+  /// Snackbar after clearing all bookings
+  ///
+  /// In en, this message translates to:
+  /// **'All bookings have been cleared'**
+  String get snackbarBookingsCleared;
+
+  /// Snackbar after clearing all conversations
+  ///
+  /// In en, this message translates to:
+  /// **'All conversations have been cleared'**
+  String get snackbarConversationsCleared;
+
+  /// Snackbar after clearing all ratings
+  ///
+  /// In en, this message translates to:
+  /// **'All ratings have been cleared'**
+  String get snackbarRatingsCleared;
+
+  /// Snackbar when user already rated someone
+  ///
+  /// In en, this message translates to:
+  /// **'You have already rated {userName} for this trip'**
+  String snackbarAlreadyRated(String userName);
+
+  /// Snackbar after submitting rating
+  ///
+  /// In en, this message translates to:
+  /// **'Rating submitted: {rating} stars for {userName}'**
+  String snackbarRatingSubmitted(String rating, String userName);
+
+  /// Snackbar when text is copied
+  ///
+  /// In en, this message translates to:
+  /// **'{label} copied to clipboard'**
+  String snackbarCopiedToClipboard(String label);
+
+  /// Snackbar when trying to message yourself
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot message yourself'**
+  String get snackbarCannotMessageYourself;
+
+  /// Snackbar when chat fails to open
+  ///
+  /// In en, this message translates to:
+  /// **'Error opening support chat: {error}'**
+  String snackbarErrorOpeningChat(String error);
+
+  /// Snackbar when conversation is unarchived
+  ///
+  /// In en, this message translates to:
+  /// **'Conversation restored'**
+  String get snackbarConversationRestored;
 }
 
 class _AppLocalizationsDelegate

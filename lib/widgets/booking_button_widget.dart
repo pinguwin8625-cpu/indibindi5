@@ -182,7 +182,6 @@ class _BookingButtonWidgetState extends State<BookingButtonWidget> {
     // Get current user ID
     final currentUser = AuthService.currentUser;
     final userId = currentUser?.id ?? 'unknown';
-    final l10n = AppLocalizations.of(context)!;
 
     // Check for time conflicts with existing bookings
     final bookingStorage = BookingStorage();
@@ -198,15 +197,17 @@ class _BookingButtonWidgetState extends State<BookingButtonWidget> {
       );
       
       // Show error message
+      final l10n = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
             conflictingBooking != null
-                ? 'You already have a ride scheduled around this time (${_formatTime(conflictingBooking.departureTime)} - ${_formatTime(conflictingBooking.arrivalTime)})'
-                : 'You already have a ride scheduled around this time',
+                ? l10n.snackbarConflictingBooking('${_formatTime(conflictingBooking.departureTime)} - ${_formatTime(conflictingBooking.arrivalTime)}')
+                : l10n.snackbarAlreadyBookedThisRide,
           ),
           backgroundColor: Colors.red,
-          duration: Duration(seconds: 4),
+          duration: Duration(seconds: 3),
+          behavior: SnackBarBehavior.floating,
         ),
       );
       return;
@@ -218,7 +219,7 @@ class _BookingButtonWidgetState extends State<BookingButtonWidget> {
     List<RiderInfo>? riders;
     List<int> finalSelectedSeats = widget.selectedSeats;
 
-    if (widget.userRole.toLowerCase() == l10n.driver.toLowerCase() &&
+    if (widget.userRole.toLowerCase() == 'driver' &&
         currentUser != null) {
       driverName = currentUser.name;
       if (currentUser.surname.isNotEmpty) {

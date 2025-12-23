@@ -80,9 +80,23 @@ class SeatLayoutWidget extends StatelessWidget {
   }
 
   Widget _buildDriverRow(BuildContext context) {
+    // Always look up driver name from MockUsers first for accuracy
+    final driverId = booking.driverUserId ?? booking.userId;
+    final driver = MockUsers.getUserById(driverId);
+    String driverDisplayName;
+    if (driver != null) {
+      driverDisplayName = driver.name;
+      if (driver.surname.isNotEmpty) {
+        driverDisplayName = '${driver.name} ${driver.surname[0]}.';
+      }
+    } else {
+      // Fall back to stored name or default
+      driverDisplayName = booking.driverName ?? 'Driver';
+    }
+
     final label = _buildSeatLabel(
       context,
-      booking.driverName ?? 'Driver',
+      driverDisplayName,
       booking.driverRating?.toStringAsFixed(1) ?? '0.0',
     );
     final seat = _buildSeat(context, null, isDriver: true);

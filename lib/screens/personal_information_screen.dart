@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import '../l10n/app_localizations.dart';
 import '../services/auth_service.dart';
 import '../widgets/scroll_indicator.dart';
+import '../models/user.dart';
 
 class PersonalInformationScreen extends StatefulWidget {
   const PersonalInformationScreen({super.key});
@@ -36,7 +37,7 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
     if (user != null) {
       _nameController.text = user.name;
       _surnameController.text = user.surname;
-      _phoneController.text = user.phoneNumber;
+      _phoneController.text = User.formatPhoneNumber(user.phoneNumber, user.countryCode);
       _emailController.text = user.email;
       
       // Load profile photo if exists (skip for asset paths - they're mock data)
@@ -655,49 +656,86 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
                 Row(
                   children: [
                     // Country code dropdown
-                    Container(
-                      height: 56,
-                      padding: EdgeInsets.symmetric(horizontal: 12),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey[400]!),
-                        borderRadius: BorderRadius.circular(8),
-                        color: Colors.grey[50],
-                      ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: _selectedCountryIso,
-                          items: _countryCodes.map((country) {
-                            return DropdownMenuItem<String>(
-                              value: country['iso'],
-                              child: Row(
-                                children: [
-                                  Text(
-                                    country['flag']!,
-                                    style: TextStyle(fontSize: 20),
-                                        ),
-                                        SizedBox(width: 8),
-                                        Text(
-                                          country['code']!,
-                                          style: TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
-                                      ],
+                    Flexible(
+                      flex: 2,
+                      child: Container(
+                        height: 56,
+                        padding: EdgeInsets.symmetric(horizontal: 12),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey[400]!),
+                          borderRadius: BorderRadius.circular(8),
+                          color: Colors.grey[50],
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: _selectedCountryIso,
+                            menuMaxHeight: 400,
+                            menuWidth: 300,
+                            items: _countryCodes.map((country) {
+                              return DropdownMenuItem<String>(
+                                value: country['iso'],
+                                child: Row(
+                                  children: [
+                                    Text(
+                                      country['flag']!,
+                                      style: TextStyle(fontSize: 20),
                                     ),
-                                  );
-                                }).toList(),
-                                onChanged: (value) {
-                                  setState(() {
-                                    _selectedCountryIso = value!;
-                                  });
-                                },
-                              ),
-                            ),
+                                    SizedBox(width: 8),
+                                    Text(
+                                      country['code']!,
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    SizedBox(width: 8),
+                                    Flexible(
+                                      child: Text(
+                                        country['country']!,
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }).toList(),
+                            selectedItemBuilder: (BuildContext context) {
+                              return _countryCodes.map((country) {
+                                return Row(
+                                  children: [
+                                    Text(
+                                      country['flag']!,
+                                      style: TextStyle(fontSize: 20),
+                                    ),
+                                    SizedBox(width: 8),
+                                    Text(
+                                      country['code']!,
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              }).toList();
+                            },
+                            onChanged: (value) {
+                              setState(() {
+                                _selectedCountryIso = value!;
+                              });
+                            },
+                          ),
+                        ),
+                      ),
                     ),
                     SizedBox(width: 12),
                     // Phone number input
                     Expanded(
+                      flex: 3,
                       child: TextFormField(
                         controller: _phoneController,
                         keyboardType: TextInputType.phone,
@@ -783,10 +821,13 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
                       // Save user data
                       final currentUser = AuthService.currentUser;
                       if (currentUser != null) {
+                        // Remove formatting from phone number (keep only digits)
+                        final phoneDigitsOnly = _phoneController.text.trim().replaceAll(RegExp(r'\D'), '');
+
                         final updatedUser = currentUser.copyWith(
                           name: _nameController.text.trim(),
                           surname: _surnameController.text.trim(),
-                          phoneNumber: _phoneController.text.trim(),
+                          phoneNumber: phoneDigitsOnly,
                           countryCode: _selectedCountryIso,
                           profilePhotoUrl: _profileImage?.path,
                         );

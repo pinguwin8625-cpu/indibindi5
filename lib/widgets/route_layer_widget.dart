@@ -141,122 +141,137 @@ class _RouteLayerWidgetState extends State<RouteLayerWidget> {
                   style: TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFFDD2C00),
+                    color: Color(0xFF2E2E2E),
                     letterSpacing: 0.5,
                   ),
                   textAlign: TextAlign.center,
                 ),
-                SizedBox(height: 60),
+                // Hint below title
+                if (AuthService.currentUser?.shouldShowOnboardingHints ?? true)
+                  Padding(
+                    padding: EdgeInsets.only(top: 12),
+                    child: Text(
+                      l10n.hintRoleSelection,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Color(0xFF8E8E8E),
+                        fontStyle: FontStyle.italic,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                SizedBox(height: 48),
                 // Buttons
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Driver Button
-                      GestureDetector(
-                        onTap: () async {
-                          setState(() {
-                            _selectedRole = 'driver';
-                          });
-                          widget.tabController?.animateTo(0); // Switch to driver tab
-                          widget.onRoleSelected?.call('driver');
+                    GestureDetector(
+                      onTap: () async {
+                        setState(() {
+                          _selectedRole = 'driver';
+                        });
+                        widget.tabController?.animateTo(0); // Switch to driver tab
+                        widget.onRoleSelected?.call('driver');
 
-                          // Check vehicle info after selecting driver role
-                          final currentUser = AuthService.currentUser;
-                          if (currentUser != null && !currentUser.hasVehicle) {
-                            // Small delay to let the UI update first
-                            await Future.delayed(Duration(milliseconds: 100));
-                            _showIncompleteVehicleInfoDialog();
-                          }
-                        },
-                        child: Container(
-                          padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                          decoration: BoxDecoration(
-                            color: _selectedRole == 'driver' ? Color(0xFFDD2C00) : Colors.white,
-                            borderRadius: BorderRadius.circular(30),
-                            border: Border.all(
-                              color: _selectedRole == 'driver' ? Color(0xFFDD2C00) : Colors.grey[300]!,
-                              width: 2,
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              // Driver icon - steering wheel representation
-                              SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CustomPaint(
-                                  size: Size(20, 20),
-                                  painter: _SteeringWheelPainter(
-                                    color: _selectedRole == 'driver' ? Colors.white : Color(0xFFDD2C00),
-                                  ),
-                                ),
-                              ),
-                                SizedBox(width: 8),
-                                Text(
-                                  l10n.driver,
-                                  style: TextStyle(
-                                    color: _selectedRole == 'driver' ? Colors.white : Color(0xFFDD2C00),
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                              ],
-                            ),
+                        // Check vehicle info after selecting driver role
+                        final currentUser = AuthService.currentUser;
+                        if (currentUser != null && !currentUser.hasVehicle) {
+                          // Small delay to let the UI update first
+                          await Future.delayed(Duration(milliseconds: 100));
+                          _showIncompleteVehicleInfoDialog();
+                        }
+                      },
+                      child: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: _selectedRole == 'driver' ? Color(0xFF2E2E2E) : Colors.white,
+                          borderRadius: BorderRadius.circular(30),
+                          border: Border.all(
+                            color: _selectedRole == 'driver' ? Color(0xFF2E2E2E) : Colors.grey[300]!,
+                            width: 2,
                           ),
                         ),
-                      SizedBox(width: 20),
-                      // Rider Button
-                      GestureDetector(
-                        onTap: () async {
-                          setState(() {
-                            _selectedRole = 'rider';
-                          });
-                          widget.tabController?.animateTo(1); // Switch to rider tab
-                          widget.onRoleSelected?.call('rider');
-
-                          // Check personal info after selecting rider role
-                          final currentUser = AuthService.currentUser;
-                          if (currentUser != null && !currentUser.hasCompletePersonalInfo) {
-                            // Small delay to let the UI update first
-                            await Future.delayed(Duration(milliseconds: 100));
-                            _showIncompletePersonalInfoDialog(isDriver: false);
-                          }
-                        },
-                        child: Container(
-                          padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                          decoration: BoxDecoration(
-                            color: _selectedRole == 'rider' ? Color(0xFFDD2C00) : Colors.white,
-                            borderRadius: BorderRadius.circular(30),
-                            border: Border.all(
-                              color: _selectedRole == 'rider' ? Color(0xFFDD2C00) : Colors.grey[300]!,
-                              width: 2,
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.person,
-                                color: _selectedRole == 'rider' ? Colors.white : Color(0xFFDD2C00),
-                                size: 20,
-                              ),
-                              SizedBox(width: 8),
-                              Text(
-                                l10n.rider,
-                                style: TextStyle(
-                                  color: _selectedRole == 'rider' ? Colors.white : Color(0xFFDD2C00),
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Driver icon - steering wheel representation
+                            SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CustomPaint(
+                                size: Size(20, 20),
+                                painter: _SteeringWheelPainter(
+                                  color: _selectedRole == 'driver' ? Colors.white : Color(0xFF2E2E2E),
                                 ),
                               ),
-                            ],
-                          ),
+                            ),
+                            SizedBox(width: 8),
+                            Text(
+                              l10n.driver,
+                              style: TextStyle(
+                                color: _selectedRole == 'driver' ? Colors.white : Color(0xFF2E2E2E),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ],
-                  ),
-                ],
+                    ),
+                    SizedBox(width: 20),
+                    // Rider Button
+                    GestureDetector(
+                      onTap: () async {
+                        setState(() {
+                          _selectedRole = 'rider';
+                        });
+                        widget.tabController?.animateTo(1); // Switch to rider tab
+                        widget.onRoleSelected?.call('rider');
+
+                        // Check personal info after selecting rider role
+                        final currentUser = AuthService.currentUser;
+                        if (currentUser != null && !currentUser.hasCompletePersonalInfo) {
+                          // Small delay to let the UI update first
+                          await Future.delayed(Duration(milliseconds: 100));
+                          _showIncompletePersonalInfoDialog(isDriver: false);
+                        }
+                      },
+                      child: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: _selectedRole == 'rider' ? Color(0xFF2E2E2E) : Colors.white,
+                          borderRadius: BorderRadius.circular(30),
+                          border: Border.all(
+                            color: _selectedRole == 'rider' ? Color(0xFF2E2E2E) : Colors.grey[300]!,
+                            width: 2,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.person,
+                              color: _selectedRole == 'rider' ? Colors.white : Color(0xFF2E2E2E),
+                              size: 20,
+                            ),
+                            SizedBox(width: 8),
+                            Text(
+                              l10n.rider,
+                              style: TextStyle(
+                                color: _selectedRole == 'rider' ? Colors.white : Color(0xFF2E2E2E),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
               ),
             ),
           ),
@@ -346,18 +361,35 @@ class _RouteLayerWidgetState extends State<RouteLayerWidget> {
                   ],
                 ),
               ),
-              // Title
+              // Title with hint
               Padding(
                 padding: EdgeInsets.fromLTRB(0, 8, 0, 16),
                 child: Center(
-                  child: Text(
-                    l10n.chooseYourRoute,
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF42A5F5),
-                      letterSpacing: 0.5,
-                    ),
+                  child: Column(
+                    children: [
+                      Text(
+                        l10n.chooseYourRoute,
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF42A5F5),
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      if (AuthService.currentUser?.shouldShowOnboardingHints ?? true)
+                        Padding(
+                          padding: EdgeInsets.only(top: 4),
+                          child: Text(
+                            l10n.hintRouteSelection,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Color(0xFF42A5F5).withOpacity(0.6),
+                              fontStyle: FontStyle.italic,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                    ],
                   ),
                 ),
               ),

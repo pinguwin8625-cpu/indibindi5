@@ -1,10 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import '../l10n/app_localizations.dart';
 import '../services/auth_service.dart';
 import '../services/booking_storage.dart';
 import '../services/messaging_service.dart';
+import '../services/rating_service.dart';
 import '../services/mock_users.dart';
 import '../models/user.dart';
 import '../models/booking.dart';
+import '../models/message.dart';
+import '../models/trip_rating.dart';
+import '../widgets/booking_card_widget.dart';
+import '../widgets/seat_layout_widget.dart';
+import 'chat_screen.dart';
 
 class AdminPanelScreen extends StatelessWidget {
   const AdminPanelScreen({super.key});
@@ -27,7 +35,7 @@ class AdminPanelScreen extends StatelessWidget {
     }
 
     return DefaultTabController(
-      length: 3,
+      length: 4,
       child: Scaffold(
         appBar: AppBar(
           title: Text('Admin Panel'),
@@ -38,11 +46,12 @@ class AdminPanelScreen extends StatelessWidget {
               Tab(icon: Icon(Icons.people), text: 'Users'),
               Tab(icon: Icon(Icons.directions_car), text: 'Bookings'),
               Tab(icon: Icon(Icons.message), text: 'Messages'),
+              Tab(icon: Icon(Icons.star), text: 'Ratings'),
             ],
           ),
         ),
         body: TabBarView(
-          children: [_UsersTab(), _BookingsTab(), _MessagesTab()],
+          children: [_UsersTab(), _BookingsTab(), _MessagesTab(), _RatingsTab()],
         ),
       ),
     );
@@ -51,64 +60,238 @@ class AdminPanelScreen extends StatelessWidget {
 
 // Users Management Tab
 class _UsersTab extends StatelessWidget {
+  void _copyToClipboard(BuildContext context, String text, String label) {
+    Clipboard.setData(ClipboardData(text: text));
+    final l10n = AppLocalizations.of(context)!;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(l10n.snackbarCopiedToClipboard(label)),
+        duration: Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(BuildContext context, String text, {required VoidCallback onTap}) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+        child: Text(
+          text,
+          style: TextStyle(fontSize: 14, color: Color(0xFF2E2E2E)),
+        ),
+      ),
+    );
+  }
+
+
+  void _navigateToSupportChat(BuildContext context, User user) {
+    final currentUser = AuthService.currentUser;
+    if (currentUser == null) return;
+
+    // Don't allow messaging yourself
+    if (currentUser.id == user.id) {
+      final l10n = AppLocalizations.of(context)!;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.snackbarCannotMessageYourself),
+          duration: Duration(seconds: 3),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    // Create a support conversation ID (use smaller user ID first for consistency)
+    final userId1 = currentUser.id;
+    final userId2 = user.id;
+    final conversationId = userId1.compareTo(userId2) < 0
+        ? 'support_${userId1}_$userId2'
+        : 'support_${userId2}_$userId1';
+
+    // Get or create conversation
+    var conversation = MessagingService().getConversation(conversationId);
+
+    if (conversation == null) {
+      // Create new support conversation
+      conversation = Conversation(
+        id: conversationId,
+        bookingId: conversationId,
+        driverId: currentUser.id,
+        driverName: currentUser.fullName,
+        riderId: user.id,
+        riderName: user.fullName,
+        routeName: 'Support',
+        originName: '',
+        destinationName: '',
+        departureTime: DateTime.now(),
+        arrivalTime: DateTime.now().add(Duration(days: 365)), // Never expires
+        messages: [],
+      );
+      MessagingService().addConversation(conversation);
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ChatScreen(
+          conversation: conversation!,
+          createConversationOnFirstMessage: true,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final users = MockUsers.users;
+    final currentUser = AuthService.currentUser;
 
     return ListView.builder(
       padding: EdgeInsets.all(16),
       itemCount: users.length,
       itemBuilder: (context, index) {
         final user = users[index];
-        final bookingCount = BookingStorage()
-            .getBookingsForUser(user.id)
-            .length;
+        // Get live rating from RatingService
+        final liveRating = RatingService().getUserAverageRating(user.id);
+        final userWithLiveRating = user.copyWith(rating: liveRating);
+
+        // Check if this is the current user's own card
+        final isSelf = currentUser != null && userWithLiveRating.id == currentUser.id;
+
+        // Extract country info for display
+        final countryInfo = User.getCountryInfo(userWithLiveRating.countryCode);
 
         return Card(
           margin: EdgeInsets.only(bottom: 12),
-          child: ListTile(
-            leading: CircleAvatar(
-              backgroundColor: user.isAdmin ? Color(0xFFDD2C00) : Colors.blue,
-              child: Icon(
-                user.isAdmin
-                    ? Icons.admin_panel_settings
-                    : (user.hasVehicle ? Icons.directions_car : Icons.person),
-                color: Colors.white,
+          child: InkWell(
+            onTap: () => _showUserDetails(context, userWithLiveRating),
+            child: Padding(
+              padding: EdgeInsets.all(12),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Profile photo and rating
+                  Column(
+                    children: [
+                      CircleAvatar(
+                        radius: 32,
+                        backgroundColor: Colors.grey[300],
+                        backgroundImage: userWithLiveRating.profilePhotoUrl != null
+                            ? (userWithLiveRating.profilePhotoUrl!.startsWith('http')
+                                ? NetworkImage(userWithLiveRating.profilePhotoUrl!) as ImageProvider
+                                : AssetImage(userWithLiveRating.profilePhotoUrl!))
+                            : null,
+                        child: userWithLiveRating.profilePhotoUrl == null
+                            ? Icon(
+                                userWithLiveRating.isAdmin ? Icons.admin_panel_settings : Icons.person,
+                                color: Colors.white,
+                                size: 32,
+                              )
+                            : null,
+                      ),
+                      SizedBox(height: 8),
+                      // Rating centered
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.amber[50],
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.star, size: 14, color: Colors.amber),
+                            SizedBox(width: 4),
+                            Text(
+                              userWithLiveRating.rating.toStringAsFixed(1),
+                              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Message button - only show if not viewing own card
+                      if (!isSelf) ...[
+                        SizedBox(height: 8),
+                        ElevatedButton(
+                          onPressed: () {
+                            _navigateToSupportChat(context, userWithLiveRating);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Theme.of(context).primaryColor,
+                            foregroundColor: Colors.white,
+                            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                            minimumSize: Size(0, 32),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: Icon(Icons.message, size: 16),
+                        ),
+                      ],
+                    ],
+                  ),
+                  SizedBox(width: 12),
+                  // User information
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Full name
+                        _buildInfoRow(
+                          context,
+                          userWithLiveRating.fullName,
+                          onTap: () => _copyToClipboard(context, userWithLiveRating.fullName, 'Name'),
+                        ),
+                        // Country
+                        _buildInfoRow(
+                          context,
+                          '${countryInfo['flag']} ${countryInfo['country']}',
+                          onTap: () => _copyToClipboard(context, countryInfo['country']!, 'Country'),
+                        ),
+                        // Phone number
+                        _buildInfoRow(
+                          context,
+                          userWithLiveRating.formattedPhone,
+                          onTap: () {
+                            // Copy phone number without flag, just country code + digits combined
+                            final phoneDigits = '${countryInfo['code']}${userWithLiveRating.phoneNumber}';
+                            _copyToClipboard(context, phoneDigits, 'Phone');
+                          },
+                        ),
+                        // Email
+                        _buildInfoRow(
+                          context,
+                          userWithLiveRating.email,
+                          onTap: () => _copyToClipboard(context, userWithLiveRating.email, 'Email'),
+                        ),
+                        if (userWithLiveRating.isAdmin)
+                          Padding(
+                            padding: EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+                            child: Container(
+                              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.orange[50],
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                'Admin',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.orange[900],
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
-            title: Text(
-              user.fullName,
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-            ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(height: 4),
-                Text(user.email, style: TextStyle(fontSize: 14)),
-                SizedBox(height: 2),
-                Text(
-                  user.isAdmin
-                      ? 'Admin'
-                      : (user.hasVehicle ? 'Driver' : 'Rider'),
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                ),
-              ],
-            ),
-            trailing: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  '$bookingCount',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  'bookings',
-                  style: TextStyle(fontSize: 10, color: Colors.grey[600]),
-                ),
-              ],
-            ),
-            onTap: () => _showUserDetails(context, user),
           ),
         );
       },
@@ -117,6 +300,8 @@ class _UsersTab extends StatelessWidget {
 
   void _showUserDetails(BuildContext context, User user) {
     final bookings = BookingStorage().getBookingsForUser(user.id);
+    final conversations = MessagingService().getConversationsForUser(user.id);
+    final ratings = RatingService().getRatingsForUser(user.id);
 
     showModalBottomSheet(
       context: context,
@@ -139,15 +324,18 @@ class _UsersTab extends StatelessWidget {
                   CircleAvatar(
                     radius: 30,
                     backgroundColor: Colors.white,
-                    child: Icon(
-                      user.isAdmin
-                          ? Icons.admin_panel_settings
-                          : (user.hasVehicle
-                                ? Icons.directions_car
-                                : Icons.person),
-                      color: Color(0xFFDD2C00),
-                      size: 30,
-                    ),
+                    backgroundImage: user.profilePhotoUrl != null
+                        ? (user.profilePhotoUrl!.startsWith('http')
+                            ? NetworkImage(user.profilePhotoUrl!) as ImageProvider
+                            : AssetImage(user.profilePhotoUrl!))
+                        : null,
+                    child: user.profilePhotoUrl == null
+                        ? Icon(
+                            user.isAdmin ? Icons.admin_panel_settings : Icons.person,
+                            color: Color(0xFFDD2C00),
+                            size: 30,
+                          )
+                        : null,
                   ),
                   SizedBox(width: 16),
                   Expanded(
@@ -162,10 +350,6 @@ class _UsersTab extends StatelessWidget {
                             color: Colors.white,
                           ),
                         ),
-                        Text(
-                          user.email,
-                          style: TextStyle(fontSize: 14, color: Colors.white70),
-                        ),
                       ],
                     ),
                   ),
@@ -177,122 +361,16 @@ class _UsersTab extends StatelessWidget {
               ),
             ),
             Expanded(
-              child: ListView(
-                controller: scrollController,
-                padding: EdgeInsets.all(16),
-                children: [
-                  _buildInfoRow('ID', user.id),
-                  _buildInfoRow('Phone', user.formattedPhone),
-                  _buildInfoRow(
-                    'Role',
-                    user.isAdmin
-                        ? 'Admin'
-                        : (user.hasVehicle ? 'Driver' : 'Rider'),
-                  ),
-                  if (user.hasVehicle) ...[
-                    Divider(height: 32),
-                    Text(
-                      'Vehicle Information',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 8),
-                    _buildInfoRow('Make', user.vehicleBrand ?? ''),
-                    _buildInfoRow('Model', user.vehicleModel ?? ''),
-                    _buildInfoRow('Color', user.vehicleColor ?? ''),
-                    _buildInfoRow('Plate', user.licensePlate ?? ''),
-                  ],
-                  Divider(height: 32),
-                  Text(
-                    'Bookings (${bookings.length})',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  SizedBox(height: 8),
-                  ...bookings.map(
-                    (booking) => Card(
-                      margin: EdgeInsets.only(bottom: 8),
-                      child: ListTile(
-                        title: Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                booking.route.name,
-                                style: TextStyle(fontSize: 14),
-                              ),
-                            ),
-                            if (booking.isHidden == true)
-                              Container(
-                                margin: EdgeInsets.only(left: 4),
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 6,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.purple[100],
-                                  borderRadius: BorderRadius.circular(4),
-                                  border: Border.all(
-                                    color: Colors.purple[300]!,
-                                    width: 1,
-                                  ),
-                                ),
-                                child: Text(
-                                  'Hidden',
-                                  style: TextStyle(
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.purple[700],
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                        subtitle: Text(
-                          booking.departureTime.toString().substring(0, 16),
-                          style: TextStyle(fontSize: 12),
-                        ),
-                        trailing: Text(
-                          booking.isUpcoming ? 'Upcoming' : 'Past',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: booking.isUpcoming
-                                ? Colors.green
-                                : Colors.grey,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+              child: _UserDetailsContent(
+                user: user,
+                bookings: bookings,
+                conversations: conversations,
+                ratings: ratings,
+                scrollController: scrollController,
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildInfoRow(String label, String value) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 100,
-            child: Text(
-              '$label:',
-              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -305,185 +383,167 @@ class _BookingsTab extends StatelessWidget {
     return ValueListenableBuilder(
       valueListenable: BookingStorage().bookings,
       builder: (context, bookings, _) {
-        return Column(
-          children: [
-            // Management buttons
-            Container(
-              padding: EdgeInsets.all(16),
-              color: Colors.grey[100],
-              child: ElevatedButton.icon(
-                onPressed: () => _confirmClearAll(context),
-                icon: Icon(Icons.delete_sweep),
-                label: Text('Clear All Bookings'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red[700],
-                  foregroundColor: Colors.white,
-                ),
-              ),
-            ),
-
-            // Bookings list
-            Expanded(
-              child: bookings.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.calendar_today,
-                            size: 64,
-                            color: Colors.grey[300],
-                          ),
-                          SizedBox(height: 16),
-                          Text(
-                            'No bookings yet',
-                            style: TextStyle(
-                              fontSize: 18,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                        ],
+        return bookings.isEmpty
+            ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.calendar_today,
+                      size: 64,
+                      color: Colors.grey[300],
+                    ),
+                    SizedBox(height: 16),
+                    Text(
+                      'No bookings yet',
+                      style: TextStyle(
+                        fontSize: 18,
+                        color: Colors.grey[600],
                       ),
-                    )
-                  : _buildBookingsList(context, bookings),
-            ),
-          ],
-        );
+                    ),
+                  ],
+                ),
+              )
+            : _buildBookingsList(context, bookings);
       },
     );
   }
 
   Widget _buildBookingsList(BuildContext context, List bookings) {
-    final upcomingBookings = bookings.where((b) => b.isUpcoming).toList();
-    final pastBookings = bookings.where((b) => b.isPast).toList();
+    // Only show driver bookings (rider bookings are duplicates - rider info shown in seat layout)
+    final driverBookings = bookings.where((b) => b.userRole.toLowerCase() == 'driver').cast<Booking>().toList();
+    final now = DateTime.now();
+
+    // Upcoming: departure time is in the future
+    final upcomingBookings = driverBookings
+        .where((b) =>
+            b.departureTime.isAfter(now) &&
+            (b.isCanceled != true) &&
+            (b.isArchived != true))
+        .toList()
+      ..sort((a, b) => a.departureTime.compareTo(b.departureTime));
+
+    // Ongoing: departure time has passed but arrival time hasn't
+    final ongoingBookings = driverBookings
+        .where((b) =>
+            b.departureTime.isBefore(now) &&
+            b.arrivalTime.isAfter(now) &&
+            (b.isCanceled != true) &&
+            (b.isArchived != true))
+        .toList()
+      ..sort((a, b) => b.departureTime.compareTo(a.departureTime));
+
+    // Completed: arrival time has passed
+    final completedBookings = driverBookings
+        .where((b) =>
+            b.arrivalTime.isBefore(now) &&
+            (b.isCanceled != true) &&
+            (b.isArchived != true))
+        .toList()
+      ..sort((a, b) => b.departureTime.compareTo(a.departureTime));
+
+    // Canceled bookings
+    final canceledBookings = driverBookings
+        .where((b) => b.isCanceled == true && (b.isArchived != true))
+        .toList()
+      ..sort((a, b) => b.departureTime.compareTo(a.departureTime));
+
+    // Archived bookings (archived but NOT hidden)
+    final archivedBookings = driverBookings
+        .where((b) => b.isArchived == true && b.isHidden != true)
+        .toList()
+      ..sort((a, b) => b.departureTime.compareTo(a.departureTime));
+
+    // Hidden bookings (archived AND hidden)
+    final hiddenBookings = driverBookings
+        .where((b) => b.isArchived == true && b.isHidden == true)
+        .toList()
+      ..sort((a, b) => b.departureTime.compareTo(a.departureTime));
 
     return ListView(
       padding: EdgeInsets.all(16),
       children: [
-        if (upcomingBookings.isNotEmpty) ...[
-          Text(
-            'Upcoming (${upcomingBookings.length})',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        if (upcomingBookings.isNotEmpty)
+          _CollapsibleBookingSection(
+            title: 'Upcoming',
+            count: upcomingBookings.length,
+            bookings: upcomingBookings,
+            buildBookingCard: (booking) => _buildBookingCard(context, booking, cardsCollapsible: false),
+            color: Colors.blue[700],
           ),
-          SizedBox(height: 8),
-          ...upcomingBookings.map(
-            (booking) => _buildBookingCard(context, booking),
+        if (ongoingBookings.isNotEmpty)
+          _CollapsibleBookingSection(
+            title: 'Ongoing',
+            count: ongoingBookings.length,
+            bookings: ongoingBookings,
+            buildBookingCard: (booking) => _buildBookingCard(context, booking, cardsCollapsible: false),
+            startCollapsed: false,
+            color: Colors.orange[700],
           ),
-          SizedBox(height: 16),
-        ],
-        if (pastBookings.isNotEmpty) ...[
-          Text(
-            'Past (${pastBookings.length})',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        if (completedBookings.isNotEmpty)
+          _CollapsibleBookingSection(
+            title: 'Completed',
+            count: completedBookings.length,
+            bookings: completedBookings,
+            buildBookingCard: (booking) => _buildBookingCard(context, booking, cardsCollapsible: true),
+            startCollapsed: true,
+            color: Colors.green[700],
           ),
-          SizedBox(height: 8),
-          ...pastBookings.map((booking) => _buildBookingCard(context, booking)),
-        ],
+        if (canceledBookings.isNotEmpty)
+          _CollapsibleBookingSection(
+            title: 'Canceled',
+            count: canceledBookings.length,
+            bookings: canceledBookings,
+            buildBookingCard: (booking) => _buildBookingCard(context, booking, cardsCollapsible: true),
+            startCollapsed: true,
+            color: Colors.red[700],
+          ),
+        if (archivedBookings.isNotEmpty)
+          _CollapsibleBookingSection(
+            title: 'Archive',
+            count: archivedBookings.length,
+            bookings: archivedBookings,
+            buildBookingCard: (booking) => _buildBookingCard(context, booking, cardsCollapsible: true),
+            startCollapsed: true,
+            color: Colors.grey[700],
+          ),
+        if (hiddenBookings.isNotEmpty)
+          _CollapsibleBookingSection(
+            title: 'Hidden',
+            count: hiddenBookings.length,
+            bookings: hiddenBookings,
+            buildBookingCard: (booking) => _buildBookingCard(context, booking, cardsCollapsible: true),
+            startCollapsed: true,
+            color: Colors.purple[700],
+          ),
       ],
     );
   }
 
-  void _confirmClearAll(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Clear All Bookings?'),
-        content: Text(
-          'This will permanently delete all bookings. This action cannot be undone.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              BookingStorage().clearAllBookings();
-              Navigator.pop(context);
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(SnackBar(content: Text('All bookings cleared')));
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red[700]),
-            child: Text('Clear All', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
+  Widget _buildBookingCard(BuildContext context, Booking booking, {bool cardsCollapsible = false}) {
+    final isPast = booking.arrivalTime.isBefore(DateTime.now());
+    final isOngoing = booking.departureTime.isBefore(DateTime.now()) && booking.arrivalTime.isAfter(DateTime.now());
+
+    return BookingCard(
+      booking: booking,
+      isPast: isPast,
+      isCanceled: booking.isCanceled == true,
+      isOngoing: isOngoing,
+      isArchived: booking.isArchived == true,
+      showActions: false, // Admin panel doesn't show action buttons
+      showSeatsForCanceled: true, // Admin can see seats even for canceled rides
+      isCollapsible: cardsCollapsible,
+      initiallyExpanded: false,
+      buildMiniatureSeatLayout: (selectedSeats, booking) =>
+          _buildMiniatureSeatLayout(selectedSeats, booking),
     );
   }
 
-  Widget _buildBookingCard(BuildContext context, Booking booking) {
-    final user = MockUsers.getUserById(booking.userId);
-
-    return Card(
-      margin: EdgeInsets.only(bottom: 12),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: booking.isUpcoming ? Colors.green : Colors.grey,
-          child: Icon(
-            booking.userRole.toLowerCase() == 'driver'
-                ? Icons.directions_car
-                : Icons.person,
-            color: Colors.white,
-          ),
-        ),
-        title: Row(
-          children: [
-            Expanded(
-              child: Text(
-                booking.route.name,
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-              ),
-            ),
-            if (booking.isHidden == true)
-              Container(
-                margin: EdgeInsets.only(left: 4),
-                padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.purple[100],
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.all(color: Colors.purple[300]!, width: 1),
-                ),
-                child: Text(
-                  'Hidden',
-                  style: TextStyle(
-                    fontSize: 9,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.purple[700],
-                  ),
-                ),
-              ),
-          ],
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(height: 4),
-            Text(
-              user?.fullName ?? 'Unknown User',
-              style: TextStyle(fontSize: 14),
-            ),
-            Text(
-              booking.departureTime.toString().substring(0, 16),
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-            ),
-          ],
-        ),
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(
-              '${booking.selectedSeats.length}',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            Text(
-              'seats',
-              style: TextStyle(fontSize: 10, color: Colors.grey[600]),
-            ),
-          ],
-        ),
-      ),
+  Widget _buildMiniatureSeatLayout(List<int> selectedSeats, Booking booking) {
+    return SeatLayoutWidget(
+      booking: booking,
+      isInteractive: false,
+      currentUserId: null, // Admin view doesn't highlight specific users
     );
   }
 }
@@ -530,6 +590,18 @@ class _MessagesTab extends StatelessWidget {
             return Card(
               margin: EdgeInsets.only(bottom: 12),
               child: ListTile(
+                onTap: () {
+                  // Navigate to chat screen to view conversation in admin mode
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ChatScreen(
+                        conversation: conversation,
+                        isAdminView: true,
+                      ),
+                    ),
+                  );
+                },
                 leading: CircleAvatar(
                   backgroundColor: conversation.id.startsWith('support_')
                       ? Color(0xFFDD2C00)
@@ -624,6 +696,902 @@ class _MessagesTab extends StatelessWidget {
           },
         );
       },
+    );
+  }
+}
+
+// Ratings Management Tab
+class _RatingsTab extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final allRatings = RatingService().getAllRatings();
+
+    if (allRatings.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.star_border, size: 64, color: Colors.grey[300]),
+            SizedBox(height: 16),
+            Text(
+              'No ratings yet',
+              style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Sort by ratedAt (most recent first)
+    final sortedRatings = allRatings.toList()
+      ..sort((a, b) => b.ratedAt.compareTo(a.ratedAt));
+
+    return ListView.builder(
+      padding: EdgeInsets.all(16),
+      itemCount: sortedRatings.length,
+      itemBuilder: (context, index) {
+        final rating = sortedRatings[index];
+        final fromUser = MockUsers.getUserById(rating.fromUserId);
+        final toUser = MockUsers.getUserById(rating.toUserId);
+
+        return Card(
+          margin: EdgeInsets.only(bottom: 12),
+          child: Padding(
+            padding: EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header with users and overall rating
+                Row(
+                  children: [
+                    // From user
+                    Expanded(
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 20,
+                            backgroundColor: Colors.grey[300],
+                            backgroundImage: fromUser?.profilePhotoUrl != null
+                                ? (fromUser!.profilePhotoUrl!.startsWith('http')
+                                    ? NetworkImage(fromUser.profilePhotoUrl!) as ImageProvider
+                                    : AssetImage(fromUser.profilePhotoUrl!))
+                                : null,
+                            child: fromUser?.profilePhotoUrl == null
+                                ? Icon(Icons.person, color: Colors.white, size: 20)
+                                : null,
+                          ),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              fromUser?.fullName ?? 'Unknown',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Arrow
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 8),
+                      child: Icon(Icons.arrow_forward, size: 20, color: Colors.grey[600]),
+                    ),
+
+                    // To user
+                    Expanded(
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 20,
+                            backgroundColor: Colors.grey[300],
+                            backgroundImage: toUser?.profilePhotoUrl != null
+                                ? (toUser!.profilePhotoUrl!.startsWith('http')
+                                    ? NetworkImage(toUser.profilePhotoUrl!) as ImageProvider
+                                    : AssetImage(toUser.profilePhotoUrl!))
+                                : null,
+                            child: toUser?.profilePhotoUrl == null
+                                ? Icon(Icons.person, color: Colors.white, size: 20)
+                                : null,
+                          ),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              toUser?.fullName ?? 'Unknown',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Overall rating
+                    SizedBox(width: 8),
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.amber.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.amber, width: 1.5),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.star, color: Colors.amber[700], size: 18),
+                          SizedBox(width: 4),
+                          Text(
+                            rating.averageRating.toStringAsFixed(1),
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.amber[900],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+
+                // Category chips
+                SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 6,
+                  children: [
+                    if (rating.polite == 1) _buildRatingChip('Polite'),
+                    if (rating.clean == 1) _buildRatingChip('Clean'),
+                    if (rating.communicative == 1) _buildRatingChip('Communicative'),
+                    if (rating.safe == 1) _buildRatingChip('Safe'),
+                    if (rating.punctual == 1) _buildRatingChip('Punctual'),
+                  ],
+                ),
+
+                // Timestamp
+                SizedBox(height: 8),
+                Text(
+                  _formatTimestamp(rating.ratedAt),
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildRatingChip(String label) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.amber.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.amber[300]!, width: 1),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.star, size: 12, color: Colors.amber[700]),
+          SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.amber[900],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatTimestamp(DateTime timestamp) {
+    final now = DateTime.now();
+    final diff = now.difference(timestamp);
+
+    if (diff.inDays > 30) {
+      return '${timestamp.day}/${timestamp.month}/${timestamp.year}';
+    } else if (diff.inDays > 0) {
+      return '${diff.inDays} day${diff.inDays > 1 ? 's' : ''} ago';
+    } else if (diff.inHours > 0) {
+      return '${diff.inHours} hour${diff.inHours > 1 ? 's' : ''} ago';
+    } else if (diff.inMinutes > 0) {
+      return '${diff.inMinutes} minute${diff.inMinutes > 1 ? 's' : ''} ago';
+    } else {
+      return 'Just now';
+    }
+  }
+}
+
+// Collapsible section widget for booking groups
+class _CollapsibleBookingSection extends StatefulWidget {
+  final String title;
+  final int count;
+  final List<Booking> bookings;
+  final Widget Function(Booking) buildBookingCard;
+  final bool startCollapsed;
+  final Color? color; // Optional color for the section
+
+  const _CollapsibleBookingSection({
+    required this.title,
+    required this.count,
+    required this.bookings,
+    required this.buildBookingCard,
+    this.startCollapsed = false,
+    this.color,
+  });
+
+  @override
+  State<_CollapsibleBookingSection> createState() =>
+      _CollapsibleBookingSectionState();
+}
+
+class _CollapsibleBookingSectionState
+    extends State<_CollapsibleBookingSection> {
+  late bool _isExpanded;
+
+  @override
+  void initState() {
+    super.initState();
+    _isExpanded = !widget.startCollapsed;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final sectionColor = widget.color ?? Colors.black87;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                offset: Offset(0, 1),
+                blurRadius: 2,
+              ),
+            ],
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () {
+                setState(() {
+                  _isExpanded = !_isExpanded;
+                });
+              },
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          _isExpanded ? Icons.expand_less : Icons.expand_more,
+                          color: sectionColor,
+                          size: 20,
+                        ),
+                        SizedBox(width: 4),
+                        Text(
+                          widget.title,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: sectionColor,
+                          ),
+                        ),
+                        SizedBox(width: 8),
+                        Text(
+                          '(${widget.count})',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: sectionColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+        if (_isExpanded) ...[
+          SizedBox(height: 8),
+          ...widget.bookings.map((booking) => widget.buildBookingCard(booking)),
+        ],
+        SizedBox(height: 8),
+      ],
+    );
+  }
+}
+
+// User details content widget with collapsible sections
+class _UserDetailsContent extends StatefulWidget {
+  final User user;
+  final List<Booking> bookings;
+  final List<Conversation> conversations;
+  final List<TripRating> ratings;
+  final ScrollController scrollController;
+
+  const _UserDetailsContent({
+    required this.user,
+    required this.bookings,
+    required this.conversations,
+    required this.ratings,
+    required this.scrollController,
+  });
+
+  @override
+  State<_UserDetailsContent> createState() => _UserDetailsContentState();
+}
+
+class _UserDetailsContentState extends State<_UserDetailsContent> {
+  bool _userInfoExpanded = true;
+  bool _messagesExpanded = false;
+  bool _ratingsExpanded = false;
+
+  // Bookings section expansion state
+  bool _bookingsExpanded = false;
+
+  // Booking category expansion states
+  bool _upcomingExpanded = true;
+  bool _ongoingExpanded = false;
+  bool _completedExpanded = false;
+  bool _canceledExpanded = false;
+  bool _archivedExpanded = false;
+  bool _hiddenExpanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      controller: widget.scrollController,
+      padding: EdgeInsets.all(16),
+      children: [
+        // User Information Section
+        _buildCollapsibleSection(
+          title: 'User Information',
+          count: null,
+          isExpanded: _userInfoExpanded,
+          onTap: () => setState(() => _userInfoExpanded = !_userInfoExpanded),
+          children: [
+            Text(
+              'Personal Information',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+            SizedBox(height: 8),
+            _buildInfoRow('ID', widget.user.id),
+            _buildInfoRow('Name', widget.user.name),
+            _buildInfoRow('Surname', widget.user.surname),
+            _buildInfoRow('Email', widget.user.email),
+            _buildInfoRow('Phone', widget.user.formattedPhone),
+            if (widget.user.isAdmin) _buildInfoRow('Role', 'Admin'),
+            if (widget.user.hasVehicle) ...[
+              Divider(height: 24),
+              Text(
+                'Vehicle Information',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              ),
+              SizedBox(height: 8),
+              _buildInfoRow('Make', widget.user.vehicleBrand ?? ''),
+              _buildInfoRow('Model', widget.user.vehicleModel ?? ''),
+              _buildInfoRow('Color', widget.user.vehicleColor ?? ''),
+              _buildInfoRow('Plate', widget.user.licensePlate ?? ''),
+            ],
+          ],
+        ),
+
+        SizedBox(height: 16),
+
+        // Bookings Section
+        _buildCollapsibleSection(
+          title: 'Bookings',
+          count: widget.bookings.length,
+          isExpanded: _bookingsExpanded,
+          onTap: () => setState(() => _bookingsExpanded = !_bookingsExpanded),
+          children: [
+            _buildBookingsContent(),
+          ],
+        ),
+
+        SizedBox(height: 16),
+
+        // Messages Section
+        _buildCollapsibleSection(
+          title: 'Messages',
+          count: widget.conversations.length,
+          isExpanded: _messagesExpanded,
+          onTap: () => setState(() => _messagesExpanded = !_messagesExpanded),
+          children: widget.conversations.isEmpty
+              ? [
+                  Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Text(
+                      'No conversations found',
+                      style: TextStyle(color: Colors.grey[600]),
+                    ),
+                  )
+                ]
+              : widget.conversations
+                  .map((conv) => Padding(
+                        padding: EdgeInsets.only(bottom: 8),
+                        child: Card(
+                          child: ListTile(
+                            title: Text(conv.routeName),
+                            subtitle: Text(
+                              conv.lastMessage?.content ?? 'No messages yet',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            trailing: Text(
+                              '${conv.messages.length} msgs',
+                              style: TextStyle(fontSize: 12),
+                            ),
+                          ),
+                        ),
+                      ))
+                  .toList(),
+        ),
+
+        SizedBox(height: 16),
+
+        // Ratings Section
+        _buildCollapsibleSection(
+          title: 'Ratings',
+          count: widget.ratings.length,
+          isExpanded: _ratingsExpanded,
+          onTap: () => setState(() => _ratingsExpanded = !_ratingsExpanded),
+          children: widget.ratings.isEmpty
+              ? [
+                  Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Text(
+                      'No ratings received',
+                      style: TextStyle(color: Colors.grey[600]),
+                    ),
+                  )
+                ]
+              : widget.ratings
+                  .map((rating) {
+                    final fromUser = MockUsers.getUserById(rating.fromUserId);
+                    return Padding(
+                      padding: EdgeInsets.only(bottom: 8),
+                      child: Card(
+                        child: Padding(
+                          padding: EdgeInsets.all(12),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Header with name and overall rating
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    fromUser?.fullName ?? 'Unknown User',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 15,
+                                    ),
+                                  ),
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.star, color: Colors.amber, size: 16),
+                                      SizedBox(width: 4),
+                                      Text(
+                                        rating.averageRating.toStringAsFixed(1),
+                                        style: TextStyle(fontWeight: FontWeight.bold),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 8),
+                              // Category details
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 4,
+                                children: [
+                                  if (rating.polite == 1)
+                                    _buildRatingChip('Polite'),
+                                  if (rating.clean == 1)
+                                    _buildRatingChip('Clean'),
+                                  if (rating.communicative == 1)
+                                    _buildRatingChip('Communicative'),
+                                  if (rating.safe == 1)
+                                    _buildRatingChip('Safe'),
+                                  if (rating.punctual == 1)
+                                    _buildRatingChip('Punctual'),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  })
+                  .toList(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCollapsibleSection({
+    required String title,
+    required int? count,
+    required bool isExpanded,
+    required VoidCallback onTap,
+    required List<Widget> children,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            offset: Offset(0, 1),
+            blurRadius: 2,
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: onTap,
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Icon(
+                      isExpanded ? Icons.expand_less : Icons.expand_more,
+                      color: Color(0xFFDD2C00),
+                    ),
+                    SizedBox(width: 8),
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    if (count != null) ...[
+                      SizedBox(width: 8),
+                      Text(
+                        '($count)',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ),
+          if (isExpanded) ...[
+            Divider(height: 1),
+            Padding(
+              padding: EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: children,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 100,
+            child: Text(
+              '$label:',
+              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBookingsContent() {
+    final now = DateTime.now();
+
+    // Categorize bookings
+    final upcoming = widget.bookings
+        .where((b) =>
+            b.departureTime.isAfter(now) &&
+            b.isCanceled != true &&
+            b.isArchived != true)
+        .toList()
+      ..sort((a, b) => a.departureTime.compareTo(b.departureTime));
+
+    final ongoing = widget.bookings
+        .where((b) =>
+            b.departureTime.isBefore(now) &&
+            b.arrivalTime.isAfter(now) &&
+            b.isCanceled != true &&
+            b.isArchived != true)
+        .toList()
+      ..sort((a, b) => b.departureTime.compareTo(a.departureTime));
+
+    final completed = widget.bookings
+        .where((b) =>
+            b.arrivalTime.isBefore(now) &&
+            b.isCanceled != true &&
+            b.isArchived != true)
+        .toList()
+      ..sort((a, b) => b.departureTime.compareTo(a.departureTime));
+
+    final canceled = widget.bookings
+        .where((b) => b.isCanceled == true && b.isArchived != true)
+        .toList()
+      ..sort((a, b) => b.departureTime.compareTo(a.departureTime));
+
+    final archived = widget.bookings
+        .where((b) => b.isArchived == true && b.isHidden != true)
+        .toList()
+      ..sort((a, b) => b.departureTime.compareTo(a.departureTime));
+
+    final hidden = widget.bookings
+        .where((b) => b.isArchived == true && b.isHidden == true)
+        .toList()
+      ..sort((a, b) => b.departureTime.compareTo(a.departureTime));
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Upcoming bookings - seats always visible (no chevron on cards)
+        if (upcoming.isNotEmpty)
+          _buildBookingCategory(
+            'Upcoming',
+            upcoming,
+            Colors.blue[700]!,
+            _upcomingExpanded,
+            () => setState(() => _upcomingExpanded = !_upcomingExpanded),
+            isPast: false,
+            cardsCollapsible: false,
+          ),
+
+        // Ongoing bookings - seats always visible (no chevron on cards)
+        if (ongoing.isNotEmpty) ...[
+          SizedBox(height: 8),
+          _buildBookingCategory(
+            'Ongoing',
+            ongoing,
+            Colors.orange[700]!,
+            _ongoingExpanded,
+            () => setState(() => _ongoingExpanded = !_ongoingExpanded),
+            isPast: false,
+            isOngoing: true,
+            cardsCollapsible: false,
+          ),
+        ],
+
+        // Completed bookings - seats collapsed with chevron
+        if (completed.isNotEmpty) ...[
+          SizedBox(height: 8),
+          _buildBookingCategory(
+            'Completed',
+            completed,
+            Colors.green[700]!,
+            _completedExpanded,
+            () => setState(() => _completedExpanded = !_completedExpanded),
+            isPast: true,
+            cardsCollapsible: true,
+          ),
+        ],
+
+        // Canceled bookings - seats collapsed with chevron
+        if (canceled.isNotEmpty) ...[
+          SizedBox(height: 8),
+          _buildBookingCategory(
+            'Canceled',
+            canceled,
+            Colors.red[700]!,
+            _canceledExpanded,
+            () => setState(() => _canceledExpanded = !_canceledExpanded),
+            isPast: true,
+            isCanceled: true,
+            cardsCollapsible: true,
+          ),
+        ],
+
+        // Archive bookings - seats collapsed with chevron
+        if (archived.isNotEmpty) ...[
+          SizedBox(height: 8),
+          _buildBookingCategory(
+            'Archive',
+            archived,
+            Colors.grey[700]!,
+            _archivedExpanded,
+            () => setState(() => _archivedExpanded = !_archivedExpanded),
+            isPast: true,
+            isArchived: true,
+            cardsCollapsible: true,
+          ),
+        ],
+
+        // Hidden bookings - seats collapsed with chevron
+        if (hidden.isNotEmpty) ...[
+          SizedBox(height: 8),
+          _buildBookingCategory(
+            'Hidden',
+            hidden,
+            Colors.purple[700]!,
+            _hiddenExpanded,
+            () => setState(() => _hiddenExpanded = !_hiddenExpanded),
+            isPast: true,
+            isArchived: true,
+            cardsCollapsible: true,
+          ),
+        ],
+
+        // Show message if no bookings
+        if (widget.bookings.isEmpty)
+          Padding(
+            padding: EdgeInsets.all(16),
+            child: Text(
+              'No bookings found',
+              style: TextStyle(color: Colors.grey[600]),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildBookingCategory(
+    String title,
+    List<Booking> bookings,
+    Color color,
+    bool isExpanded,
+    VoidCallback onTap, {
+    bool isPast = false,
+    bool isCanceled = false,
+    bool isOngoing = false,
+    bool isArchived = false,
+    bool cardsCollapsible = false,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Category header - matching main Bookings tab style
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                offset: Offset(0, 1),
+                blurRadius: 2,
+              ),
+            ],
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: onTap,
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          isExpanded ? Icons.expand_less : Icons.expand_more,
+                          color: color,
+                          size: 20,
+                        ),
+                        SizedBox(width: 4),
+                        Text(
+                          title,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: color,
+                          ),
+                        ),
+                        SizedBox(width: 8),
+                        Text(
+                          '(${bookings.length})',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: color,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+        // Category bookings
+        if (isExpanded) ...[
+          SizedBox(height: 8),
+          ...bookings.map((booking) => BookingCard(
+                booking: booking,
+                isPast: isPast,
+                isCanceled: isCanceled,
+                isOngoing: isOngoing,
+                isArchived: isArchived,
+                showActions: false,
+                showSeatsForCanceled: true,
+                isCollapsible: cardsCollapsible,
+                initiallyExpanded: false,
+                buildMiniatureSeatLayout: (seats, booking) {
+                  // Simple seat layout for admin panel
+                  return Container();
+                },
+              )),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildRatingChip(String label) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.amber.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.amber, width: 1),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.star, size: 12, color: Colors.amber[800]),
+          SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.amber[900],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -4,16 +4,17 @@ import 'dart:io';
 import '../services/booking_storage.dart';
 import '../services/auth_service.dart';
 import '../services/rating_service.dart';
+import '../services/messaging_service.dart';
 import '../services/mock_users.dart';
 import '../models/booking.dart';
 import '../models/trip_rating.dart';
 import '../models/message.dart';
-import '../utils/date_time_helpers.dart';
 import '../utils/dialog_helper.dart';
 import '../l10n/app_localizations.dart';
 import '../widgets/scroll_indicator.dart';
 import '../widgets/language_selector.dart';
 import '../widgets/seat_layout_widget.dart';
+import '../widgets/booking_card_widget.dart';
 import 'chat_screen.dart';
 
 class MyBookingsScreen extends StatefulWidget {
@@ -507,6 +508,7 @@ class MyBookingsScreenState extends State<MyBookingsScreen>
   }
 
   Future<void> _cancelBooking(Booking booking) async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await DialogHelper.showConfirmDialog(
       context: context,
       title: 'Cancel Booking',
@@ -517,6 +519,35 @@ class MyBookingsScreenState extends State<MyBookingsScreen>
     );
 
     if (confirmed) {
+      final currentUser = AuthService.currentUser;
+      final isDriver = booking.userRole.toLowerCase() == 'driver';
+
+      // Send system notification to affected parties before canceling
+      final messagingService = MessagingService();
+
+      if (isDriver) {
+        // Driver canceled - notify all riders in existing conversations
+        final notificationContent = l10n.systemNotificationDriverCanceled(
+          currentUser?.fullName ?? 'Driver',
+          booking.route.name,
+        );
+        messagingService.sendSystemNotificationForBooking(
+          bookingId: booking.id,
+          content: notificationContent,
+          excludeUserId: currentUser?.id,
+        );
+      } else {
+        // Rider canceled - notify the driver
+        final notificationContent = l10n.systemNotificationRiderCanceled(
+          currentUser?.fullName ?? 'Rider',
+        );
+        messagingService.sendSystemNotificationForBooking(
+          bookingId: booking.id,
+          content: notificationContent,
+          excludeUserId: currentUser?.id,
+        );
+      }
+
       BookingStorage().cancelBooking(booking.id);
     }
   }
@@ -549,7 +580,7 @@ class MyBookingsScreenState extends State<MyBookingsScreen>
     bool isOngoing = false,
     bool isArchived = false,
   }) {
-    return _BookingCard(
+    return BookingCard(
       booking: booking,
       isPast: isPast,
       isCanceled: isCanceled,
@@ -557,6 +588,9 @@ class MyBookingsScreenState extends State<MyBookingsScreen>
       isArchived: isArchived,
       onCancel: () => _cancelBooking(booking),
       onArchive: () => _archiveBooking(booking),
+      showActions: true, // Show action buttons in My Bookings
+      showSeatsForCanceled: false, // Don't show seats for canceled rides
+      isCollapsible: false, // Individual cards are not collapsible
       buildMiniatureSeatLayout: (selectedSeats, booking) =>
           _buildMiniatureSeatLayout(selectedSeats, booking),
     );
@@ -649,10 +683,17 @@ class MyBookingsScreenState extends State<MyBookingsScreen>
     String? otherUserId;
     
     if (isDriver) {
-      // Clicked on driver photo
+      // Clicked on driver photo - always look up from MockUsers first
       final driverId = booking.driverUserId ?? booking.userId;
       final driver = MockUsers.getUserById(driverId);
-      otherUserName = booking.driverName ?? driver?.name ?? 'Driver';
+      if (driver != null) {
+        otherUserName = driver.name;
+        if (driver.surname.isNotEmpty) {
+          otherUserName = '${driver.name} ${driver.surname[0]}.';
+        }
+      } else {
+        otherUserName = booking.driverName ?? 'Driver';
+      }
       profilePhotoUrl = driver?.profilePhotoUrl;
       otherUserId = driverId;
     } else if (riderSeatIndex != null && booking.riders != null) {
@@ -885,8 +926,16 @@ class MyBookingsScreenState extends State<MyBookingsScreen>
         return;
       }
       
+      // Always look up driver name from MockUsers first for accuracy
       final driver = MockUsers.getUserById(driverId);
-      driverName = booking.driverName ?? driver?.name ?? 'Driver';
+      if (driver != null) {
+        driverName = driver.name;
+        if (driver.surname.isNotEmpty) {
+          driverName = '${driver.name} ${driver.surname[0]}.';
+        }
+      } else {
+        driverName = booking.driverName ?? 'Driver';
+      }
     }
 
     // Extract base driver booking ID for consistent conversation ID
@@ -958,10 +1007,13 @@ class MyBookingsScreenState extends State<MyBookingsScreen>
     final hasAlreadyRated = RatingService().hasRated(booking.id, currentUser.id, otherUserId);
 
     if (hasAlreadyRated) {
+      final l10n = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('You have already rated $otherUserName for this trip'),
+          content: Text(l10n.snackbarAlreadyRated(otherUserName)),
           backgroundColor: Colors.orange,
+          duration: Duration(seconds: 3),
+          behavior: SnackBarBehavior.floating,
         ),
       );
       return;
@@ -998,12 +1050,6 @@ class MyBookingsScreenState extends State<MyBookingsScreen>
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF2E2E2E),
                         ),
-                      ),
-                      SizedBox(height: 8),
-                      Text(
-                        l10n.selectQualitiesThatApply,
-                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                        textAlign: TextAlign.center,
                       ),
                       SizedBox(height: 20),
 
@@ -1071,18 +1117,16 @@ class MyBookingsScreenState extends State<MyBookingsScreen>
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
+                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              Text(
-                                l10n.submitRating,
-                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                              ...List.generate(
+                                totalStars,
+                                (index) => Icon(Icons.star, size: 24),
                               ),
-                              if (totalStars > 0) ...[
-                                SizedBox(width: 12),
-                                ...List.generate(
-                                  totalStars,
-                                  (index) => Icon(Icons.star, size: 20),
-                                ),
-                              ],
+                              ...List.generate(
+                                5 - totalStars,
+                                (index) => Icon(Icons.star_border, size: 24),
+                              ),
                             ],
                           ),
                         ),
@@ -1202,12 +1246,13 @@ class MyBookingsScreenState extends State<MyBookingsScreen>
     RatingService().submitRating(rating);
 
     // Show success message
+    final l10n = AppLocalizations.of(context)!;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
-          'Rating submitted: ${rating.averageRating.toStringAsFixed(1)} stars for $otherUserName',
-        ),
+        content: Text(l10n.snackbarRatingSubmitted(rating.averageRating.toStringAsFixed(1), otherUserName)),
         backgroundColor: Colors.green,
+        duration: Duration(seconds: 3),
+        behavior: SnackBarBehavior.floating,
       ),
     );
   }
@@ -1251,7 +1296,6 @@ class _SectionHeaderDelegate extends SliverPersistentHeaderDelegate {
     final fontSize = 18.0;
     final baseColor = sectionColor ?? Color(0xFF2E2E2E);
     final textColor = baseColor;
-    final underlineWidth = 60.0;
 
     return Container(
       decoration: BoxDecoration(
@@ -1306,16 +1350,6 @@ class _SectionHeaderDelegate extends SliverPersistentHeaderDelegate {
                     ],
                   ],
                 ),
-                SizedBox(height: 4),
-                // Static underline
-                Container(
-                  height: 2,
-                  width: underlineWidth,
-                  decoration: BoxDecoration(
-                    color: baseColor,
-                    borderRadius: BorderRadius.circular(1),
-                  ),
-                ),
               ],
             ),
           ),
@@ -1329,362 +1363,5 @@ class _SectionHeaderDelegate extends SliverPersistentHeaderDelegate {
     return title != oldDelegate.title ||
         isExpanded != oldDelegate.isExpanded ||
         count != oldDelegate.count;
-  }
-}
-
-// Collapsible booking card widget
-class _BookingCard extends StatefulWidget {
-  final Booking booking;
-  final bool isPast;
-  final bool isCanceled;
-  final bool isOngoing;
-  final bool isArchived;
-  final VoidCallback onCancel;
-  final VoidCallback onArchive;
-  final Widget Function(List<int>, Booking) buildMiniatureSeatLayout;
-
-  const _BookingCard({
-    required this.booking,
-    required this.isPast,
-    required this.isCanceled,
-    this.isOngoing = false,
-    this.isArchived = false,
-    required this.onCancel,
-    required this.onArchive,
-    required this.buildMiniatureSeatLayout,
-  });
-
-  @override
-  State<_BookingCard> createState() => _BookingCardState();
-}
-
-class _BookingCardState extends State<_BookingCard> {
-  bool _isExpanded = false;
-
-  String _formatDate(BuildContext context, DateTime date) {
-    final l10n = AppLocalizations.of(context)!;
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final target = DateTime(date.year, date.month, date.day);
-    final diffDays = target.difference(today).inDays;
-
-    if (diffDays == 0) return l10n.today;
-    if (diffDays == 1) return l10n.tomorrow;
-
-    final monthAbbr = [
-      l10n.jan,
-      l10n.feb,
-      l10n.mar,
-      l10n.apr,
-      l10n.may,
-      l10n.jun,
-      l10n.jul,
-      l10n.aug,
-      l10n.sep,
-      l10n.oct,
-      l10n.nov,
-      l10n.dec,
-    ];
-
-    return '${date.day} ${monthAbbr[date.month - 1]}';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-
-    return Card(
-      margin: EdgeInsets.only(bottom: 16),
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Stack(
-        children: [
-          Padding(
-            padding: EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Status note for archived items (at very top)
-                if (widget.isArchived)
-                  Padding(
-                    padding: EdgeInsets.only(bottom: 12),
-                    child: Container(
-                      width: double.infinity,
-                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: widget.booking.isCanceled == true
-                            ? Colors.red.withOpacity(0.1)
-                            : Colors.green.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Center(
-                        child: Text(
-                          widget.booking.isCanceled == true
-                              ? l10n.canceled
-                              : l10n.completed,
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: widget.booking.isCanceled == true
-                                ? Colors.red[700]
-                                : Colors.green[700],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-
-                // Route name and date
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        widget.booking.route.name,
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF2E2E2E),
-                        ),
-                      ),
-                    ),
-                    SizedBox(width: 8),
-                    SizedBox(
-                      width: 85,
-                      child: Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Center(
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: Text(
-                              _formatDate(context, widget.booking.departureTime),
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.black,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-
-                SizedBox(height: 16),
-
-                // Origin with departure time
-                Row(
-                  children: [
-                    Icon(Icons.location_on, color: Colors.green, size: 20),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        widget.booking.originName,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.black87,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                    SizedBox(
-                      width: 85,
-                      child: Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.green.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Center(
-                          child: Text(
-                            formatTimeHHmm(widget.booking.departureTime),
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.green[700],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-
-                SizedBox(height: 8),
-
-                // Destination with arrival time
-                Row(
-                  children: [
-                    Icon(Icons.flag, color: Colors.red, size: 20),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        widget.booking.destinationName,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.black87,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                    SizedBox(
-                      width: 85,
-                      child: Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.red.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Center(
-                          child: Stack(
-                            clipBehavior: Clip.none,
-                            children: [
-                              Text(
-                                formatTimeHHmm(widget.booking.arrivalTime),
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.red[700],
-                                ),
-                              ),
-                              // Show +1 at top right corner if arrival is on a different day than departure
-                              if (widget.booking.arrivalTime.day != widget.booking.departureTime.day ||
-                                  widget.booking.arrivalTime.month != widget.booking.departureTime.month ||
-                                  widget.booking.arrivalTime.year != widget.booking.departureTime.year)
-                                Positioned(
-                                  top: -2,
-                                  right: -14,
-                                  child: Text(
-                                    '+1',
-                                    style: TextStyle(
-                                      fontSize: 9,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.red[700],
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-
-                // Miniature seat layout and status button
-                // Hide seats entirely for canceled bookings
-                if (!widget.isCanceled) ...[
-                  SizedBox(height: 12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      // Miniature seat layout - always show for all bookings
-                      Expanded(
-                        child: widget.buildMiniatureSeatLayout(
-                          widget.booking.selectedSeats,
-                          widget.booking,
-                        ),
-                      ),
-
-                      // Status button/label in bottom right - removed, now at bottom of card
-                      SizedBox.shrink(),
-                    ],
-                  ),
-
-                  // Collapse button when expanded (for archived)
-                  if (_isExpanded && widget.isArchived)
-                    Padding(
-                      padding: EdgeInsets.only(top: 8),
-                      child: Center(
-                        child: InkWell(
-                          onTap: () {
-                            setState(() {
-                              _isExpanded = false;
-                            });
-                          },
-                          child: Container(
-                            padding: EdgeInsets.all(6),
-                            decoration: BoxDecoration(
-                              color: Colors.grey[100],
-                              borderRadius: BorderRadius.circular(6),
-                              border: Border.all(color: Colors.grey[300]!),
-                            ),
-                            child: Icon(
-                              Icons.expand_less,
-                              size: 16,
-                              color: Colors.grey[700],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-
-                // Cancel/Archive button at the bottom (hidden for ongoing rides and archived items)
-                if (!widget.isOngoing && !widget.isArchived)
-                  Builder(
-                    builder: (context) {
-                      return Padding(
-                        padding: EdgeInsets.only(top: 12),
-                        child: SizedBox(
-                          width: double.infinity,
-                          child: widget.isCanceled || widget.isPast
-                              ? OutlinedButton.icon(
-                                  onPressed: widget.onArchive,
-                                  icon: Icon(
-                                    Icons.archive,
-                                    size: 18,
-                                  ),
-                                  label: Text(l10n.archive),
-                                  style: OutlinedButton.styleFrom(
-                                    foregroundColor: Colors.grey[700],
-                                    side: BorderSide(
-                                      color: Colors.grey[400]!,
-                                    ),
-                                    padding: EdgeInsets.symmetric(vertical: 12),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                  ),
-                                )
-                              : OutlinedButton.icon(
-                                  onPressed: widget.onCancel,
-                                  icon: Icon(Icons.close, size: 18),
-                                  label: Text(l10n.cancelRide),
-                                  style: OutlinedButton.styleFrom(
-                                    foregroundColor: Colors.red[600],
-                                    side: BorderSide(color: Colors.red[300]!),
-                                    padding: EdgeInsets.symmetric(vertical: 12),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                  ),
-                                ),
-                        ),
-                      );
-                    },
-                  ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }

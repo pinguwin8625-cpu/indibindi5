@@ -595,37 +595,172 @@ class AppLocalizationsJa extends AppLocalizations {
   String get archived => 'アーカイブ済み';
 
   @override
-  String get message => 'Message';
+  String get message => 'メッセージ';
 
   @override
-  String get rate => 'Rate';
+  String get rate => '評価';
 
   @override
-  String get yourRating => 'Your Rating:';
+  String get yourRating => 'あなたの評価:';
 
   @override
   String rateUser(String userName) {
-    return 'Rate $userName';
+    return '$userNameを評価';
   }
 
   @override
-  String get selectQualitiesThatApply => 'Select the qualities that apply';
+  String get selectQualitiesThatApply => '該当する項目を選択';
 
   @override
-  String get submitRating => 'Submit Rating';
+  String get submitRating => '評価を送信';
 
   @override
-  String get safe => 'Safe';
+  String get safe => '安全';
 
   @override
-  String get punctual => 'Punctual';
+  String get punctual => '時間厳守';
 
   @override
-  String get clean => 'Clean';
+  String get clean => '清潔';
 
   @override
-  String get polite => 'Polite';
+  String get polite => '礼儀正しい';
 
   @override
-  String get communicative => 'Communicative';
+  String get communicative => 'コミュニケーション力';
+
+  @override
+  String get suggestion => 'Suggestion';
+
+  @override
+  String get complaint => 'Complaint';
+
+  @override
+  String get delete => 'Delete';
+
+  @override
+  String get conversationArchived => '会話をアーカイブしました';
+
+  @override
+  String get conversationDeleted => 'Conversation deleted';
+
+  @override
+  String get undo => 'Undo';
+
+  @override
+  String get newRouteSuggestion => 'New Route Suggestion';
+
+  @override
+  String get newStopSuggestion => 'New Stop Suggestion';
+
+  @override
+  String get hintRoleSelection => '乗車を提供したい？ドライバーを選択！乗車したい？ライダーを選択！';
+
+  @override
+  String get hintRouteSelection => '移動するルートを選択してください';
+
+  @override
+  String get hintOriginSelection => 'どこから出発しますか？';
+
+  @override
+  String get hintDestinationSelection => 'どこで降りますか？';
+
+  @override
+  String get hintTimeSelection => 'いつ移動する予定ですか？';
+
+  @override
+  String get hintSeatSelectionDriver => '座席をタップしてライダーに開放';
+
+  @override
+  String get hintSeatSelectionRider => '座席をタップして予約';
+
+  @override
+  String get hintMatchingRides => 'これらのドライバーはルートと時間が一致しています';
+
+  @override
+  String get hintPostRide => '乗車の詳細を確認して確定';
+
+  @override
+  String systemNotificationDriverCanceled(String driverName, String routeName) {
+    return '$driverNameが$routeNameの乗車をキャンセルしました';
+  }
+
+  @override
+  String systemNotificationRiderCanceled(String riderName) {
+    return '$riderNameが予約をキャンセルしました';
+  }
+
+  @override
+  String systemNotificationNewRider(String riderName) {
+    return '$riderNameがあなたの乗車に座席を予約しました';
+  }
+
+  @override
+  String systemNotificationRiderBooked(String driverName) {
+    return '$driverNameの乗車に座席を予約しました';
+  }
+
+  @override
+  String get snackbarAdminViewOnly => '管理者はメッセージの閲覧のみ可能で、送信はできません';
+
+  @override
+  String get snackbarMessagingExpired => 'メッセージ期間が終了しました（到着後3日間）';
+
+  @override
+  String get snackbarPleaseLoginToSuggestStop => '停留所を提案するにはログインしてください';
+
+  @override
+  String get snackbarPleaseLoginToSuggestRoute => 'ルートを提案するにはログインしてください';
+
+  @override
+  String get snackbarCannotBookOwnRideDetail =>
+      '自分の乗車に座席を予約することはできません。これは規則違反です。';
+
+  @override
+  String get snackbarAlreadyBookedThisRide => 'この乗車は既に予約済みです';
+
+  @override
+  String snackbarConflictingBooking(String routeName) {
+    return 'この時間帯に重複する予約があります: $routeName';
+  }
+
+  @override
+  String snackbarSwitchedToUser(String userName) {
+    return '$userNameに切り替えました';
+  }
+
+  @override
+  String get snackbarBookingsCleared => 'すべての予約がクリアされました';
+
+  @override
+  String get snackbarConversationsCleared => 'すべての会話がクリアされました';
+
+  @override
+  String get snackbarRatingsCleared => 'すべての評価がクリアされました';
+
+  @override
+  String snackbarAlreadyRated(String userName) {
+    return 'この旅行で$userNameを既に評価済みです';
+  }
+
+  @override
+  String snackbarRatingSubmitted(String rating, String userName) {
+    return '評価を送信しました: $userNameに$ratingつ星';
+  }
+
+  @override
+  String snackbarCopiedToClipboard(String label) {
+    return '$labelをクリップボードにコピーしました';
+  }
+
+  @override
+  String get snackbarCannotMessageYourself => '自分にメッセージを送ることはできません';
+
+  @override
+  String snackbarErrorOpeningChat(String error) {
+    return 'サポートチャットを開く際にエラーが発生しました: $error';
+  }
+
+  @override
+  String get snackbarConversationRestored => '会話を復元しました';
 }

@@ -610,34 +610,185 @@ class AppLocalizationsFr extends AppLocalizations {
   String get message => 'Message';
 
   @override
-  String get rate => 'Rate';
+  String get rate => 'Évaluer';
 
   @override
-  String get yourRating => 'Your Rating:';
+  String get yourRating => 'Votre Évaluation:';
 
   @override
   String rateUser(String userName) {
-    return 'Rate $userName';
+    return 'Évaluer $userName';
   }
 
   @override
-  String get selectQualitiesThatApply => 'Select the qualities that apply';
+  String get selectQualitiesThatApply =>
+      'Sélectionnez les qualités applicables';
 
   @override
-  String get submitRating => 'Submit Rating';
+  String get submitRating => 'Soumettre l\'Évaluation';
 
   @override
-  String get safe => 'Safe';
+  String get safe => 'Sûr';
 
   @override
-  String get punctual => 'Punctual';
+  String get punctual => 'Ponctuel';
 
   @override
-  String get clean => 'Clean';
+  String get clean => 'Propre';
 
   @override
-  String get polite => 'Polite';
+  String get polite => 'Poli';
 
   @override
-  String get communicative => 'Communicative';
+  String get communicative => 'Communicatif';
+
+  @override
+  String get suggestion => 'Suggestion';
+
+  @override
+  String get complaint => 'Complaint';
+
+  @override
+  String get delete => 'Delete';
+
+  @override
+  String get conversationArchived => 'Conversation archivée';
+
+  @override
+  String get conversationDeleted => 'Conversation deleted';
+
+  @override
+  String get undo => 'Undo';
+
+  @override
+  String get newRouteSuggestion => 'New Route Suggestion';
+
+  @override
+  String get newStopSuggestion => 'New Stop Suggestion';
+
+  @override
+  String get hintRoleSelection =>
+      'tu veux proposer un trajet? choisis conducteur! ou tu veux monter? choisis passager!';
+
+  @override
+  String get hintRouteSelection =>
+      'sélectionnez l\'itinéraire que vous emprunterez';
+
+  @override
+  String get hintOriginSelection => 'où commencera votre voyage?';
+
+  @override
+  String get hintDestinationSelection => 'où se terminera votre voyage?';
+
+  @override
+  String get hintTimeSelection => 'quand prévoyez-vous de voyager?';
+
+  @override
+  String get hintSeatSelectionDriver =>
+      'appuyez sur les sièges pour les rendre disponibles aux passagers';
+
+  @override
+  String get hintSeatSelectionRider =>
+      'appuyez sur un siège pour réserver votre place';
+
+  @override
+  String get hintMatchingRides =>
+      'ces conducteurs correspondent à votre itinéraire et horaire';
+
+  @override
+  String get hintPostRide =>
+      'vérifiez et confirmez les détails de votre trajet';
+
+  @override
+  String systemNotificationDriverCanceled(String driverName, String routeName) {
+    return '$driverName a annulé le trajet sur $routeName';
+  }
+
+  @override
+  String systemNotificationRiderCanceled(String riderName) {
+    return '$riderName a annulé sa réservation';
+  }
+
+  @override
+  String systemNotificationNewRider(String riderName) {
+    return '$riderName a réservé une place dans votre trajet';
+  }
+
+  @override
+  String systemNotificationRiderBooked(String driverName) {
+    return 'Vous avez réservé une place dans le trajet de $driverName';
+  }
+
+  @override
+  String get snackbarAdminViewOnly =>
+      'Les administrateurs peuvent uniquement voir les messages, pas les envoyer';
+
+  @override
+  String get snackbarMessagingExpired =>
+      'La période de messagerie a expiré (3 jours après l\'arrivée)';
+
+  @override
+  String get snackbarPleaseLoginToSuggestStop =>
+      'Veuillez vous connecter pour suggérer un arrêt';
+
+  @override
+  String get snackbarPleaseLoginToSuggestRoute =>
+      'Veuillez vous connecter pour suggérer un itinéraire';
+
+  @override
+  String get snackbarCannotBookOwnRideDetail =>
+      'Vous ne pouvez pas réserver une place dans votre propre trajet. Cela est contraire à nos règles.';
+
+  @override
+  String get snackbarAlreadyBookedThisRide =>
+      'Vous avez déjà réservé ce trajet';
+
+  @override
+  String snackbarConflictingBooking(String routeName) {
+    return 'Vous avez une réservation conflictuelle à cette heure: $routeName';
+  }
+
+  @override
+  String snackbarSwitchedToUser(String userName) {
+    return 'Passé à $userName';
+  }
+
+  @override
+  String get snackbarBookingsCleared =>
+      'Toutes les réservations ont été effacées';
+
+  @override
+  String get snackbarConversationsCleared =>
+      'Toutes les conversations ont été effacées';
+
+  @override
+  String get snackbarRatingsCleared =>
+      'Toutes les évaluations ont été effacées';
+
+  @override
+  String snackbarAlreadyRated(String userName) {
+    return 'Vous avez déjà évalué $userName pour ce trajet';
+  }
+
+  @override
+  String snackbarRatingSubmitted(String rating, String userName) {
+    return 'Évaluation soumise: $rating étoiles pour $userName';
+  }
+
+  @override
+  String snackbarCopiedToClipboard(String label) {
+    return '$label copié dans le presse-papiers';
+  }
+
+  @override
+  String get snackbarCannotMessageYourself =>
+      'Vous ne pouvez pas vous envoyer un message';
+
+  @override
+  String snackbarErrorOpeningChat(String error) {
+    return 'Erreur lors de l\'ouverture du chat support: $error';
+  }
+
+  @override
+  String get snackbarConversationRestored => 'Conversation restaurée';
 }

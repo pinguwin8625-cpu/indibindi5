@@ -604,37 +604,181 @@ class AppLocalizationsRu extends AppLocalizations {
   String get archived => 'Архив';
 
   @override
-  String get message => 'Message';
+  String get message => 'Сообщение';
 
   @override
-  String get rate => 'Rate';
+  String get rate => 'Оценить';
 
   @override
-  String get yourRating => 'Your Rating:';
+  String get yourRating => 'Ваша Оценка:';
 
   @override
   String rateUser(String userName) {
-    return 'Rate $userName';
+    return 'Оценить $userName';
   }
 
   @override
-  String get selectQualitiesThatApply => 'Select the qualities that apply';
+  String get selectQualitiesThatApply => 'Выберите подходящие качества';
 
   @override
-  String get submitRating => 'Submit Rating';
+  String get submitRating => 'Отправить Оценку';
 
   @override
-  String get safe => 'Safe';
+  String get safe => 'Безопасный';
 
   @override
-  String get punctual => 'Punctual';
+  String get punctual => 'Пунктуальный';
 
   @override
-  String get clean => 'Clean';
+  String get clean => 'Чистый';
 
   @override
-  String get polite => 'Polite';
+  String get polite => 'Вежливый';
 
   @override
-  String get communicative => 'Communicative';
+  String get communicative => 'Коммуникабельный';
+
+  @override
+  String get suggestion => 'Suggestion';
+
+  @override
+  String get complaint => 'Complaint';
+
+  @override
+  String get delete => 'Delete';
+
+  @override
+  String get conversationArchived => 'Разговор заархивирован';
+
+  @override
+  String get conversationDeleted => 'Conversation deleted';
+
+  @override
+  String get undo => 'Undo';
+
+  @override
+  String get newRouteSuggestion => 'New Route Suggestion';
+
+  @override
+  String get newStopSuggestion => 'New Stop Suggestion';
+
+  @override
+  String get hintRoleSelection =>
+      'хочешь опубликовать поездку? выбери водитель! или хочешь найти поездку? выбери пассажир!';
+
+  @override
+  String get hintRouteSelection => 'выберите маршрут, по которому вы поедете';
+
+  @override
+  String get hintOriginSelection => 'откуда начнется ваша поездка?';
+
+  @override
+  String get hintDestinationSelection => 'где закончится ваша поездка?';
+
+  @override
+  String get hintTimeSelection => 'когда вы планируете ехать?';
+
+  @override
+  String get hintSeatSelectionDriver =>
+      'нажмите на места, чтобы сделать их доступными для пассажиров';
+
+  @override
+  String get hintSeatSelectionRider => 'нажмите на место, чтобы забронировать';
+
+  @override
+  String get hintMatchingRides =>
+      'эти водители соответствуют вашему маршруту и времени';
+
+  @override
+  String get hintPostRide => 'проверьте и подтвердите детали поездки';
+
+  @override
+  String systemNotificationDriverCanceled(String driverName, String routeName) {
+    return '$driverName отменил поездку по маршруту $routeName';
+  }
+
+  @override
+  String systemNotificationRiderCanceled(String riderName) {
+    return '$riderName отменил бронирование';
+  }
+
+  @override
+  String systemNotificationNewRider(String riderName) {
+    return '$riderName забронировал место в вашей поездке';
+  }
+
+  @override
+  String systemNotificationRiderBooked(String driverName) {
+    return 'Вы забронировали место в поездке $driverName';
+  }
+
+  @override
+  String get snackbarAdminViewOnly =>
+      'Администраторы могут только просматривать сообщения, но не отправлять их';
+
+  @override
+  String get snackbarMessagingExpired =>
+      'Период обмена сообщениями истёк (3 дня после прибытия)';
+
+  @override
+  String get snackbarPleaseLoginToSuggestStop =>
+      'Войдите, чтобы предложить остановку';
+
+  @override
+  String get snackbarPleaseLoginToSuggestRoute =>
+      'Войдите, чтобы предложить маршрут';
+
+  @override
+  String get snackbarCannotBookOwnRideDetail =>
+      'Вы не можете забронировать место в своей собственной поездке. Это противоречит нашим правилам.';
+
+  @override
+  String get snackbarAlreadyBookedThisRide =>
+      'Вы уже забронировали эту поездку';
+
+  @override
+  String snackbarConflictingBooking(String routeName) {
+    return 'У вас есть конфликтующее бронирование на это время: $routeName';
+  }
+
+  @override
+  String snackbarSwitchedToUser(String userName) {
+    return 'Переключено на $userName';
+  }
+
+  @override
+  String get snackbarBookingsCleared => 'Все бронирования удалены';
+
+  @override
+  String get snackbarConversationsCleared => 'Все разговоры удалены';
+
+  @override
+  String get snackbarRatingsCleared => 'Все оценки удалены';
+
+  @override
+  String snackbarAlreadyRated(String userName) {
+    return 'Вы уже оценили $userName за эту поездку';
+  }
+
+  @override
+  String snackbarRatingSubmitted(String rating, String userName) {
+    return 'Оценка отправлена: $rating звёзд для $userName';
+  }
+
+  @override
+  String snackbarCopiedToClipboard(String label) {
+    return '$label скопировано в буфер обмена';
+  }
+
+  @override
+  String get snackbarCannotMessageYourself =>
+      'Вы не можете отправить сообщение самому себе';
+
+  @override
+  String snackbarErrorOpeningChat(String error) {
+    return 'Ошибка при открытии чата поддержки: $error';
+  }
+
+  @override
+  String get snackbarConversationRestored => 'Разговор восстановлен';
 }

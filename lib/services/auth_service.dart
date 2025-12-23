@@ -19,21 +19,53 @@ class AuthService {
   // Check if user is logged in
   static bool get isLoggedIn => _currentUser != null;
 
-  // Login with email and password
-  static bool login(String email, String password) {
-    // Find user by email
-    final user = MockUsers.users.firstWhere(
-      (u) => u.email.toLowerCase() == email.toLowerCase(),
-      orElse: () => throw Exception('User not found'),
+  // Login with email/phone and password
+  static bool login(String emailOrPhone, String password) {
+    print('🔐 Login attempt: emailOrPhone="$emailOrPhone", password="$password"');
+
+    // Try to find user by email first, then by phone number
+    User? user;
+
+    // Try email first
+    user = MockUsers.users.firstWhere(
+      (u) => u.email.toLowerCase() == emailOrPhone.toLowerCase(),
+      orElse: () {
+        print('🔐 Email not found, trying phone number...');
+
+        // If not found by email, try by full phone number (with country code)
+        final cleanedInput = emailOrPhone.replaceAll(RegExp(r'[^\d+]'), '');
+        print('🔐 Cleaned input: "$cleanedInput"');
+
+        final foundUser = MockUsers.users.firstWhere(
+          (u) {
+            final cleanedUserPhone = u.formattedPhone.replaceAll(RegExp(r'[^\d+]'), '');
+            print('🔐 Checking user ${u.fullName}: formattedPhone="${u.formattedPhone}", cleaned="$cleanedUserPhone"');
+            return cleanedUserPhone == cleanedInput;
+          },
+          orElse: () {
+            print('🔐 Phone not found either');
+            throw Exception('User not found');
+          },
+        );
+
+        print('🔐 Found user by phone: ${foundUser.fullName}');
+        return foundUser;
+      },
     );
+
+    if (user.email.toLowerCase() == emailOrPhone.toLowerCase()) {
+      print('🔐 Found user by email: ${user.fullName}');
+    }
 
     // Check password (all mock users use default password)
     if (password == defaultPassword) {
       _currentUser = user;
       MockUsers.currentUser = user;
+      print('🔐 Login successful for: ${user.fullName}');
       return true;
     }
 
+    print('🔐 Password incorrect');
     return false;
   }
 

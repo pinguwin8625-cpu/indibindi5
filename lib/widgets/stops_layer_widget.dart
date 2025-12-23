@@ -6,6 +6,7 @@ import '../widgets/scroll_indicator.dart';
 import '../widgets/ride_details_bar.dart';
 import '../utils/booking_logic.dart';
 import '../l10n/app_localizations.dart';
+import '../services/auth_service.dart';
 
 class StopsLayerWidget extends StatefulWidget {
   final String userRole;
@@ -134,77 +135,111 @@ class _StopsLayerWidgetState extends State<StopsLayerWidget> {
         Builder(
           builder: (context) {
             final l10n = AppLocalizations.of(context)!;
-            
+
+            // Determine which hint to show based on current state
+            String? hintText;
+            Color? hintColor;
+            if (localOriginIndex == null) {
+              hintText = l10n.hintOriginSelection;
+              hintColor = Color(0xFF4CAF50).withOpacity(0.6);
+            } else if (localDestinationIndex == null) {
+              hintText = l10n.hintDestinationSelection;
+              hintColor = Color(0xFFDD2C00).withOpacity(0.5);
+            } else {
+              hintText = l10n.hintTimeSelection;
+              hintColor = Color(0xFFFF6D00).withOpacity(0.6);
+            }
+
             return Container(
-              padding: EdgeInsets.fromLTRB(16, 8, 16, 16),
-              child: Row(
+              padding: EdgeInsets.fromLTRB(16, 8, 16, 8),
+              child: Column(
                 children: [
-                  // Left column - "from?" (flex: 3 to match stops column)
-                  Expanded(
-                    flex: 3,
-                    child: Row(
-                      children: [
-                        // "from?" on the left side
-                        Expanded(
-                          child: localOriginIndex == null
-                              ? Center(
-                                  child: FittedBox(
-                                    fit: BoxFit.scaleDown,
-                                    child: Text(
-                                      l10n.pickUpAndDropOff,
-                                      style: TextStyle(
-                                        fontSize: 28,
-                                        fontWeight: FontWeight.w600,
-                                        color: Color(0xFF4CAF50), // Green for from
-                                        letterSpacing: 0.5,
+                  // Titles row
+                  Row(
+                    children: [
+                      // Left column - "from?" (flex: 3 to match stops column)
+                      Expanded(
+                        flex: 3,
+                        child: Row(
+                          children: [
+                            // "from?" on the left side
+                            Expanded(
+                              child: localOriginIndex == null
+                                  ? Center(
+                                      child: FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        child: Text(
+                                          l10n.pickUpAndDropOff,
+                                          style: TextStyle(
+                                            fontSize: 28,
+                                            fontWeight: FontWeight.w600,
+                                            color: Color(0xFF4CAF50), // Green for from
+                                            letterSpacing: 0.5,
+                                          ),
+                                          maxLines: 1,
+                                        ),
                                       ),
-                                      maxLines: 1,
-                                    ),
-                                  ),
-                                )
-                              : SizedBox.shrink(),
-                        ),
-                        // "to?" in the middle
-                        Expanded(
-                          child: (localOriginIndex != null && localDestinationIndex == null)
-                              ? Center(
-                                  child: FittedBox(
-                                    fit: BoxFit.scaleDown,
-                                    child: Text(
-                                      l10n.chooseDropOffPoint,
-                                      style: TextStyle(
-                                        fontSize: 28,
-                                        fontWeight: FontWeight.w600,
-                                        color: Color(0xFFDD2C00), // Red for to
-                                        letterSpacing: 0.5,
-                                      ),
-                                      maxLines: 1,
-                                    ),
-                                  ),
-                                )
-                              : SizedBox.shrink(),
-                        ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(width: 24),
-                  // Right column - "time?" (flex: 2 to match time picker column)
-                  Expanded(
-                    flex: 2,
-                    child: (localOriginIndex != null && localDestinationIndex != null)
-                        ? Center(
-                            child: Text(
-                              l10n.setYourTime,
-                              style: TextStyle(
-                                fontSize: 28,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFFFF6D00), // Orange for time
-                                letterSpacing: 0.5,
-                              ),
+                                    )
+                                  : SizedBox.shrink(),
                             ),
-                          )
-                        : SizedBox.shrink(),
+                            // "to?" in the middle
+                            Expanded(
+                              child: (localOriginIndex != null && localDestinationIndex == null)
+                                  ? Center(
+                                      child: FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        child: Text(
+                                          l10n.chooseDropOffPoint,
+                                          style: TextStyle(
+                                            fontSize: 28,
+                                            fontWeight: FontWeight.w600,
+                                            color: Color(0xFFDD2C00), // Red for to
+                                            letterSpacing: 0.5,
+                                          ),
+                                          maxLines: 1,
+                                        ),
+                                      ),
+                                    )
+                                  : SizedBox.shrink(),
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(width: 24),
+                      // Right column - "time?" (flex: 2 to match time picker column)
+                      Expanded(
+                        flex: 2,
+                        child: (localOriginIndex != null && localDestinationIndex != null)
+                            ? Center(
+                                child: Text(
+                                  l10n.setYourTime,
+                                  style: TextStyle(
+                                    fontSize: 28,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFFFF6D00), // Orange for time
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              )
+                            : SizedBox.shrink(),
+                      ),
+                    ],
                   ),
+                  // Hint row - full width
+                  if (AuthService.currentUser?.shouldShowOnboardingHints ?? true)
+                    Padding(
+                      padding: EdgeInsets.only(top: 8),
+                      child: Text(
+                        hintText,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: hintColor,
+                          fontStyle: FontStyle.italic,
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                      ),
+                    ),
                 ],
               ),
             );

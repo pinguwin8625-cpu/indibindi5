@@ -98,6 +98,11 @@ class RatingService {
     }
   }
 
+  // Get all ratings in the system
+  List<TripRating> getAllRatings() {
+    return ratings.value;
+  }
+
   // Get all ratings a user has received
   List<TripRating> getRatingsForUser(String userId) {
     return ratings.value.where((r) => r.toUserId == userId).toList();

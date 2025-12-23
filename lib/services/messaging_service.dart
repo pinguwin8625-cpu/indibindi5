@@ -4,6 +4,7 @@ import 'dart:convert';
 import '../models/message.dart';
 import '../models/booking.dart';
 import '../services/auth_service.dart';
+import '../services/mock_users.dart';
 
 class MessagingService {
   static final MessagingService _instance = MessagingService._internal();
@@ -74,8 +75,11 @@ class MessagingService {
                   content: msgData['content'],
                   timestamp: DateTime.parse(msgData['timestamp']),
                   isRead: msgData['isRead'] ?? false,
+                  isSystemMessage: msgData['isSystemMessage'] ?? false,
                 );
               }).toList(),
+              isManuallyArchived: data['isManuallyArchived'] ?? false,
+              isDeleted: data['isDeleted'] ?? false,
             );
             
             loadedConversations.add(conversation);
@@ -105,10 +109,13 @@ class MessagingService {
                 _messageIdCounter = msgId + 1;
               }
             }
-            if (conv.id.startsWith('support_')) {
-              final refNum = int.tryParse(conv.routeName.split('REF')[1].split(' ')[0]) ?? 0;
-              if (refNum >= _supportTicketCounter) {
-                _supportTicketCounter = refNum + 1;
+            if (conv.id.startsWith('support_') && conv.routeName.contains('REF')) {
+              final parts = conv.routeName.split('REF');
+              if (parts.length > 1) {
+                final refNum = int.tryParse(parts[1].split(' ')[0]) ?? 0;
+                if (refNum >= _supportTicketCounter) {
+                  _supportTicketCounter = refNum + 1;
+                }
               }
             }
           }
@@ -156,8 +163,11 @@ class MessagingService {
               'content': msg.content,
               'timestamp': msg.timestamp.toIso8601String(),
               'isRead': msg.isRead,
+              'isSystemMessage': msg.isSystemMessage,
             };
           }).toList(),
+          'isManuallyArchived': conv.isManuallyArchived,
+          'isDeleted': conv.isDeleted,
         };
       }).toList();
 
@@ -431,12 +441,104 @@ class MessagingService {
     _saveConversations(); // Persist changes
   }
 
-  // Get total unread count for a user
-  int getTotalUnreadCount(String userId) {
-    return conversations.value.fold<int>(
-      0,
-      (sum, conversation) => sum + conversation.getUnreadCount(userId),
+  // Archive a conversation (manually archive)
+  void archiveConversation(String conversationId) {
+    final conversation = getConversation(conversationId);
+    if (conversation == null) return;
+
+    final updatedConversation = conversation.copyWith(
+      isManuallyArchived: true,
     );
+
+    final updatedConversations = conversations.value.map((c) {
+      return c.id == conversationId ? updatedConversation : c;
+    }).toList();
+
+    conversations.value = updatedConversations;
+    _saveConversations();
+
+    if (kDebugMode) {
+      print('📁 Archived conversation: $conversationId');
+    }
+  }
+
+  // Unarchive a conversation
+  void unarchiveConversation(String conversationId) {
+    final conversation = getConversation(conversationId);
+    if (conversation == null) return;
+
+    final updatedConversation = conversation.copyWith(
+      isManuallyArchived: false,
+    );
+
+    final updatedConversations = conversations.value.map((c) {
+      return c.id == conversationId ? updatedConversation : c;
+    }).toList();
+
+    conversations.value = updatedConversations;
+    _saveConversations();
+
+    if (kDebugMode) {
+      print('📂 Unarchived conversation: $conversationId');
+    }
+  }
+
+  // Delete a conversation (soft delete)
+  void deleteConversation(String conversationId) {
+    final conversation = getConversation(conversationId);
+    if (conversation == null) return;
+
+    final updatedConversation = conversation.copyWith(
+      isDeleted: true,
+    );
+
+    final updatedConversations = conversations.value.map((c) {
+      return c.id == conversationId ? updatedConversation : c;
+    }).toList();
+
+    conversations.value = updatedConversations;
+    _saveConversations();
+
+    if (kDebugMode) {
+      print('🗑️ Deleted conversation: $conversationId');
+    }
+  }
+
+  // Restore a deleted conversation
+  void restoreConversation(String conversationId) {
+    final conversation = getConversation(conversationId);
+    if (conversation == null) return;
+
+    final updatedConversation = conversation.copyWith(
+      isDeleted: false,
+    );
+
+    final updatedConversations = conversations.value.map((c) {
+      return c.id == conversationId ? updatedConversation : c;
+    }).toList();
+
+    conversations.value = updatedConversations;
+    _saveConversations();
+
+    if (kDebugMode) {
+      print('♻️ Restored conversation: $conversationId');
+    }
+  }
+
+  // Get total unread count for a user
+  // Only counts from visible, non-archived, non-deleted conversations
+  int getTotalUnreadCount(String userId) {
+    return conversations.value
+        .where((c) =>
+            (c.driverId == userId || c.riderId == userId) &&
+            c.isVisible &&
+            !c.isArchived &&
+            !c.isManuallyArchived &&
+            !c.isDeleted)
+        .fold<int>(
+          0,
+          (sum, conversation) => sum + conversation.getUnreadCount(userId),
+        );
   }
 
   // Check if user can message in this conversation
@@ -464,10 +566,22 @@ class MessagingService {
     // Check if conversation already exists
     if (conversations.value.any((c) => c.bookingId == booking.id)) return;
 
-    // Create conversation based on user role
-    final isDriver =
-        booking.userRole.toLowerCase() == 'driver' ||
-        booking.userRole.toLowerCase() == 'sürücü';
+    // Create conversation based on user role (always compare with English)
+    final isDriver = booking.userRole.toLowerCase() == 'driver';
+
+    // Always look up driver name from MockUsers first for accuracy
+    final driverId = booking.driverUserId ?? booking.userId;
+    final driver = MockUsers.getUserById(driverId);
+    String driverDisplayName;
+    if (driver != null) {
+      driverDisplayName = driver.name;
+      if (driver.surname.isNotEmpty) {
+        driverDisplayName = '${driver.name} ${driver.surname[0]}.';
+      }
+    } else {
+      // Fall back to stored name or default
+      driverDisplayName = booking.driverName ?? 'Driver';
+    }
 
     final conversation = Conversation(
       id: booking.id,
@@ -475,7 +589,7 @@ class MessagingService {
       driverId: isDriver ? currentUser.id : 'other_user_${booking.id}',
       driverName: isDriver
           ? currentUser.fullName
-          : (booking.driverName ?? 'Driver'),
+          : driverDisplayName,
       riderId: isDriver ? 'other_user_${booking.id}' : currentUser.id,
       riderName: isDriver ? 'Rider' : currentUser.fullName,
       routeName: booking.route.name,
@@ -529,5 +643,167 @@ class MessagingService {
     }
 
     return conversation;
+  }
+
+  // Send a system notification message to a conversation
+  // Used for ride updates, cancellations, new bookings, etc.
+  void sendSystemNotification({
+    required String conversationId,
+    required String receiverId,
+    required String receiverName,
+    required String content,
+  }) {
+    var conversation = getConversation(conversationId);
+
+    if (conversation == null) {
+      if (kDebugMode) {
+        print('⚠️ Cannot send system notification: conversation $conversationId not found');
+      }
+      return;
+    }
+
+    final message = Message(
+      id: 'msg_${_messageIdCounter++}',
+      conversationId: conversationId,
+      senderId: Message.systemSenderId,
+      senderName: Message.systemSenderName,
+      receiverId: receiverId,
+      receiverName: receiverName,
+      content: content,
+      timestamp: DateTime.now(),
+      isRead: false,
+      isSystemMessage: true,
+    );
+
+    final updatedMessages = [...conversation.messages, message];
+    final updatedConversation = conversation.copyWith(
+      messages: updatedMessages,
+    );
+
+    final updatedConversations = conversations.value.map((c) {
+      return c.id == conversationId ? updatedConversation : c;
+    }).toList();
+
+    conversations.value = updatedConversations;
+    _saveConversations();
+
+    if (kDebugMode) {
+      print('🤖 System notification sent to $receiverName in conversation $conversationId');
+    }
+  }
+
+  // Send system notification to all parties in a booking's conversations
+  // This respects privacy: only notifies driver-rider pairs, not rider-to-rider
+  void sendSystemNotificationForBooking({
+    required String bookingId,
+    required String content,
+    String? excludeUserId, // Don't notify this user (usually the one who made the change)
+  }) {
+    // Find all conversations related to this booking
+    final relatedConversations = conversations.value.where((c) {
+      return c.bookingId == bookingId || c.id.startsWith(bookingId);
+    }).toList();
+
+    if (kDebugMode) {
+      print('🤖 Sending system notification to ${relatedConversations.length} conversations for booking $bookingId');
+    }
+
+    for (var conversation in relatedConversations) {
+      // Determine who to notify (the other party, not the one who made the change)
+      String receiverId;
+      String receiverName;
+
+      if (excludeUserId == conversation.driverId) {
+        // Driver made the change, notify the rider
+        receiverId = conversation.riderId;
+        receiverName = conversation.riderName;
+      } else if (excludeUserId == conversation.riderId) {
+        // Rider made the change, notify the driver
+        receiverId = conversation.driverId;
+        receiverName = conversation.driverName;
+      } else {
+        // No exclusion, notify both (send to rider by default for system messages)
+        receiverId = conversation.riderId;
+        receiverName = conversation.riderName;
+      }
+
+      sendSystemNotification(
+        conversationId: conversation.id,
+        receiverId: receiverId,
+        receiverName: receiverName,
+        content: content,
+      );
+    }
+  }
+
+  // Create a conversation and send system notifications for a new rider booking
+  // This is specifically for when a rider books a seat - creates the conversation
+  // between driver and rider, then sends notifications to both parties
+  void createConversationAndNotifyBothParties({
+    required String driverBookingId,
+    required String driverId,
+    required String driverName,
+    required String riderId,
+    required String riderName,
+    required String routeName,
+    required String originName,
+    required String destinationName,
+    required DateTime departureTime,
+    required DateTime arrivalTime,
+    required String driverNotificationContent,
+    required String riderNotificationContent,
+  }) {
+    // Create unique conversation ID for this driver-rider pair
+    final conversationId = '${driverBookingId}_${driverId}_$riderId';
+
+    if (kDebugMode) {
+      print('🤖 Creating conversation and notifying driver');
+      print('   conversationId: $conversationId');
+      print('   driver: $driverName ($driverId)');
+      print('   rider: $riderName ($riderId)');
+    }
+
+    // Check if conversation already exists
+    var conversation = getConversation(conversationId);
+
+    if (conversation == null) {
+      // Create the conversation
+      conversation = Conversation(
+        id: conversationId,
+        bookingId: driverBookingId,
+        driverId: driverId,
+        driverName: driverName,
+        riderId: riderId,
+        riderName: riderName,
+        routeName: routeName,
+        originName: originName,
+        destinationName: destinationName,
+        departureTime: departureTime,
+        arrivalTime: arrivalTime,
+        messages: [],
+      );
+
+      addConversation(conversation);
+
+      if (kDebugMode) {
+        print('💬 Created new conversation: $conversationId');
+      }
+    }
+
+    // Send system notification to the driver
+    sendSystemNotification(
+      conversationId: conversationId,
+      receiverId: driverId,
+      receiverName: driverName,
+      content: driverNotificationContent,
+    );
+
+    // Send system notification to the rider
+    sendSystemNotification(
+      conversationId: conversationId,
+      receiverId: riderId,
+      receiverName: riderName,
+      content: riderNotificationContent,
+    );
   }
 }

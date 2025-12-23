@@ -3,6 +3,7 @@ import '../models/routes.dart';
 import '../models/booking.dart';
 import '../services/booking_storage.dart';
 import '../services/auth_service.dart';
+import '../services/messaging_service.dart';
 import '../services/mock_users.dart';
 import '../widgets/seat_planning_section_widget.dart';
 import '../widgets/scroll_indicator.dart';
@@ -87,6 +88,18 @@ class _RiderSeatSelectionScreenState extends State<RiderSeatSelectionScreen> {
                                 letterSpacing: 0.5,
                               ),
                             ),
+                            if (AuthService.currentUser?.shouldShowOnboardingHints ?? true)
+                              Padding(
+                                padding: EdgeInsets.only(top: 4),
+                                child: Text(
+                                  l10n.hintSeatSelectionRider,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Color(0xFF2E2E2E).withOpacity(0.5),
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                ),
+                              ),
                             SizedBox(height: 8),
                             // Seat count subtitle
                             Text(
@@ -225,6 +238,28 @@ class _RiderSeatSelectionScreenState extends State<RiderSeatSelectionScreen> {
 
     final bookingStorage = BookingStorage();
 
+    // Find the driver's booking first to check if it's the user's own ride
+    final driverBooking = bookingStorage.getAllBookings().firstWhere(
+      (b) => b.id == widget.ride.id,
+      orElse: () => throw Exception('Driver booking not found'),
+    );
+
+    // Prevent booking a seat on your own driver booking (against regulations)
+    if (driverBooking.userId == currentUser.id) {
+      if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.snackbarCannotBookOwnRideDetail),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+      return;
+    }
+
     // Check for time conflicts with the rider's existing bookings
     if (bookingStorage.hasTimeConflict(
       userId: currentUser.id,
@@ -236,28 +271,24 @@ class _RiderSeatSelectionScreenState extends State<RiderSeatSelectionScreen> {
         departureTime: widget.ride.departureTime,
         arrivalTime: widget.ride.departureTime.add(Duration(hours: 1)),
       );
-      
+
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
               conflictingBooking != null
-                  ? 'You already have a ride scheduled around this time (${_formatTime(conflictingBooking.departureTime)} - ${_formatTime(conflictingBooking.arrivalTime)})'
-                  : 'You already have a ride scheduled around this time',
+                  ? l10n.snackbarConflictingBooking('${_formatTime(conflictingBooking.departureTime)} - ${_formatTime(conflictingBooking.arrivalTime)}')
+                  : l10n.snackbarAlreadyBookedThisRide,
             ),
             backgroundColor: Colors.red,
-            duration: Duration(seconds: 4),
+            duration: Duration(seconds: 3),
+            behavior: SnackBarBehavior.floating,
           ),
         );
       }
       return;
     }
-
-    // Find the driver's booking
-    final driverBooking = bookingStorage.getAllBookings().firstWhere(
-      (b) => b.id == widget.ride.id,
-      orElse: () => throw Exception('Driver booking not found'),
-    );
 
     // Create rider name (first name + last initial)
     String riderName = currentUser.name;
@@ -313,6 +344,26 @@ class _RiderSeatSelectionScreenState extends State<RiderSeatSelectionScreen> {
     print('✅ Rider booking created and driver booking updated');
     print('   Rider: $riderName, Seats: $selectedSeats');
     print('   Driver available seats now: $updatedDriverSeats');
+
+    // Create conversation and send system notifications to both driver and rider
+    final messagingService = MessagingService();
+    final l10n = AppLocalizations.of(context)!;
+    final driverNotification = l10n.systemNotificationNewRider(riderName);
+    final riderNotification = l10n.systemNotificationRiderBooked(widget.ride.driverName);
+    messagingService.createConversationAndNotifyBothParties(
+      driverBookingId: widget.ride.id,
+      driverId: widget.ride.driverId,
+      driverName: widget.ride.driverName,
+      riderId: currentUser.id,
+      riderName: riderName,
+      routeName: widget.ride.route.name,
+      originName: widget.ride.route.stops[widget.ride.originIndex].name,
+      destinationName: widget.ride.route.stops[widget.ride.destinationIndex].name,
+      departureTime: widget.ride.departureTime,
+      arrivalTime: widget.ride.arrivalTime,
+      driverNotificationContent: driverNotification,
+      riderNotificationContent: riderNotification,
+    );
 
     // Show confirmation dialog
     await DialogHelper.showInfoDialog(

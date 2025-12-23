@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../models/routes.dart';
 import '../l10n/app_localizations.dart';
-import 'package:url_launcher/url_launcher.dart';
+import '../services/auth_service.dart';
+import '../services/messaging_service.dart';
+import '../screens/chat_screen.dart';
 
 class RouteSelectionWidget extends StatelessWidget {
   final RouteInfo? selectedRoute;
@@ -106,7 +108,7 @@ class RouteSelectionWidget extends StatelessWidget {
         Padding(
           padding: EdgeInsets.only(bottom: 12),
           child: InkWell(
-            onTap: () => _launchURL('https://forms.gle/yourformlink'),
+            onTap: () => _suggestNewRoute(context),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
@@ -132,11 +134,39 @@ class RouteSelectionWidget extends StatelessWidget {
     );
   }
 
-  Future<void> _launchURL(String url) async {
-    final Uri uri = Uri.parse(url);
-    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-      throw Exception('Could not launch $url');
+  void _suggestNewRoute(BuildContext context) {
+    final currentUser = AuthService.currentUser;
+    if (currentUser == null) {
+      final l10n = AppLocalizations.of(context)!;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.snackbarPleaseLoginToSuggestRoute),
+          duration: Duration(seconds: 3),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
     }
+
+    final messagingService = MessagingService();
+
+    // Create support conversation with "New Route Suggestion" type
+    final supportConversation = messagingService.createSupportConversation(
+      currentUser.id,
+      currentUser.fullName,
+      'New Route Suggestion',
+    );
+
+    // Navigate to chat screen
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ChatScreen(
+          conversation: supportConversation,
+          createConversationOnFirstMessage: true,
+        ),
+      ),
+    );
   }
 
   String _getFormattedRouteName(String routeName) {

@@ -595,37 +595,172 @@ class AppLocalizationsKo extends AppLocalizations {
   String get archived => '보관됨';
 
   @override
-  String get message => 'Message';
+  String get message => '메시지';
 
   @override
-  String get rate => 'Rate';
+  String get rate => '평가';
 
   @override
-  String get yourRating => 'Your Rating:';
+  String get yourRating => '내 평가:';
 
   @override
   String rateUser(String userName) {
-    return 'Rate $userName';
+    return '$userName 평가하기';
   }
 
   @override
-  String get selectQualitiesThatApply => 'Select the qualities that apply';
+  String get selectQualitiesThatApply => '해당하는 항목을 선택하세요';
 
   @override
-  String get submitRating => 'Submit Rating';
+  String get submitRating => '평가 제출';
 
   @override
-  String get safe => 'Safe';
+  String get safe => '안전';
 
   @override
-  String get punctual => 'Punctual';
+  String get punctual => '시간 엄수';
 
   @override
-  String get clean => 'Clean';
+  String get clean => '청결';
 
   @override
-  String get polite => 'Polite';
+  String get polite => '예의 바름';
 
   @override
-  String get communicative => 'Communicative';
+  String get communicative => '의사소통';
+
+  @override
+  String get suggestion => 'Suggestion';
+
+  @override
+  String get complaint => 'Complaint';
+
+  @override
+  String get delete => 'Delete';
+
+  @override
+  String get conversationArchived => '대화가 보관되었습니다';
+
+  @override
+  String get conversationDeleted => 'Conversation deleted';
+
+  @override
+  String get undo => 'Undo';
+
+  @override
+  String get newRouteSuggestion => 'New Route Suggestion';
+
+  @override
+  String get newStopSuggestion => 'New Stop Suggestion';
+
+  @override
+  String get hintRoleSelection => '탑승을 제공하고 싶으세요? 드라이버 선택! 탑승하고 싶으세요? 라이더 선택!';
+
+  @override
+  String get hintRouteSelection => '이동할 노선을 선택하세요';
+
+  @override
+  String get hintOriginSelection => '어디서 출발하시나요?';
+
+  @override
+  String get hintDestinationSelection => '어디서 내리시나요?';
+
+  @override
+  String get hintTimeSelection => '언제 이동할 예정인가요?';
+
+  @override
+  String get hintSeatSelectionDriver => '좌석을 탭하여 라이더에게 제공';
+
+  @override
+  String get hintSeatSelectionRider => '좌석을 탭하여 예약하세요';
+
+  @override
+  String get hintMatchingRides => '이 드라이버들이 노선과 시간이 일치합니다';
+
+  @override
+  String get hintPostRide => '탑승 세부 정보를 검토하고 확인하세요';
+
+  @override
+  String systemNotificationDriverCanceled(String driverName, String routeName) {
+    return '$driverName님이 $routeName 탑승을 취소했습니다';
+  }
+
+  @override
+  String systemNotificationRiderCanceled(String riderName) {
+    return '$riderName님이 예약을 취소했습니다';
+  }
+
+  @override
+  String systemNotificationNewRider(String riderName) {
+    return '$riderName님이 탑승에 좌석을 예약했습니다';
+  }
+
+  @override
+  String systemNotificationRiderBooked(String driverName) {
+    return '$driverName님의 탑승에 좌석을 예약했습니다';
+  }
+
+  @override
+  String get snackbarAdminViewOnly => '관리자는 메시지를 볼 수만 있고 보낼 수 없습니다';
+
+  @override
+  String get snackbarMessagingExpired => '메시지 기간이 만료되었습니다 (도착 후 3일)';
+
+  @override
+  String get snackbarPleaseLoginToSuggestStop => '정류장을 제안하려면 로그인하세요';
+
+  @override
+  String get snackbarPleaseLoginToSuggestRoute => '노선을 제안하려면 로그인하세요';
+
+  @override
+  String get snackbarCannotBookOwnRideDetail =>
+      '본인의 탑승에는 좌석을 예약할 수 없습니다. 이는 규정 위반입니다.';
+
+  @override
+  String get snackbarAlreadyBookedThisRide => '이미 이 탑승을 예약했습니다';
+
+  @override
+  String snackbarConflictingBooking(String routeName) {
+    return '이 시간에 충돌하는 예약이 있습니다: $routeName';
+  }
+
+  @override
+  String snackbarSwitchedToUser(String userName) {
+    return '$userName(으)로 전환했습니다';
+  }
+
+  @override
+  String get snackbarBookingsCleared => '모든 예약이 삭제되었습니다';
+
+  @override
+  String get snackbarConversationsCleared => '모든 대화가 삭제되었습니다';
+
+  @override
+  String get snackbarRatingsCleared => '모든 평가가 삭제되었습니다';
+
+  @override
+  String snackbarAlreadyRated(String userName) {
+    return '이 여행에서 $userName님을 이미 평가했습니다';
+  }
+
+  @override
+  String snackbarRatingSubmitted(String rating, String userName) {
+    return '평가 제출됨: $userName님에게 $rating점';
+  }
+
+  @override
+  String snackbarCopiedToClipboard(String label) {
+    return '$label이(가) 클립보드에 복사되었습니다';
+  }
+
+  @override
+  String get snackbarCannotMessageYourself => '자신에게 메시지를 보낼 수 없습니다';
+
+  @override
+  String snackbarErrorOpeningChat(String error) {
+    return '지원 채팅을 여는 중 오류 발생: $error';
+  }
+
+  @override
+  String get snackbarConversationRestored => '대화가 복원되었습니다';
 }

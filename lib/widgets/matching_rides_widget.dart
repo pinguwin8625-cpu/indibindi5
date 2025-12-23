@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/routes.dart';
 import '../models/booking.dart';
 import '../services/booking_storage.dart';
+import '../services/auth_service.dart';
 import '../services/mock_users.dart';
 import '../widgets/ride_details_bar.dart';
 import '../widgets/matching_rides_card.dart';
@@ -42,6 +43,7 @@ class _MatchingRidesWidgetState extends State<MatchingRidesWidget> {
     try {
       final bookingStorage = BookingStorage();
       final allBookings = bookingStorage.getAllBookings();
+      final currentUser = AuthService.currentUser;
 
       print(
         '🔍 MATCHING DEBUG: Total bookings in storage: ${allBookings.length}',
@@ -88,6 +90,12 @@ class _MatchingRidesWidgetState extends State<MatchingRidesWidget> {
             // userRole is stored as 'driver' or 'rider' in English (not localized)
             if (booking.userRole.toLowerCase() != 'driver') {
               print('   ❌ Not a driver booking');
+              return false;
+            }
+
+            // Cannot book a seat on your own driver booking (against regulations)
+            if (currentUser != null && booking.userId == currentUser.id) {
+              print('   ❌ Cannot book seat on your own ride');
               return false;
             }
 
@@ -211,14 +219,25 @@ class _MatchingRidesWidgetState extends State<MatchingRidesWidget> {
         final bookedSeats = booking.riders?.length ?? 0;
         final availableSeats = totalOfferedSeats - bookedSeats;
 
-        // Get driver's photo from user data
+        // Get driver's photo and name from user data
+        // Always look up driver name from MockUsers first for accuracy
         final driver = MockUsers.getUserById(booking.userId);
         final driverPhoto = driver?.profilePhotoUrl ?? '';
+        String driverDisplayName;
+        if (driver != null) {
+          driverDisplayName = driver.name;
+          if (driver.surname.isNotEmpty) {
+            driverDisplayName = '${driver.name} ${driver.surname[0]}.';
+          }
+        } else {
+          // Fall back to stored name or default
+          driverDisplayName = booking.driverName ?? 'Driver';
+        }
 
         return RideInfo(
           id: booking.id,
           driverId: booking.userId,
-          driverName: booking.driverName ?? 'Driver',
+          driverName: driverDisplayName,
           driverPhoto: driverPhoto,
           driverRating: booking.driverRating ?? 4.5,
           price: '\$${(10 + (widget.destinationIndex - widget.originIndex) * 5)}.00',
@@ -307,14 +326,31 @@ class _MatchingRidesWidgetState extends State<MatchingRidesWidget> {
               Container(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
                 child: Center(
-                  child: Text(
-                    l10n.matchingRides,
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF5D4037),
-                      letterSpacing: 0.5,
-                    ),
+                  child: Column(
+                    children: [
+                      Text(
+                        l10n.matchingRides,
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF5D4037),
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      if (AuthService.currentUser?.shouldShowOnboardingHints ?? true)
+                        Padding(
+                          padding: EdgeInsets.only(top: 4),
+                          child: Text(
+                            l10n.hintMatchingRides,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Color(0xFF5D4037).withOpacity(0.6),
+                              fontStyle: FontStyle.italic,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                    ],
                   ),
                 ),
               ),

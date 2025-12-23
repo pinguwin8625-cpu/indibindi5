@@ -505,7 +505,7 @@ class _CarSeatLayoutState extends State<CarSeatLayout> {
     final l10n = AppLocalizations.of(context)!;
 
     // If driver is the current user, show their name with last initial
-    if (widget.userRole.toLowerCase() == l10n.driver.toLowerCase() &&
+    if (widget.userRole.toLowerCase() == 'driver' &&
         currentUser != null) {
       String displayName = currentUser.name;
       if (currentUser.surname.isNotEmpty) {

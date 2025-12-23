@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import '../models/routes.dart';
 import '../screens/route_line_with_stops.dart';
 import '../l10n/app_localizations.dart';
-import 'package:url_launcher/url_launcher.dart';
+import '../services/auth_service.dart';
+import '../services/messaging_service.dart';
+import '../screens/chat_screen.dart';
 
 class StopsSectionWidget extends StatefulWidget {
   final bool hideUnusedStops;
@@ -47,8 +49,8 @@ class _StopsSectionWidgetState extends State<StopsSectionWidget> {
       }
     }
 
-    // Use smaller row height in compact view (24px vs 42px)
-    final double compactRowHeight = 24.0;
+    // Row heights - compact needs to fit 26x26 markers
+    final double compactRowHeight = 30.0;
     final double normalRowHeight = 42.0;
 
     // Calculate height based on view mode
@@ -60,37 +62,42 @@ class _StopsSectionWidgetState extends State<StopsSectionWidget> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Main stops section (title is now handled separately)
-        SizedBox(
-          height: totalHeight,
-          child: Stack(
-            children: [
-              Positioned.fill(
-                child: CustomPaint(
-                  painter: RouteLineWithStopsPainter(
-                    stopCount: showCompactView ? relevantStopIndices.length : widget.selectedRoute.stops.length,
-                    rowHeight: showCompactView ? compactRowHeight : normalRowHeight,
-                    lineWidth: 2,
-                    lineColor: Color(0xFF2E2E2E),
-                    originIndex: 0,
-                    destinationIndex: showCompactView
-                        ? relevantStopIndices.length - 1
-                        : (widget.selectedRoute.stops.length > 1 ? widget.selectedRoute.stops.length - 1 : 0),
-                    greyedStops: widget.greyedStops,
+        // Add padding to allow shadows to render outside the content area
+        Padding(
+          padding: EdgeInsets.symmetric(vertical: 4),
+          child: SizedBox(
+            height: totalHeight,
+            child: Stack(
+              clipBehavior: Clip.none, // Allow shadows to extend beyond stack
+              children: [
+                Positioned.fill(
+                  child: CustomPaint(
+                    painter: RouteLineWithStopsPainter(
+                      stopCount: showCompactView ? relevantStopIndices.length : widget.selectedRoute.stops.length,
+                      rowHeight: showCompactView ? compactRowHeight : normalRowHeight,
+                      lineWidth: 2,
+                      lineColor: Color(0xFF2E2E2E),
+                      originIndex: 0,
+                      destinationIndex: showCompactView
+                          ? relevantStopIndices.length - 1
+                          : (widget.selectedRoute.stops.length > 1 ? widget.selectedRoute.stops.length - 1 : 0),
+                      greyedStops: widget.greyedStops,
+                    ),
                   ),
                 ),
-              ),
-              Column(
-                children: showCompactView
-                    ? [
-                        // Build all stops between origin and destination with compact height
-                        ...relevantStopIndices.map((i) => _buildCompactStopRow(i)),
-                      ]
-                    : [
-                        // Build all stops with normal height
-                        ...List.generate(widget.selectedRoute.stops.length, (i) => _buildStopRow(i)),
-                      ],
-              ),
-            ],
+                Column(
+                  children: showCompactView
+                      ? [
+                          // Build all stops between origin and destination with compact height
+                          ...relevantStopIndices.map((i) => _buildCompactStopRow(i)),
+                        ]
+                      : [
+                          // Build all stops with normal height
+                          ...List.generate(widget.selectedRoute.stops.length, (i) => _buildStopRow(i)),
+                        ],
+                ),
+              ],
+            ),
           ),
         ),
 
@@ -98,7 +105,7 @@ class _StopsSectionWidgetState extends State<StopsSectionWidget> {
         Padding(
           padding: EdgeInsets.only(top: 16, bottom: 8),
           child: InkWell(
-            onTap: () => _launchURL('https://forms.gle/yourstopformlink'),
+            onTap: () => _suggestNewStop(context),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
@@ -116,11 +123,39 @@ class _StopsSectionWidgetState extends State<StopsSectionWidget> {
     );
   }
 
-  Future<void> _launchURL(String url) async {
-    final Uri uri = Uri.parse(url);
-    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-      throw Exception('Could not launch $url');
+  void _suggestNewStop(BuildContext context) {
+    final currentUser = AuthService.currentUser;
+    if (currentUser == null) {
+      final l10n = AppLocalizations.of(context)!;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.snackbarPleaseLoginToSuggestStop),
+          duration: Duration(seconds: 3),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
     }
+
+    final messagingService = MessagingService();
+
+    // Create support conversation with "New Stop Suggestion" type
+    final supportConversation = messagingService.createSupportConversation(
+      currentUser.id,
+      currentUser.fullName,
+      'New Stop Suggestion',
+    );
+
+    // Navigate to chat screen
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ChatScreen(
+          conversation: supportConversation,
+          createConversationOnFirstMessage: true,
+        ),
+      ),
+    );
   }
 
   // Build a compact stop row (smaller height, same font size)
@@ -128,9 +163,10 @@ class _StopsSectionWidgetState extends State<StopsSectionWidget> {
     bool isGreyed = widget.greyedStops.contains(i);
     bool isOrigin = i == widget.originIndex;
     bool isDestination = i == widget.destinationIndex;
+    bool isIntermediate = !isOrigin && !isDestination;
 
     // Allow tapping on origin/destination to deselect
-    bool disableTap = widget.isDisabled || (!isOrigin && !isDestination);
+    bool disableTap = widget.isDisabled || isIntermediate;
 
     return InkWell(
       onTap: disableTap
@@ -148,25 +184,29 @@ class _StopsSectionWidgetState extends State<StopsSectionWidget> {
               }
             },
       child: Container(
-        height: 24.0, // Compact height
+        height: 30.0, // Fits 26x26 markers for origin/destination
         padding: EdgeInsets.symmetric(vertical: 2),
+        clipBehavior: Clip.none, // Allow shadows to extend beyond container
         child: Row(
           mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Container(
               width: 28,
+              clipBehavior: Clip.none, // Allow shadows to extend beyond container
               alignment: Alignment.center,
               child: _buildStopCircleOrMarker(i, widget.originIndex, widget.destinationIndex, isGreyed),
             ),
             SizedBox(width: 8),
+            // Add left padding to intermediate stops to indent them
+            if (isIntermediate) SizedBox(width: 12),
             Expanded(
               child: Text(
                 widget.selectedRoute.stops[i].name,
                 style: TextStyle(
-                  fontSize: 14, // Same font size as normal view
-                  color: isGreyed ? Colors.grey : Color(0xFF2E2E2E),
-                  fontWeight: (isOrigin || isDestination) ? FontWeight.bold : FontWeight.normal,
+                  fontSize: (isOrigin || isDestination) ? 16 : 13,
+                  color: isIntermediate ? Colors.grey[600] : Colors.black,
+                  fontWeight: (isOrigin || isDestination) ? FontWeight.w800 : FontWeight.normal,
                 ),
                 textAlign: TextAlign.left,
                 maxLines: 1,
@@ -182,6 +222,8 @@ class _StopsSectionWidgetState extends State<StopsSectionWidget> {
   Widget _buildStopRow(int i) {
     bool isFirst = i == 0;
     bool isLast = i == widget.selectedRoute.stops.length - 1;
+    bool isOrigin = i == widget.originIndex;
+    bool isDestination = i == widget.destinationIndex;
     bool disableTap =
         widget.isDisabled ||
         (widget.originIndex == null && isLast) ||
@@ -189,8 +231,8 @@ class _StopsSectionWidgetState extends State<StopsSectionWidget> {
         // Disable taps on inactive stops when both origin and destination are selected
         (widget.originIndex != null &&
             widget.destinationIndex != null &&
-            i != widget.originIndex &&
-            i != widget.destinationIndex);
+            !isOrigin &&
+            !isDestination);
     bool isGreyed = widget.greyedStops.contains(i);
 
     return InkWell(
@@ -204,18 +246,18 @@ class _StopsSectionWidgetState extends State<StopsSectionWidget> {
                   widget.onDestinationChanged(null);
                   widget.onResetDateTime();
                 }
-              } else if (widget.destinationIndex == null && i != widget.originIndex && i > widget.originIndex!) {
+              } else if (widget.destinationIndex == null && !isOrigin && i > widget.originIndex!) {
                 if (!isFirst) {
                   print('🎯 StopsSection: Setting destination to $i');
                   widget.onDestinationChanged(i);
                   // Don't reset date/time here - user may have already selected time
                 }
-              } else if (i == widget.originIndex) {
+              } else if (isOrigin) {
                 print('🎯 StopsSection: Clearing origin (was $i)');
                 widget.onOriginChanged(null);
                 widget.onDestinationChanged(null);
                 widget.onResetDateTime();
-              } else if (i == widget.destinationIndex) {
+              } else if (isDestination) {
                 print('🎯 StopsSection: Clearing destination (was $i)');
                 widget.onDestinationChanged(null);
                 widget.onResetDateTime();
@@ -238,11 +280,12 @@ class _StopsSectionWidgetState extends State<StopsSectionWidget> {
               child: Text(
                 widget.selectedRoute.stops[i].name,
                 style: TextStyle(
-                  fontSize: 14,
-                  color: isGreyed ? Colors.grey : Color(0xFF2E2E2E), // Use same dark color for all stops
-                  fontWeight: (i == widget.originIndex || i == widget.destinationIndex)
-                      ? FontWeight.bold
-                      : FontWeight.normal,
+                  fontSize: (i == widget.originIndex || i == widget.destinationIndex) ? 16 : 14,
+                  // Check origin/destination FIRST, before isGreyed
+                  color: (i == widget.originIndex || i == widget.destinationIndex)
+                      ? Colors.black
+                      : (isGreyed ? Colors.grey : Color(0xFF2E2E2E)),
+                  fontWeight: (i == widget.originIndex || i == widget.destinationIndex) ? FontWeight.w800 : FontWeight.normal,
                 ),
                 textAlign: TextAlign.left,
                 maxLines: 2,
@@ -258,67 +301,67 @@ class _StopsSectionWidgetState extends State<StopsSectionWidget> {
 
   Widget _buildStopCircleOrMarker(int i, int? originIndex, int? destinationIndex, bool isGreyed) {
     if (i == originIndex) {
-      // Google Maps style origin marker
-      return Stack(
-        alignment: Alignment.center,
-        children: [
-          // Outer circle
-          Container(
-            width: 20,
-            height: 20,
+      // Larger origin marker - green with grey outer ring, white middle, green center
+      return Container(
+        width: 26,
+        height: 26,
+        decoration: BoxDecoration(
+          color: Colors.grey[400],
+          shape: BoxShape.circle,
+        ),
+        child: Center(
+          child: Container(
+            width: 24,
+            height: 24,
             decoration: BoxDecoration(
               color: Colors.white,
               shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.2),
-                  blurRadius: 2,
-                  spreadRadius: 1,
-                  offset: Offset(0, 1),
+            ),
+            child: Center(
+              child: Container(
+                width: 16,
+                height: 16,
+                decoration: BoxDecoration(
+                  color: Colors.green,
+                  shape: BoxShape.circle,
                 ),
-              ],
+              ),
             ),
           ),
-          // Inner circle - green for origin
-          Container(
-            width: 14,
-            height: 14,
-            decoration: BoxDecoration(color: Colors.green, shape: BoxShape.circle),
-          ),
-        ],
+        ),
       );
     } else if (i == destinationIndex) {
-      // Google Maps style destination marker
-      return Stack(
-        alignment: Alignment.center,
-        children: [
-          // Outer circle
-          Container(
-            width: 20,
-            height: 20,
+      // Larger destination marker - red with grey outer ring, white middle, red center
+      return Container(
+        width: 26,
+        height: 26,
+        decoration: BoxDecoration(
+          color: Colors.grey[400],
+          shape: BoxShape.circle,
+        ),
+        child: Center(
+          child: Container(
+            width: 24,
+            height: 24,
             decoration: BoxDecoration(
               color: Colors.white,
               shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.2),
-                  blurRadius: 2,
-                  spreadRadius: 1,
-                  offset: Offset(0, 1),
+            ),
+            child: Center(
+              child: Container(
+                width: 16,
+                height: 16,
+                decoration: BoxDecoration(
+                  color: Colors.red,
+                  shape: BoxShape.circle,
                 ),
-              ],
+              ),
             ),
           ),
-          // Inner circle - red for destination
-          Container(
-            width: 14,
-            height: 14,
-            decoration: BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-          ),
-        ],
+        ),
       );
     } else {
-      // Regular stop marker
+      // Regular stop marker - simple border, no shadow
       return Container(
         width: 14,
         height: 14,

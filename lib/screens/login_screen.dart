@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'dart:io';
 import '../services/auth_service.dart';
 import '../widgets/scroll_indicator.dart';
-import '../widgets/language_selector.dart';
 import '../utils/phone_formatter.dart';
 import '../utils/dialog_helper.dart';
 import 'main_screen.dart';
@@ -300,7 +299,10 @@ class _LoginScreenState extends State<LoginScreen> {
   }
   
   String _getCountryCode() {
-    return _countryCodes.firstWhere((c) => c['iso'] == _selectedCountryIso)['code']!;
+    return _countryCodes.firstWhere(
+      (c) => c['iso'] == _selectedCountryIso,
+      orElse: () => {'code': '+1', 'country': 'United States', 'flag': '🇺🇸', 'iso': 'US'},
+    )['code']!;
   }
   
   String _getPhoneHint() {
@@ -465,12 +467,6 @@ class _LoginScreenState extends State<LoginScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        actions: [
-          Padding(
-            padding: EdgeInsets.only(right: 12),
-            child: LanguageSelector(isDarkBackground: false),
-          ),
-        ],
       ),
       body: SafeArea(
         maintainBottomViewPadding: true,

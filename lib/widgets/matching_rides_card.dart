@@ -6,6 +6,7 @@ import '../models/booking.dart';
 import '../l10n/app_localizations.dart';
 import '../services/auth_service.dart';
 import '../services/booking_storage.dart';
+import '../services/messaging_service.dart';
 import '../services/mock_users.dart';
 
 /// A card that displays a matching ride with the same style as booking cards
@@ -107,7 +108,8 @@ class _MatchingRideCardState extends State<MatchingRideCard>
         SnackBar(
           content: Text(l10n.cannotBookOwnRide),
           backgroundColor: Colors.orange,
-          duration: Duration(seconds: 2),
+          duration: Duration(seconds: 3),
+          behavior: SnackBarBehavior.floating,
         ),
       );
       return;
@@ -226,11 +228,12 @@ class _MatchingRideCardState extends State<MatchingRideCard>
           SnackBar(
             content: Text(
               conflictingBooking != null
-                  ? '${l10n.alreadyHaveRideScheduled} (${_formatTimeForConflict(conflictingBooking.departureTime)} - ${_formatTimeForConflict(conflictingBooking.arrivalTime)})'
+                  ? l10n.snackbarConflictingBooking('${_formatTimeForConflict(conflictingBooking.departureTime)} - ${_formatTimeForConflict(conflictingBooking.arrivalTime)}')
                   : l10n.alreadyHaveRideScheduled,
             ),
             backgroundColor: Colors.red,
-            duration: Duration(seconds: 4),
+            duration: Duration(seconds: 3),
+            behavior: SnackBarBehavior.floating,
           ),
         );
       }
@@ -319,6 +322,26 @@ class _MatchingRideCardState extends State<MatchingRideCard>
     print('   Total riders: ${updatedRiders.length}');
     print(
       '   Available seats: ${driverBooking.selectedSeats.length - updatedRiders.length}',
+    );
+
+    // Create conversation and send system notifications to both driver and rider
+    final messagingService = MessagingService();
+    final l10n = AppLocalizations.of(context)!;
+    final driverNotification = l10n.systemNotificationNewRider(riderName);
+    final riderNotification = l10n.systemNotificationRiderBooked(widget.ride.driverName);
+    messagingService.createConversationAndNotifyBothParties(
+      driverBookingId: widget.ride.id,
+      driverId: widget.ride.driverId,
+      driverName: widget.ride.driverName,
+      riderId: currentUser.id,
+      riderName: riderName,
+      routeName: widget.ride.route.name,
+      originName: widget.ride.route.stops[widget.ride.originIndex].name,
+      destinationName: widget.ride.route.stops[widget.ride.destinationIndex].name,
+      departureTime: widget.ride.departureTime,
+      arrivalTime: widget.ride.arrivalTime,
+      driverNotificationContent: driverNotification,
+      riderNotificationContent: riderNotification,
     );
 
     setState(() {

@@ -594,37 +594,171 @@ class AppLocalizationsZh extends AppLocalizations {
   String get archived => '已归档';
 
   @override
-  String get message => 'Message';
+  String get message => '消息';
 
   @override
-  String get rate => 'Rate';
+  String get rate => '评价';
 
   @override
-  String get yourRating => 'Your Rating:';
+  String get yourRating => '您的评价:';
 
   @override
   String rateUser(String userName) {
-    return 'Rate $userName';
+    return '评价$userName';
   }
 
   @override
-  String get selectQualitiesThatApply => 'Select the qualities that apply';
+  String get selectQualitiesThatApply => '选择适用的品质';
 
   @override
-  String get submitRating => 'Submit Rating';
+  String get submitRating => '提交评价';
 
   @override
-  String get safe => 'Safe';
+  String get safe => '安全';
 
   @override
-  String get punctual => 'Punctual';
+  String get punctual => '守时';
 
   @override
-  String get clean => 'Clean';
+  String get clean => '干净';
 
   @override
-  String get polite => 'Polite';
+  String get polite => '礼貌';
 
   @override
-  String get communicative => 'Communicative';
+  String get communicative => '善于沟通';
+
+  @override
+  String get suggestion => 'Suggestion';
+
+  @override
+  String get complaint => 'Complaint';
+
+  @override
+  String get delete => 'Delete';
+
+  @override
+  String get conversationArchived => '对话已归档';
+
+  @override
+  String get conversationDeleted => 'Conversation deleted';
+
+  @override
+  String get undo => 'Undo';
+
+  @override
+  String get newRouteSuggestion => 'New Route Suggestion';
+
+  @override
+  String get newStopSuggestion => 'New Stop Suggestion';
+
+  @override
+  String get hintRoleSelection => '想发布行程？选择司机！想搭车？选择乘客！';
+
+  @override
+  String get hintRouteSelection => '选择您要行驶的路线';
+
+  @override
+  String get hintOriginSelection => '您的行程从哪里开始？';
+
+  @override
+  String get hintDestinationSelection => '您的行程在哪里结束？';
+
+  @override
+  String get hintTimeSelection => '您计划什么时候出行？';
+
+  @override
+  String get hintSeatSelectionDriver => '点击座位使其对乘客可用';
+
+  @override
+  String get hintSeatSelectionRider => '点击座位预订您的位置';
+
+  @override
+  String get hintMatchingRides => '这些司机与您的路线和时间匹配';
+
+  @override
+  String get hintPostRide => '查看并确认您的行程详情';
+
+  @override
+  String systemNotificationDriverCanceled(String driverName, String routeName) {
+    return '$driverName取消了$routeName的行程';
+  }
+
+  @override
+  String systemNotificationRiderCanceled(String riderName) {
+    return '$riderName取消了预订';
+  }
+
+  @override
+  String systemNotificationNewRider(String riderName) {
+    return '$riderName在您的行程中预订了座位';
+  }
+
+  @override
+  String systemNotificationRiderBooked(String driverName) {
+    return '您在$driverName的行程中预订了座位';
+  }
+
+  @override
+  String get snackbarAdminViewOnly => '管理员只能查看消息，不能发送';
+
+  @override
+  String get snackbarMessagingExpired => '消息期限已过（到达后3天）';
+
+  @override
+  String get snackbarPleaseLoginToSuggestStop => '请登录以建议停靠点';
+
+  @override
+  String get snackbarPleaseLoginToSuggestRoute => '请登录以建议路线';
+
+  @override
+  String get snackbarCannotBookOwnRideDetail => '您不能在自己的行程中预订座位。这违反了我们的规定。';
+
+  @override
+  String get snackbarAlreadyBookedThisRide => '您已预订此行程';
+
+  @override
+  String snackbarConflictingBooking(String routeName) {
+    return '您在此时间有冲突的预订: $routeName';
+  }
+
+  @override
+  String snackbarSwitchedToUser(String userName) {
+    return '已切换到$userName';
+  }
+
+  @override
+  String get snackbarBookingsCleared => '所有预订已清除';
+
+  @override
+  String get snackbarConversationsCleared => '所有对话已清除';
+
+  @override
+  String get snackbarRatingsCleared => '所有评价已清除';
+
+  @override
+  String snackbarAlreadyRated(String userName) {
+    return '您已对此行程中的$userName进行了评价';
+  }
+
+  @override
+  String snackbarRatingSubmitted(String rating, String userName) {
+    return '评价已提交: 给$userName$rating颗星';
+  }
+
+  @override
+  String snackbarCopiedToClipboard(String label) {
+    return '$label已复制到剪贴板';
+  }
+
+  @override
+  String get snackbarCannotMessageYourself => '您不能给自己发消息';
+
+  @override
+  String snackbarErrorOpeningChat(String error) {
+    return '打开客服聊天时出错: $error';
+  }
+
+  @override
+  String get snackbarConversationRestored => '对话已恢复';
 }
