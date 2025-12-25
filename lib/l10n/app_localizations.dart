@@ -1444,17 +1444,17 @@ abstract class AppLocalizations {
   /// **'{riderName} has canceled their booking'**
   String systemNotificationRiderCanceled(String riderName);
 
-  /// System notification when a new rider books a seat
+  /// System notification when a new rider books a seat (shown to driver)
   ///
   /// In en, this message translates to:
-  /// **'{riderName} has booked a seat on your ride'**
-  String systemNotificationNewRider(String riderName);
+  /// **'{riderName} booked a seat on {driverName}\'s ride'**
+  String systemNotificationNewRider(String riderName, String driverName);
 
   /// System notification shown to rider after booking a seat
   ///
   /// In en, this message translates to:
-  /// **'You booked a seat on {driverName}\'s ride'**
-  String systemNotificationRiderBooked(String driverName);
+  /// **'{riderName} booked a seat on {driverName}\'s ride'**
+  String systemNotificationRiderBooked(String riderName, String driverName);
 
   /// Snackbar shown when admin tries to send message in view mode
   ///

@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../l10n/app_localizations.dart';
@@ -13,6 +14,7 @@ import '../models/trip_rating.dart';
 import '../widgets/booking_card_widget.dart';
 import '../widgets/seat_layout_widget.dart';
 import '../utils/dialog_helper.dart';
+import '../utils/date_time_helpers.dart';
 import 'chat_screen.dart';
 
 class AdminPanelScreen extends StatelessWidget {
@@ -97,33 +99,28 @@ class _UsersTab extends StatelessWidget {
         ? 'support_${userId1}_$userId2'
         : 'support_${userId2}_$userId1';
 
-    // Get or create conversation
-    var conversation = MessagingService().getConversation(conversationId);
-
-    if (conversation == null) {
-      // Create new support conversation
-      conversation = Conversation(
-        id: conversationId,
-        bookingId: conversationId,
-        driverId: currentUser.id,
-        driverName: currentUser.fullName,
-        riderId: user.id,
-        riderName: user.fullName,
-        routeName: 'Support',
-        originName: '',
-        destinationName: '',
-        departureTime: DateTime.now(),
-        arrivalTime: DateTime.now().add(Duration(days: 365)), // Never expires
-        messages: [],
-      );
-      MessagingService().addConversation(conversation);
-    }
+    // Get or create conversation - don't add until first message is sent
+    var conversation = MessagingService().getConversation(conversationId) ??
+        Conversation(
+          id: conversationId,
+          bookingId: conversationId,
+          driverId: currentUser.id,
+          driverName: currentUser.fullName,
+          riderId: user.id,
+          riderName: user.fullName,
+          routeName: 'Support',
+          originName: '',
+          destinationName: '',
+          departureTime: DateTime.now(),
+          arrivalTime: DateTime.now().add(Duration(days: 365)), // Never expires
+          messages: [],
+        );
 
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => ChatScreen(
-          conversation: conversation!,
+          conversation: conversation,
           createConversationOnFirstMessage: true,
         ),
       ),
@@ -299,7 +296,11 @@ class _UsersTab extends StatelessWidget {
 
   void _showUserDetails(BuildContext context, User user) {
     final bookings = BookingStorage().getBookingsForUser(user.id);
-    final conversations = MessagingService().getConversationsForUser(user.id);
+    // Filter out empty conversations (same as inbox) to sync data
+    final conversations = MessagingService()
+        .getConversationsForUser(user.id)
+        .where((c) => c.messages.isNotEmpty)
+        .toList();
     final ratings = RatingService().getRatingsForUser(user.id);
 
     showModalBottomSheet(
@@ -695,7 +696,17 @@ class _MessagesTabState extends State<_MessagesTab> {
         ValueListenableBuilder(
           valueListenable: MessagingService().conversations,
           builder: (context, conversations, _) {
-            if (conversations.isEmpty) {
+            // Show all conversations with at least one message (same filter as inbox)
+            final allConversations = conversations
+                .where((c) => c.messages.isNotEmpty)
+                .toList()
+              ..sort((a, b) {
+                final aLast = a.lastMessage?.timestamp ?? a.arrivalTime;
+                final bLast = b.lastMessage?.timestamp ?? b.arrivalTime;
+                return bLast.compareTo(aLast);
+              });
+
+            if (allConversations.isEmpty) {
               return Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -711,14 +722,6 @@ class _MessagesTabState extends State<_MessagesTab> {
               );
             }
 
-            // Show all conversations
-            final allConversations = conversations.toList()
-              ..sort((a, b) {
-                final aLast = a.lastMessage?.timestamp ?? a.arrivalTime;
-                final bLast = b.lastMessage?.timestamp ?? b.arrivalTime;
-                return bLast.compareTo(aLast);
-              });
-
             return ListView.builder(
               padding: EdgeInsets.all(16),
               itemCount: allConversations.length,
@@ -726,105 +729,166 @@ class _MessagesTabState extends State<_MessagesTab> {
                 final conversation = allConversations[index];
                 final messageCount = conversation.messages.length;
                 final unreadCount = conversation.getUnreadCount('admin');
+                final isSupport = conversation.id.startsWith('support_');
 
-                return Card(
-                  margin: EdgeInsets.only(bottom: 12),
-                  child: ListTile(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ChatScreen(
-                            conversation: conversation,
-                            isAdminView: true,
-                          ),
+                // Get driver and rider info
+                final driver = MockUsers.getUserById(conversation.driverId);
+                final rider = MockUsers.getUserById(conversation.riderId);
+                final driverRating = driver != null ? RatingService().getUserAverageRating(driver.id) : 0.0;
+                final riderRating = rider != null ? RatingService().getUserAverageRating(rider.id) : 0.0;
+
+                // Card color based on unread status
+                final cardColor = unreadCount > 0 ? Colors.blue[100] : Colors.blue[50];
+
+                return InkWell(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ChatScreen(
+                          conversation: conversation,
+                          isAdminView: true,
                         ),
-                      );
-                    },
-                    leading: CircleAvatar(
-                      backgroundColor: conversation.id.startsWith('support_')
-                          ? Color(0xFFDD2C00)
-                          : Colors.blue,
-                      child: Icon(
-                        conversation.id.startsWith('support_')
-                            ? Icons.support_agent
-                            : Icons.message,
-                        color: Colors.white,
                       ),
+                    );
+                  },
+                  child: Container(
+                    margin: EdgeInsets.only(bottom: 12),
+                    padding: EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: cardColor,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey[300]!, width: 0.5),
                     ),
-                    title: Row(
+                    child: Column(
                       children: [
-                        Expanded(
-                          child: Text(
-                            conversation.routeName,
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-                          ),
-                        ),
-                        if (conversation.isHidden)
-                          Container(
-                            margin: EdgeInsets.only(left: 4),
-                            padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: Colors.purple[100],
-                              borderRadius: BorderRadius.circular(4),
-                              border: Border.all(color: Colors.purple[300]!, width: 1),
-                            ),
-                            child: Text(
-                              'Hidden',
-                              style: TextStyle(
-                                fontSize: 9,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.purple[700],
+                        // Top row: Date and route info (or support type)
+                        _buildConversationTopRow(conversation, isSupport),
+                        SizedBox(height: 8),
+                        // Middle row: Driver avatar (left) - message count - Rider avatar (right)
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Driver on left
+                            SizedBox(
+                              width: 70,
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  _buildAvatar(driver?.profilePhotoUrl, isDriver: true),
+                                  SizedBox(height: 4),
+                                  Text(
+                                    driver != null
+                                        ? '${driver.name} ${driver.surname.isNotEmpty ? '${driver.surname[0]}.' : ''}'
+                                        : conversation.driverName,
+                                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                                    textAlign: TextAlign.center,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  if (driver != null) ...[
+                                    SizedBox(height: 2),
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.star, size: 12, color: Colors.amber),
+                                        SizedBox(width: 2),
+                                        Text(
+                                          driverRating.toStringAsFixed(1),
+                                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ],
                               ),
                             ),
-                          ),
-                      ],
-                    ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SizedBox(height: 4),
-                        Text(
-                          '${conversation.driverName} ↔ ${conversation.riderName}',
-                          style: TextStyle(fontSize: 14),
-                        ),
-                        if (conversation.lastMessage != null)
-                          Text(
-                            conversation.lastMessage!.content,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                          ),
-                      ],
-                    ),
-                    trailing: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          '$messageCount',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Text(
-                          'messages',
-                          style: TextStyle(fontSize: 10, color: Colors.grey[600]),
-                        ),
-                        if (unreadCount > 0)
-                          Container(
-                            margin: EdgeInsets.only(top: 4),
-                            padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: Color(0xFFDD2C00),
-                              borderRadius: BorderRadius.circular(10),
+                            // Center: Message count and info
+                            Expanded(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  SizedBox(height: 4),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.message, size: 16, color: Colors.grey[600]),
+                                      SizedBox(width: 4),
+                                      Text(
+                                        '$messageCount',
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  if (unreadCount > 0)
+                                    Container(
+                                      margin: EdgeInsets.only(top: 4),
+                                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: Color(0xFFDD2C00),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: Text(
+                                        '$unreadCount new',
+                                        style: TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                  if (conversation.isHidden)
+                                    Container(
+                                      margin: EdgeInsets.only(top: 4),
+                                      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: Colors.purple[100],
+                                        borderRadius: BorderRadius.circular(4),
+                                        border: Border.all(color: Colors.purple[300]!, width: 1),
+                                      ),
+                                      child: Text(
+                                        'Hidden',
+                                        style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.purple[700]),
+                                      ),
+                                    ),
+                                ],
+                              ),
                             ),
-                            child: Text(
-                              '$unreadCount',
-                              style: TextStyle(fontSize: 10, color: Colors.white),
+                            // Rider on right
+                            SizedBox(
+                              width: 70,
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  _buildAvatar(rider?.profilePhotoUrl, isDriver: false),
+                                  SizedBox(height: 4),
+                                  Text(
+                                    rider != null
+                                        ? '${rider.name} ${rider.surname.isNotEmpty ? '${rider.surname[0]}.' : ''}'
+                                        : conversation.riderName,
+                                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                                    textAlign: TextAlign.center,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  if (rider != null) ...[
+                                    SizedBox(height: 2),
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.star, size: 12, color: Colors.amber),
+                                        SizedBox(width: 2),
+                                        Text(
+                                          riderRating.toStringAsFixed(1),
+                                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ],
+                              ),
                             ),
-                          ),
+                          ],
+                        ),
                       ],
                     ),
                   ),
@@ -844,6 +908,182 @@ class _MessagesTabState extends State<_MessagesTab> {
           ),
         ),
       ],
+    );
+  }
+
+  // Format date for conversation card
+  String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final target = DateTime(date.year, date.month, date.day);
+    final diffDays = target.difference(today).inDays;
+
+    if (diffDays == 0) return 'Today';
+    if (diffDays == 1) return 'Tomorrow';
+    if (diffDays == -1) return 'Yesterday';
+
+    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return '${date.day} ${months[date.month - 1]}';
+  }
+
+  // Build conversation top row (date and route info or support type)
+  Widget _buildConversationTopRow(Conversation conversation, bool isSupport) {
+    if (isSupport) {
+      // For support conversations, show the support type
+      final routeName = conversation.routeName;
+      String supportType;
+      Color typeColor;
+      IconData typeIcon;
+
+      if (routeName.startsWith('Suggestion')) {
+        supportType = 'Suggestion';
+        typeColor = Colors.green;
+        typeIcon = Icons.lightbulb_outline;
+      } else if (routeName.startsWith('Complaint')) {
+        supportType = 'Complaint';
+        typeColor = Colors.red;
+        typeIcon = Icons.report_problem_outlined;
+      } else if (routeName.startsWith('New Route Suggestion')) {
+        supportType = 'New Route';
+        typeColor = Colors.blue;
+        typeIcon = Icons.add_road;
+      } else if (routeName.startsWith('New Stop Suggestion')) {
+        supportType = 'New Stop';
+        typeColor = Colors.teal;
+        typeIcon = Icons.add_location;
+      } else {
+        supportType = 'Support';
+        typeColor = Colors.amber;
+        typeIcon = Icons.support_agent;
+      }
+
+      return Container(
+        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: typeColor.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(color: typeColor.withValues(alpha: 0.3), width: 0.5),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(typeIcon, color: typeColor, size: 14),
+            SizedBox(width: 6),
+            Text(
+              supportType,
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: typeColor),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // For regular conversations, show date and times
+    return Row(
+      children: [
+        // Date
+        Container(
+          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+          decoration: BoxDecoration(
+            color: Colors.grey.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Text(
+            _formatDate(conversation.departureTime),
+            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.black87),
+          ),
+        ),
+        SizedBox(width: 8),
+        // Departure
+        Expanded(
+          child: Row(
+            children: [
+              Icon(Icons.location_on, color: Colors.green, size: 14),
+              SizedBox(width: 2),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.green.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  formatTimeHHmm(conversation.departureTime),
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.green[700]),
+                ),
+              ),
+              SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  conversation.originName,
+                  style: TextStyle(fontSize: 11, color: Colors.black87),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ),
+        SizedBox(width: 8),
+        // Arrival
+        Expanded(
+          child: Row(
+            children: [
+              Icon(Icons.flag, color: Colors.red, size: 14),
+              SizedBox(width: 2),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.red.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  formatTimeHHmm(conversation.arrivalTime),
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.red[700]),
+                ),
+              ),
+              SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  conversation.destinationName,
+                  style: TextStyle(fontSize: 11, color: Colors.black87),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Build avatar widget
+  Widget _buildAvatar(String? profilePhotoUrl, {required bool isDriver}) {
+    final defaultIcon = isDriver ? Icons.drive_eta : Icons.person;
+    final defaultColor = isDriver ? Colors.blue : Colors.green;
+
+    if (profilePhotoUrl != null && profilePhotoUrl.isNotEmpty) {
+      if (profilePhotoUrl.startsWith('assets/')) {
+        return CircleAvatar(
+          radius: 20,
+          backgroundImage: AssetImage(profilePhotoUrl),
+        );
+      } else {
+        final photoFile = File(profilePhotoUrl);
+        if (photoFile.existsSync()) {
+          return CircleAvatar(
+            radius: 20,
+            backgroundImage: FileImage(photoFile),
+          );
+        }
+      }
+    }
+
+    // Fallback to default icon
+    return CircleAvatar(
+      radius: 20,
+      backgroundColor: defaultColor.withValues(alpha: 0.1),
+      child: Icon(defaultIcon, color: defaultColor),
     );
   }
 
@@ -1700,7 +1940,64 @@ class _UserDetailsContentState extends State<_UserDetailsContent> {
                   })
                   .toList(),
         ),
+
+        // Delete Account Button (only for non-admin users)
+        if (!widget.user.isAdmin) ...[
+          SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => _showDeleteAccountDialog(context),
+              icon: Icon(Icons.delete_forever, size: 20),
+              label: Text(AppLocalizations.of(context)!.deleteAccount),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.red[700],
+                side: BorderSide(color: Colors.red[300]!),
+                padding: EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+          ),
+        ],
       ],
+    );
+  }
+
+  void _showDeleteAccountDialog(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: Text(l10n.deleteAccount),
+          content: Text(
+            'Are you sure you want to delete ${widget.user.fullName}\'s account? This action cannot be undone.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+                // TODO: Implement actual account deletion
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Account deletion would be processed here'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              },
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: Text('Delete'),
+            ),
+          ],
+        );
+      },
     );
   }
 

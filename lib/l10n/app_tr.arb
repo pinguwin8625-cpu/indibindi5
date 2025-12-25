@@ -217,8 +217,8 @@
   "hintPostRide": "yolculuk detaylarınızı gözden geçirin ve onaylayın",
   "systemNotificationDriverCanceled": "{driverName}, {routeName} güzergahındaki yolculuğu iptal etti",
   "systemNotificationRiderCanceled": "{riderName} rezervasyonunu iptal etti",
-  "systemNotificationNewRider": "{riderName} yolculuğunuza bir koltuk rezerve etti",
-  "systemNotificationRiderBooked": "{driverName} ile yolculuğa koltuk rezerve ettiniz",
+  "systemNotificationNewRider": "{riderName}, {driverName}'in yolculuğuna koltuk rezerve etti",
+  "systemNotificationRiderBooked": "{riderName}, {driverName}'in yolculuğuna koltuk rezerve etti",
 
   "snackbarAdminViewOnly": "Yöneticiler yalnızca mesajları görüntüleyebilir, gönderemez",
   "snackbarMessagingExpired": "Mesajlaşma süresi doldu (varıştan 3 gün sonra)",

@@ -230,8 +230,8 @@
   "hintPostRide": "revise e confirme os detalhes da sua viagem",
   "systemNotificationDriverCanceled": "{driverName} cancelou a viagem em {routeName}",
   "systemNotificationRiderCanceled": "{riderName} cancelou a reserva",
-  "systemNotificationNewRider": "{riderName} reservou um assento na sua viagem",
-  "systemNotificationRiderBooked": "Você reservou um assento na viagem de {driverName}",
+  "systemNotificationNewRider": "{riderName} reservou um assento na viagem de {driverName}",
+  "systemNotificationRiderBooked": "{riderName} reservou um assento na viagem de {driverName}",
 
   "snackbarAdminViewOnly": "Administradores só podem visualizar mensagens, não enviá-las",
   "snackbarMessagingExpired": "O período de mensagens expirou (3 dias após a chegada)",

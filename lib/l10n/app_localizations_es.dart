@@ -701,13 +701,13 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String systemNotificationNewRider(String riderName) {
-    return '$riderName ha reservado un asiento en tu viaje';
+  String systemNotificationNewRider(String riderName, String driverName) {
+    return '$riderName ha reservado un asiento en el viaje de $driverName';
   }
 
   @override
-  String systemNotificationRiderBooked(String driverName) {
-    return 'Has reservado un asiento en el viaje de $driverName';
+  String systemNotificationRiderBooked(String riderName, String driverName) {
+    return '$riderName ha reservado un asiento en el viaje de $driverName';
   }
 
   @override

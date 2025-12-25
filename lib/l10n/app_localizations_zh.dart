@@ -690,13 +690,13 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String systemNotificationNewRider(String riderName) {
-    return '$riderName在您的行程中预订了座位';
+  String systemNotificationNewRider(String riderName, String driverName) {
+    return '$riderName在$driverName的行程中预订了座位';
   }
 
   @override
-  String systemNotificationRiderBooked(String driverName) {
-    return '您在$driverName的行程中预订了座位';
+  String systemNotificationRiderBooked(String riderName, String driverName) {
+    return '$riderName在$driverName的行程中预订了座位';
   }
 
   @override

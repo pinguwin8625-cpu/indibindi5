@@ -230,8 +230,8 @@
   "hintPostRide": "راجع وأكد تفاصيل رحلتك",
   "systemNotificationDriverCanceled": "{driverName} ألغى الرحلة على {routeName}",
   "systemNotificationRiderCanceled": "{riderName} ألغى حجزه",
-  "systemNotificationNewRider": "{riderName} حجز مقعداً في رحلتك",
-  "systemNotificationRiderBooked": "حجزت مقعداً في رحلة {driverName}",
+  "systemNotificationNewRider": "{riderName} حجز مقعداً في رحلة {driverName}",
+  "systemNotificationRiderBooked": "{riderName} حجز مقعداً في رحلة {driverName}",
 
   "snackbarAdminViewOnly": "يمكن للمسؤولين عرض الرسائل فقط، وليس إرسالها",
   "snackbarMessagingExpired": "انتهت فترة المراسلة (3 أيام بعد الوصول)",

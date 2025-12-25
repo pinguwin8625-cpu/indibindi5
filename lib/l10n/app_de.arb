@@ -231,8 +231,8 @@
   "hintPostRide": "überprüfen und bestätigen Sie Ihre Fahrtdetails",
   "systemNotificationDriverCanceled": "{driverName} hat die Fahrt auf {routeName} storniert",
   "systemNotificationRiderCanceled": "{riderName} hat die Buchung storniert",
-  "systemNotificationNewRider": "{riderName} hat einen Platz bei Ihrer Fahrt gebucht",
-  "systemNotificationRiderBooked": "Sie haben einen Platz bei {driverName}s Fahrt gebucht",
+  "systemNotificationNewRider": "{riderName} hat einen Platz bei {driverName}s Fahrt gebucht",
+  "systemNotificationRiderBooked": "{riderName} hat einen Platz bei {driverName}s Fahrt gebucht",
 
   "snackbarAdminViewOnly": "Administratoren können Nachrichten nur ansehen, nicht senden",
   "snackbarMessagingExpired": "Nachrichtenperiode abgelaufen (3 Tage nach Ankunft)",

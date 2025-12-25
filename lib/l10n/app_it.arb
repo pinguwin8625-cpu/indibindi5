@@ -230,8 +230,8 @@
   "hintPostRide": "rivedi e conferma i dettagli del tuo viaggio",
   "systemNotificationDriverCanceled": "{driverName} ha annullato il viaggio su {routeName}",
   "systemNotificationRiderCanceled": "{riderName} ha annullato la prenotazione",
-  "systemNotificationNewRider": "{riderName} ha prenotato un posto nel tuo viaggio",
-  "systemNotificationRiderBooked": "Hai prenotato un posto nel viaggio di {driverName}",
+  "systemNotificationNewRider": "{riderName} ha prenotato un posto nel viaggio di {driverName}",
+  "systemNotificationRiderBooked": "{riderName} ha prenotato un posto nel viaggio di {driverName}",
 
   "snackbarAdminViewOnly": "Gli amministratori possono solo visualizzare i messaggi, non inviarli",
   "snackbarMessagingExpired": "Il periodo di messaggistica è scaduto (3 giorni dopo l'arrivo)",

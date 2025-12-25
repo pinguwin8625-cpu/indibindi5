@@ -230,8 +230,8 @@
   "hintPostRide": "乗車の詳細を確認して確定",
   "systemNotificationDriverCanceled": "{driverName}が{routeName}の乗車をキャンセルしました",
   "systemNotificationRiderCanceled": "{riderName}が予約をキャンセルしました",
-  "systemNotificationNewRider": "{riderName}があなたの乗車に座席を予約しました",
-  "systemNotificationRiderBooked": "{driverName}の乗車に座席を予約しました",
+  "systemNotificationNewRider": "{riderName}が{driverName}の乗車に座席を予約しました",
+  "systemNotificationRiderBooked": "{riderName}が{driverName}の乗車に座席を予約しました",
 
   "snackbarAdminViewOnly": "管理者はメッセージの閲覧のみ可能で、送信はできません",
   "snackbarMessagingExpired": "メッセージ期間が終了しました（到着後3日間）",

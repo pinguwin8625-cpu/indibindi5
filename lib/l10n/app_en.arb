@@ -997,20 +997,26 @@
     }
   },
 
-  "systemNotificationNewRider": "{riderName} has booked a seat on your ride",
+  "systemNotificationNewRider": "{riderName} booked a seat on {driverName}'s ride",
   "@systemNotificationNewRider": {
-    "description": "System notification when a new rider books a seat",
+    "description": "System notification when a new rider books a seat (shown to driver)",
     "placeholders": {
       "riderName": {
+        "type": "String"
+      },
+      "driverName": {
         "type": "String"
       }
     }
   },
 
-  "systemNotificationRiderBooked": "You booked a seat on {driverName}'s ride",
+  "systemNotificationRiderBooked": "{riderName} booked a seat on {driverName}'s ride",
   "@systemNotificationRiderBooked": {
     "description": "System notification shown to rider after booking a seat",
     "placeholders": {
+      "riderName": {
+        "type": "String"
+      },
       "driverName": {
         "type": "String"
       }

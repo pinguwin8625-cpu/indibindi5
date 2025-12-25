@@ -230,8 +230,8 @@
   "hintPostRide": "탑승 세부 정보를 검토하고 확인하세요",
   "systemNotificationDriverCanceled": "{driverName}님이 {routeName} 탑승을 취소했습니다",
   "systemNotificationRiderCanceled": "{riderName}님이 예약을 취소했습니다",
-  "systemNotificationNewRider": "{riderName}님이 탑승에 좌석을 예약했습니다",
-  "systemNotificationRiderBooked": "{driverName}님의 탑승에 좌석을 예약했습니다",
+  "systemNotificationNewRider": "{riderName}님이 {driverName}님의 탑승에 좌석을 예약했습니다",
+  "systemNotificationRiderBooked": "{riderName}님이 {driverName}님의 탑승에 좌석을 예약했습니다",
 
   "snackbarAdminViewOnly": "관리자는 메시지를 볼 수만 있고 보낼 수 없습니다",
   "snackbarMessagingExpired": "메시지 기간이 만료되었습니다 (도착 후 3일)",

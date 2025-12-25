@@ -231,8 +231,8 @@
   "hintPostRide": "vérifiez et confirmez les détails de votre trajet",
   "systemNotificationDriverCanceled": "{driverName} a annulé le trajet sur {routeName}",
   "systemNotificationRiderCanceled": "{riderName} a annulé sa réservation",
-  "systemNotificationNewRider": "{riderName} a réservé une place dans votre trajet",
-  "systemNotificationRiderBooked": "Vous avez réservé une place dans le trajet de {driverName}",
+  "systemNotificationNewRider": "{riderName} a réservé une place dans le trajet de {driverName}",
+  "systemNotificationRiderBooked": "{riderName} a réservé une place dans le trajet de {driverName}",
 
   "snackbarAdminViewOnly": "Les administrateurs peuvent uniquement voir les messages, pas les envoyer",
   "snackbarMessagingExpired": "La période de messagerie a expiré (3 jours après l'arrivée)",

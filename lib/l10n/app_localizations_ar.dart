@@ -694,13 +694,13 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String systemNotificationNewRider(String riderName) {
-    return '$riderName حجز مقعداً في رحلتك';
+  String systemNotificationNewRider(String riderName, String driverName) {
+    return '$riderName حجز مقعداً في رحلة $driverName';
   }
 
   @override
-  String systemNotificationRiderBooked(String driverName) {
-    return 'حجزت مقعداً في رحلة $driverName';
+  String systemNotificationRiderBooked(String riderName, String driverName) {
+    return '$riderName حجز مقعداً في رحلة $driverName';
   }
 
   @override

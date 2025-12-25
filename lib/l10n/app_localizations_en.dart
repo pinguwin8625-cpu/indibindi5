@@ -696,13 +696,13 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String systemNotificationNewRider(String riderName) {
-    return '$riderName has booked a seat on your ride';
+  String systemNotificationNewRider(String riderName, String driverName) {
+    return '$riderName booked a seat on $driverName\'s ride';
   }
 
   @override
-  String systemNotificationRiderBooked(String driverName) {
-    return 'You booked a seat on $driverName\'s ride';
+  String systemNotificationRiderBooked(String riderName, String driverName) {
+    return '$riderName booked a seat on $driverName\'s ride';
   }
 
   @override

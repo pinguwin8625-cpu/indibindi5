@@ -230,8 +230,8 @@
   "hintPostRide": "查看并确认您的行程详情",
   "systemNotificationDriverCanceled": "{driverName}取消了{routeName}的行程",
   "systemNotificationRiderCanceled": "{riderName}取消了预订",
-  "systemNotificationNewRider": "{riderName}在您的行程中预订了座位",
-  "systemNotificationRiderBooked": "您在{driverName}的行程中预订了座位",
+  "systemNotificationNewRider": "{riderName}在{driverName}的行程中预订了座位",
+  "systemNotificationRiderBooked": "{riderName}在{driverName}的行程中预订了座位",
 
   "snackbarAdminViewOnly": "管理员只能查看消息，不能发送",
   "snackbarMessagingExpired": "消息期限已过（到达后3天）",

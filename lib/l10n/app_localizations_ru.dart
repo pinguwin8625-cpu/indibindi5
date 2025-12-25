@@ -703,13 +703,13 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
-  String systemNotificationNewRider(String riderName) {
-    return '$riderName забронировал место в вашей поездке';
+  String systemNotificationNewRider(String riderName, String driverName) {
+    return '$riderName забронировал место в поездке $driverName';
   }
 
   @override
-  String systemNotificationRiderBooked(String driverName) {
-    return 'Вы забронировали место в поездке $driverName';
+  String systemNotificationRiderBooked(String riderName, String driverName) {
+    return '$riderName забронировал место в поездке $driverName';
   }
 
   @override

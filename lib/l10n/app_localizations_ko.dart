@@ -691,13 +691,13 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String systemNotificationNewRider(String riderName) {
-    return '$riderName님이 탑승에 좌석을 예약했습니다';
+  String systemNotificationNewRider(String riderName, String driverName) {
+    return '$riderName님이 $driverName님의 탑승에 좌석을 예약했습니다';
   }
 
   @override
-  String systemNotificationRiderBooked(String driverName) {
-    return '$driverName님의 탑승에 좌석을 예약했습니다';
+  String systemNotificationRiderBooked(String riderName, String driverName) {
+    return '$riderName님이 $driverName님의 탑승에 좌석을 예약했습니다';
   }
 
   @override

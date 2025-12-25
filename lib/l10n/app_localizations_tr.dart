@@ -704,13 +704,13 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String systemNotificationNewRider(String riderName) {
-    return '$riderName yolculuğunuza bir koltuk rezerve etti';
+  String systemNotificationNewRider(String riderName, String driverName) {
+    return '$riderName, $driverName\'in yolculuğuna koltuk rezerve etti';
   }
 
   @override
-  String systemNotificationRiderBooked(String driverName) {
-    return '$driverName ile yolculuğa koltuk rezerve ettiniz';
+  String systemNotificationRiderBooked(String riderName, String driverName) {
+    return '$riderName, $driverName\'in yolculuğuna koltuk rezerve etti';
   }
 
   @override

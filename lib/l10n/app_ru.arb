@@ -230,8 +230,8 @@
   "hintPostRide": "проверьте и подтвердите детали поездки",
   "systemNotificationDriverCanceled": "{driverName} отменил поездку по маршруту {routeName}",
   "systemNotificationRiderCanceled": "{riderName} отменил бронирование",
-  "systemNotificationNewRider": "{riderName} забронировал место в вашей поездке",
-  "systemNotificationRiderBooked": "Вы забронировали место в поездке {driverName}",
+  "systemNotificationNewRider": "{riderName} забронировал место в поездке {driverName}",
+  "systemNotificationRiderBooked": "{riderName} забронировал место в поездке {driverName}",
 
   "snackbarAdminViewOnly": "Администраторы могут только просматривать сообщения, но не отправлять их",
   "snackbarMessagingExpired": "Период обмена сообщениями истёк (3 дня после прибытия)",

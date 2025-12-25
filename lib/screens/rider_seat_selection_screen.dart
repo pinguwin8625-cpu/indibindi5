@@ -347,8 +347,8 @@ class _RiderSeatSelectionScreenState extends State<RiderSeatSelectionScreen> {
     // Create conversation and send system notifications to both driver and rider
     final messagingService = MessagingService();
     final l10n = AppLocalizations.of(context)!;
-    final driverNotification = l10n.systemNotificationNewRider(riderName);
-    final riderNotification = l10n.systemNotificationRiderBooked(widget.ride.driverName);
+    final driverNotification = l10n.systemNotificationNewRider(riderName, widget.ride.driverName);
+    final riderNotification = l10n.systemNotificationRiderBooked(riderName, widget.ride.driverName);
     messagingService.createConversationAndNotifyBothParties(
       driverBookingId: widget.ride.id,
       driverId: widget.ride.driverId,
