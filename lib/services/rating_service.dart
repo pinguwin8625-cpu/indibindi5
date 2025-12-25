@@ -172,4 +172,33 @@ class RatingService {
       print('🗑️ All ratings cleared');
     }
   }
+
+  // Clear ratings for a specific user (ratings received AND ratings given)
+  // Returns the count of ratings removed
+  Future<int> clearRatingsForUser(String userId) async {
+    final userRatings = ratings.value
+        .where((r) => r.toUserId == userId || r.fromUserId == userId)
+        .toList();
+    final count = userRatings.length;
+
+    if (count == 0) return 0;
+
+    ratings.value = ratings.value
+        .where((r) => r.toUserId != userId && r.fromUserId != userId)
+        .toList();
+    await _saveRatings();
+
+    if (kDebugMode) {
+      print('⭐ Cleared $count ratings for user $userId');
+    }
+
+    return count;
+  }
+
+  // Count ratings for a specific user (received + given)
+  Map<String, int> countRatingsForUser(String userId) {
+    final received = ratings.value.where((r) => r.toUserId == userId).length;
+    final given = ratings.value.where((r) => r.fromUserId == userId).length;
+    return {'received': received, 'given': given, 'total': received + given};
+  }
 }

@@ -81,7 +81,9 @@ class _StopsSectionWidgetState extends State<StopsSectionWidget> {
                       destinationIndex: showCompactView
                           ? relevantStopIndices.length - 1
                           : (widget.selectedRoute.stops.length > 1 ? widget.selectedRoute.stops.length - 1 : 0),
-                      greyedStops: widget.greyedStops,
+                      // In compact view, don't pass greyedStops - indices don't match
+                      // and we're only showing the active range anyway
+                      greyedStops: showCompactView ? [] : widget.greyedStops,
                     ),
                   ),
                 ),

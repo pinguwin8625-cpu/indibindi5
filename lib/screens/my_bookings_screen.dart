@@ -461,13 +461,13 @@ class MyBookingsScreenState extends State<MyBookingsScreen>
                   ),
               ],
 
-              // Archive section at the bottom
+              // Archived section at the bottom
               if (archivedBookings.isNotEmpty) ...[
                 SliverToBoxAdapter(child: SizedBox(height: 24)),
                 SliverPersistentHeader(
                   pinned: true,
                   delegate: _SectionHeaderDelegate(
-                    title: l10n.archive,
+                    title: l10n.archived,
                     minHeight: 50,
                     maxHeight: 50,
                     isCollapsible: true,

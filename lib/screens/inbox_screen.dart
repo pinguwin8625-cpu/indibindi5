@@ -112,28 +112,6 @@ class _InboxScreenState extends State<InboxScreen> with WidgetsBindingObserver {
     }
   }
 
-  OverlayEntry? _overlayEntry;
-
-  void _showCustomSnackbar(String message, {String? undoLabel, VoidCallback? onUndo}) {
-    // Remove any existing overlay
-    _overlayEntry?.remove();
-    _overlayEntry = null;
-
-    _overlayEntry = OverlayEntry(
-      builder: (context) => _CustomSnackbar(
-        message: message,
-        undoLabel: undoLabel,
-        onUndo: onUndo,
-        onDismiss: () {
-          _overlayEntry?.remove();
-          _overlayEntry = null;
-        },
-      ),
-    );
-
-    Overlay.of(context).insert(_overlayEntry!);
-  }
-
   @override
   Widget build(BuildContext context) {
     try {
@@ -240,12 +218,12 @@ class _InboxScreenState extends State<InboxScreen> with WidgetsBindingObserver {
             );
 
             // Split into active (messaging allowed) and archived (3-7 days after arrival or manually archived)
-            // Exclude deleted conversations from both lists
+            // Exclude deleted conversations and conversations with no messages from both lists
             final activeConversations = allUserConversations
-                .where((c) => c.isVisible && !c.isArchived && !c.isManuallyArchived && !c.isDeleted)
+                .where((c) => c.isVisible && !c.isArchived && !c.isManuallyArchived && !c.isDeleted && c.messages.isNotEmpty)
                 .toList();
             final archivedConversations = allUserConversations
-                .where((c) => (c.isArchived || c.isManuallyArchived) && !c.isDeleted)
+                .where((c) => (c.isArchived || c.isManuallyArchived) && !c.isDeleted && c.messages.isNotEmpty)
                 .toList();
 
             print('📬 InboxScreen: Found ${activeConversations.length} active, ${archivedConversations.length} archived conversations');
@@ -346,34 +324,8 @@ class _InboxScreenState extends State<InboxScreen> with WidgetsBindingObserver {
         ? Colors.grey[100]
         : (unreadCount > 0 ? Colors.blue[100] : Colors.blue[50]);
 
-    return _SwipeableConversationTile(
+    return InkWell(
       key: Key('conversation_${conversation.id}'),
-      isArchived: isArchived || conversation.isManuallyArchived,
-      onArchive: () {
-        final message = (isArchived || conversation.isManuallyArchived)
-            ? l10n.snackbarConversationRestored
-            : l10n.conversationArchived;
-        final showUndo = !(isArchived || conversation.isManuallyArchived);
-        final conversationIdToRestore = conversation.id;
-        final undoLabel = l10n.undo;
-
-        // Perform the archive/unarchive action
-        if (isArchived || conversation.isManuallyArchived) {
-          _messagingService.unarchiveConversation(conversation.id);
-        } else {
-          _messagingService.archiveConversation(conversation.id);
-        }
-
-        // Show custom overlay snackbar - independent of scaffold rebuilds
-        _showCustomSnackbar(
-          message,
-          undoLabel: showUndo ? undoLabel : null,
-          onUndo: showUndo ? () {
-            _messagingService.unarchiveConversation(conversationIdToRestore);
-          } : null,
-        );
-      },
-      child: InkWell(
       onTap: () {
         Navigator.push(
           context,
@@ -474,7 +426,6 @@ class _InboxScreenState extends State<InboxScreen> with WidgetsBindingObserver {
             ),
           ],
         ),
-      ),
       ),
     );
   }
@@ -761,6 +712,7 @@ class _InboxScreenState extends State<InboxScreen> with WidgetsBindingObserver {
       child: Icon(Icons.person, color: Theme.of(context).primaryColor),
     );
   }
+
 }
 
 // Custom painter for chat bubble tail pointing LEFT (message from other user)
@@ -903,224 +855,4 @@ class _SpeechBubbleTailPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-// Swipeable conversation tile that reveals archive button
-class _SwipeableConversationTile extends StatefulWidget {
-  final Widget child;
-  final bool isArchived;
-  final VoidCallback onArchive;
-
-  const _SwipeableConversationTile({
-    super.key,
-    required this.child,
-    required this.isArchived,
-    required this.onArchive,
-  });
-
-  @override
-  State<_SwipeableConversationTile> createState() => _SwipeableConversationTileState();
-}
-
-class _SwipeableConversationTileState extends State<_SwipeableConversationTile> {
-  double _dragExtent = 0;
-  static const double _archiveButtonWidth = 80.0;
-
-  void _handleDragUpdate(DragUpdateDetails details) {
-    setState(() {
-      _dragExtent += details.delta.dx;
-      // Only allow dragging to the right (positive direction)
-      _dragExtent = _dragExtent.clamp(0.0, _archiveButtonWidth);
-    });
-  }
-
-  void _handleDragEnd(DragEndDetails details) {
-    // If dragged more than half the button width, snap open, otherwise snap closed
-    if (_dragExtent > _archiveButtonWidth / 2) {
-      setState(() {
-        _dragExtent = _archiveButtonWidth;
-      });
-    } else {
-      setState(() {
-        _dragExtent = 0;
-      });
-    }
-  }
-
-  void _closeSwipe() {
-    setState(() {
-      _dragExtent = 0;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-
-    return ClipRect(
-      child: Stack(
-        children: [
-          // Archive button - positioned behind, only visible when content slides
-          Positioned(
-            left: 0,
-            top: 0,
-            bottom: 0,
-            width: _dragExtent, // Width matches how far content has slid
-            child: GestureDetector(
-              onTap: _dragExtent > 0 ? () {
-                widget.onArchive();
-                _closeSwipe();
-              } : null,
-              child: Container(
-                margin: EdgeInsets.symmetric(vertical: 4, horizontal: 4),
-                decoration: BoxDecoration(
-                  color: widget.isArchived ? Colors.green : Colors.orange,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: _dragExtent >= _archiveButtonWidth * 0.5
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              widget.isArchived ? Icons.unarchive : Icons.archive,
-                              color: Colors.white,
-                              size: 24,
-                            ),
-                            SizedBox(height: 2),
-                            Text(
-                              widget.isArchived ? l10n.unarchive : l10n.archive,
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    : null,
-              ),
-            ),
-          ),
-          // Main content that slides
-          GestureDetector(
-            onHorizontalDragUpdate: _handleDragUpdate,
-            onHorizontalDragEnd: _handleDragEnd,
-            child: AnimatedContainer(
-              duration: Duration(milliseconds: 100),
-              transform: Matrix4.translationValues(_dragExtent, 0, 0),
-              child: widget.child,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// Custom snackbar using Overlay - completely independent of Scaffold rebuilds
-class _CustomSnackbar extends StatefulWidget {
-  final String message;
-  final String? undoLabel;
-  final VoidCallback? onUndo;
-  final VoidCallback onDismiss;
-
-  const _CustomSnackbar({
-    required this.message,
-    this.undoLabel,
-    this.onUndo,
-    required this.onDismiss,
-  });
-
-  @override
-  State<_CustomSnackbar> createState() => _CustomSnackbarState();
-}
-
-class _CustomSnackbarState extends State<_CustomSnackbar> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _animation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 200),
-    );
-    _animation = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
-    _controller.forward();
-
-    // Auto-dismiss after 3 seconds
-    Future.delayed(const Duration(seconds: 3), () {
-      if (mounted) {
-        _dismiss();
-      }
-    });
-  }
-
-  void _dismiss() {
-    _controller.reverse().then((_) {
-      widget.onDismiss();
-    });
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Positioned(
-      bottom: MediaQuery.of(context).padding.bottom + 70, // Above bottom nav
-      left: 16,
-      right: 16,
-      child: FadeTransition(
-        opacity: _animation,
-        child: SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(0, 1),
-            end: Offset.zero,
-          ).animate(_animation),
-          child: Material(
-            elevation: 6,
-            borderRadius: BorderRadius.circular(8),
-            color: Colors.grey[850],
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      widget.message,
-                      style: const TextStyle(color: Colors.white, fontSize: 14),
-                    ),
-                  ),
-                  if (widget.undoLabel != null && widget.onUndo != null) ...[
-                    const SizedBox(width: 8),
-                    GestureDetector(
-                      onTap: () {
-                        widget.onUndo!();
-                        _dismiss();
-                      },
-                      child: Text(
-                        widget.undoLabel!,
-                        style: TextStyle(
-                          color: Colors.amber[300],
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 }

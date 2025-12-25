@@ -147,19 +147,18 @@ class _RouteLayerWidgetState extends State<RouteLayerWidget> {
                   textAlign: TextAlign.center,
                 ),
                 // Hint below title
-                if (AuthService.currentUser?.shouldShowOnboardingHints ?? true)
-                  Padding(
-                    padding: EdgeInsets.only(top: 12),
-                    child: Text(
-                      l10n.hintRoleSelection,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Color(0xFF8E8E8E),
-                        fontStyle: FontStyle.italic,
-                      ),
-                      textAlign: TextAlign.center,
+                Padding(
+                  padding: EdgeInsets.only(top: 12),
+                  child: Text(
+                    l10n.hintRoleSelection,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Color(0xFF8E8E8E),
+                      fontStyle: FontStyle.italic,
                     ),
+                    textAlign: TextAlign.center,
                   ),
+                ),
                 SizedBox(height: 48),
                 // Buttons
                 Row(
@@ -376,19 +375,18 @@ class _RouteLayerWidgetState extends State<RouteLayerWidget> {
                           letterSpacing: 0.5,
                         ),
                       ),
-                      if (AuthService.currentUser?.shouldShowOnboardingHints ?? true)
-                        Padding(
-                          padding: EdgeInsets.only(top: 4),
-                          child: Text(
-                            l10n.hintRouteSelection,
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Color(0xFF42A5F5).withOpacity(0.6),
-                              fontStyle: FontStyle.italic,
-                            ),
-                            textAlign: TextAlign.center,
+                      Padding(
+                        padding: EdgeInsets.only(top: 4),
+                        child: Text(
+                          l10n.hintRouteSelection,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Color(0xFF42A5F5).withOpacity(0.6),
+                            fontStyle: FontStyle.italic,
                           ),
+                          textAlign: TextAlign.center,
                         ),
+                      ),
                     ],
                   ),
                 ),

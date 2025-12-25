@@ -13,7 +13,6 @@ class User {
   final String? licensePlate;
   final bool isAdmin;
   final double rating;
-  final int completedTripsCount; // Number of completed posts/bookings
 
   User({
     required this.id,
@@ -30,7 +29,6 @@ class User {
     this.licensePlate,
     this.isAdmin = false,
     this.rating = 0.0,
-    this.completedTripsCount = 0,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -49,7 +47,6 @@ class User {
       licensePlate: json['licensePlate'],
       isAdmin: json['isAdmin'] ?? false,
       rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
-      completedTripsCount: json['completedTripsCount'] ?? 0,
     );
   }
 
@@ -69,7 +66,6 @@ class User {
       'licensePlate': licensePlate,
       'isAdmin': isAdmin,
       'rating': rating,
-      'completedTripsCount': completedTripsCount,
     };
   }
 
@@ -88,7 +84,6 @@ class User {
     String? licensePlate,
     bool? isAdmin,
     double? rating,
-    int? completedTripsCount,
   }) {
     return User(
       id: id ?? this.id,
@@ -105,7 +100,6 @@ class User {
       licensePlate: licensePlate ?? this.licensePlate,
       isAdmin: isAdmin ?? this.isAdmin,
       rating: rating ?? this.rating,
-      completedTripsCount: completedTripsCount ?? this.completedTripsCount,
     );
   }
 
@@ -114,7 +108,7 @@ class User {
   String get formattedPhone {
     final countryInfo = getCountryInfo(countryCode);
     final formattedNumber = formatPhoneNumber(phoneNumber, countryCode);
-    return '${countryInfo['flag']} ${countryInfo['code']} $formattedNumber';
+    return '${countryInfo['code']} $formattedNumber';
   }
 
   // Helper method to format phone numbers according to local conventions
@@ -537,7 +531,4 @@ class User {
       email.isNotEmpty &&
       phoneNumber.isNotEmpty &&
       countryCode.isNotEmpty;
-
-  // Show onboarding hints for users with less than 5 completed trips
-  bool get shouldShowOnboardingHints => completedTripsCount < 5;
 }

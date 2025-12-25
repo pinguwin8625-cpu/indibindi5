@@ -80,7 +80,7 @@ class BookingStorage {
         '📚 BookingStorage._loadBookings() - Finished. Total: ${bookings.value.length}',
       );
     }
-    
+
     // Auto-archive completed rides older than 3 days
     _autoArchiveOldBookings();
     _autoHideOldArchivedBookings();
@@ -586,5 +586,52 @@ class BookingStorage {
     if (kDebugMode) {
       print('📚 BookingStorage: Cleared all bookings');
     }
+  }
+
+  // Clear bookings for a specific user
+  // Returns the count of bookings removed
+  int clearBookingsForUser(String userId) {
+    final userBookings = bookings.value.where((b) => b.userId == userId).toList();
+    final count = userBookings.length;
+
+    if (count == 0) return 0;
+
+    // Remove all bookings for this user
+    bookings.value = bookings.value.where((b) => b.userId != userId).toList();
+
+    // Also remove this user from other bookings' rider lists
+    final updatedBookings = bookings.value.map((booking) {
+      if (booking.riders != null && booking.riders!.isNotEmpty) {
+        // Find and remove any riders that belong to this user
+        final user = MockUsers.getUserById(userId);
+        if (user != null) {
+          final displayName = '${user.name} ${user.surname[0]}.';
+          final updatedRiders = booking.riders!
+              .where((r) => r.name != displayName)
+              .toList();
+          if (updatedRiders.length != booking.riders!.length) {
+            return booking.copyWith(riders: updatedRiders);
+          }
+        }
+      }
+      return booking;
+    }).toList();
+
+    bookings.value = updatedBookings;
+    _saveBookings();
+
+    if (kDebugMode) {
+      print('📚 BookingStorage: Cleared $count bookings for user $userId');
+    }
+
+    return count;
+  }
+
+  // Count bookings for a specific user (posts + books)
+  Map<String, int> countBookingsForUser(String userId) {
+    final userBookings = bookings.value.where((b) => b.userId == userId).toList();
+    final posts = userBookings.where((b) => b.userRole.toLowerCase() == 'driver').length;
+    final books = userBookings.where((b) => b.userRole.toLowerCase() == 'rider').length;
+    return {'posts': posts, 'books': books, 'total': posts + books};
   }
 }

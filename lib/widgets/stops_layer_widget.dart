@@ -6,7 +6,6 @@ import '../widgets/scroll_indicator.dart';
 import '../widgets/ride_details_bar.dart';
 import '../utils/booking_logic.dart';
 import '../l10n/app_localizations.dart';
-import '../services/auth_service.dart';
 
 class StopsLayerWidget extends StatefulWidget {
   final String userRole;
@@ -226,20 +225,19 @@ class _StopsLayerWidgetState extends State<StopsLayerWidget> {
                     ],
                   ),
                   // Hint row - full width
-                  if (AuthService.currentUser?.shouldShowOnboardingHints ?? true)
-                    Padding(
-                      padding: EdgeInsets.only(top: 8),
-                      child: Text(
-                        hintText,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: hintColor,
-                          fontStyle: FontStyle.italic,
-                        ),
-                        textAlign: TextAlign.center,
-                        maxLines: 1,
+                  Padding(
+                    padding: EdgeInsets.only(top: 8),
+                    child: Text(
+                      hintText,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: hintColor,
+                        fontStyle: FontStyle.italic,
                       ),
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
                     ),
+                  ),
                 ],
               ),
             );

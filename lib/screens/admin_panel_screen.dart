@@ -12,6 +12,7 @@ import '../models/message.dart';
 import '../models/trip_rating.dart';
 import '../widgets/booking_card_widget.dart';
 import '../widgets/seat_layout_widget.dart';
+import '../utils/dialog_helper.dart';
 import 'chat_screen.dart';
 
 class AdminPanelScreen extends StatelessWidget {
@@ -71,20 +72,6 @@ class _UsersTab extends StatelessWidget {
       ),
     );
   }
-
-  Widget _buildInfoRow(BuildContext context, String text, {required VoidCallback onTap}) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: EdgeInsets.symmetric(vertical: 6, horizontal: 12),
-        child: Text(
-          text,
-          style: TextStyle(fontSize: 14, color: Color(0xFF2E2E2E)),
-        ),
-      ),
-    );
-  }
-
 
   void _navigateToSupportChat(BuildContext context, User user) {
     final currentUser = AuthService.currentUser;
@@ -164,19 +151,19 @@ class _UsersTab extends StatelessWidget {
         final countryInfo = User.getCountryInfo(userWithLiveRating.countryCode);
 
         return Card(
-          margin: EdgeInsets.only(bottom: 12),
+          margin: EdgeInsets.only(bottom: 8),
           child: InkWell(
             onTap: () => _showUserDetails(context, userWithLiveRating),
             child: Padding(
-              padding: EdgeInsets.all(12),
+              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Profile photo and rating
                   Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       CircleAvatar(
-                        radius: 32,
+                        radius: 24,
                         backgroundColor: Colors.grey[300],
                         backgroundImage: userWithLiveRating.profilePhotoUrl != null
                             ? (userWithLiveRating.profilePhotoUrl!.startsWith('http')
@@ -187,50 +174,22 @@ class _UsersTab extends StatelessWidget {
                             ? Icon(
                                 userWithLiveRating.isAdmin ? Icons.admin_panel_settings : Icons.person,
                                 color: Colors.white,
-                                size: 32,
+                                size: 24,
                               )
                             : null,
                       ),
-                      SizedBox(height: 8),
-                      // Rating centered
-                      Container(
-                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.amber[50],
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.star, size: 14, color: Colors.amber),
-                            SizedBox(width: 4),
-                            Text(
-                              userWithLiveRating.rating.toStringAsFixed(1),
-                              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-                            ),
-                          ],
-                        ),
-                      ),
-                      // Message button - only show if not viewing own card
-                      if (!isSelf) ...[
-                        SizedBox(height: 8),
-                        ElevatedButton(
-                          onPressed: () {
-                            _navigateToSupportChat(context, userWithLiveRating);
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Theme.of(context).primaryColor,
-                            foregroundColor: Colors.white,
-                            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                            minimumSize: Size(0, 32),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
+                      SizedBox(height: 4),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.star, size: 12, color: Colors.amber),
+                          SizedBox(width: 2),
+                          Text(
+                            userWithLiveRating.rating.toStringAsFixed(1),
+                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF2E2E2E)),
                           ),
-                          child: Icon(Icons.message, size: 16),
-                        ),
-                      ],
+                        ],
+                      ),
                     ],
                   ),
                   SizedBox(width: 12),
@@ -238,57 +197,97 @@ class _UsersTab extends StatelessWidget {
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        // Full name
-                        _buildInfoRow(
-                          context,
-                          userWithLiveRating.fullName,
-                          onTap: () => _copyToClipboard(context, userWithLiveRating.fullName, 'Name'),
-                        ),
-                        // Country
-                        _buildInfoRow(
-                          context,
-                          '${countryInfo['flag']} ${countryInfo['country']}',
-                          onTap: () => _copyToClipboard(context, countryInfo['country']!, 'Country'),
-                        ),
-                        // Phone number
-                        _buildInfoRow(
-                          context,
-                          userWithLiveRating.formattedPhone,
-                          onTap: () {
-                            // Copy phone number without flag, just country code + digits combined
-                            final phoneDigits = '${countryInfo['code']}${userWithLiveRating.phoneNumber}';
-                            _copyToClipboard(context, phoneDigits, 'Phone');
-                          },
-                        ),
-                        // Email
-                        _buildInfoRow(
-                          context,
-                          userWithLiveRating.email,
-                          onTap: () => _copyToClipboard(context, userWithLiveRating.email, 'Email'),
-                        ),
-                        if (userWithLiveRating.isAdmin)
-                          Padding(
-                            padding: EdgeInsets.symmetric(vertical: 6, horizontal: 12),
-                            child: Container(
-                              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.orange[50],
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                'Admin',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.orange[900],
-                                ),
+                        // Name with admin badge
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Row(
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      userWithLiveRating.fullName,
+                                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF2E2E2E)),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  GestureDetector(
+                                    onTap: () => _copyToClipboard(context, userWithLiveRating.fullName, 'Name'),
+                                    child: Padding(
+                                      padding: EdgeInsets.only(left: 4),
+                                      child: Icon(Icons.copy, size: 12, color: Colors.grey[400]),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                          ),
+                            if (userWithLiveRating.isAdmin)
+                              Container(
+                                margin: EdgeInsets.only(left: 6),
+                                padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.orange[50],
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  'Admin',
+                                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.orange[900]),
+                                ),
+                              ),
+                          ],
+                        ),
+                        SizedBox(height: 4),
+                        // Phone
+                        Row(
+                          children: [
+                            Text(
+                              userWithLiveRating.formattedPhone,
+                              style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+                            ),
+                            GestureDetector(
+                              onTap: () {
+                                final phoneDigits = '${countryInfo['code']}${userWithLiveRating.phoneNumber}';
+                                _copyToClipboard(context, phoneDigits, 'Phone');
+                              },
+                              child: Padding(
+                                padding: EdgeInsets.only(left: 4),
+                                child: Icon(Icons.copy, size: 12, color: Colors.grey[400]),
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 2),
+                        // Email
+                        Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                userWithLiveRating.email,
+                                style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            GestureDetector(
+                              onTap: () => _copyToClipboard(context, userWithLiveRating.email, 'Email'),
+                              child: Padding(
+                                padding: EdgeInsets.only(left: 4),
+                                child: Icon(Icons.copy, size: 12, color: Colors.grey[400]),
+                              ),
+                            ),
+                          ],
+                        ),
                       ],
                     ),
                   ),
+                  // Message button
+                  if (!isSelf)
+                    IconButton(
+                      onPressed: () => _navigateToSupportChat(context, userWithLiveRating),
+                      icon: Icon(Icons.message, size: 20, color: Theme.of(context).primaryColor),
+                      constraints: BoxConstraints(minWidth: 36, minHeight: 36),
+                      padding: EdgeInsets.zero,
+                    ),
                 ],
               ),
             ),
@@ -377,36 +376,169 @@ class _UsersTab extends StatelessWidget {
 }
 
 // Bookings Management Tab
-class _BookingsTab extends StatelessWidget {
+class _BookingsTab extends StatefulWidget {
+  @override
+  State<_BookingsTab> createState() => _BookingsTabState();
+}
+
+class _BookingsTabState extends State<_BookingsTab> {
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder(
-      valueListenable: BookingStorage().bookings,
-      builder: (context, bookings, _) {
-        return bookings.isEmpty
-            ? Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.calendar_today,
-                      size: 64,
-                      color: Colors.grey[300],
+    return Stack(
+      children: [
+        ValueListenableBuilder(
+          valueListenable: BookingStorage().bookings,
+          builder: (context, bookings, _) {
+            return bookings.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.calendar_today,
+                          size: 64,
+                          color: Colors.grey[300],
+                        ),
+                        SizedBox(height: 16),
+                        Text(
+                          'No bookings yet',
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
                     ),
-                    SizedBox(height: 16),
-                    Text(
-                      'No bookings yet',
-                      style: TextStyle(
-                        fontSize: 18,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                  ],
+                  )
+                : _buildBookingsList(context, bookings);
+          },
+        ),
+        Positioned(
+          right: 16,
+          bottom: 16,
+          child: FloatingActionButton(
+            heroTag: 'clear_bookings',
+            backgroundColor: Colors.orange[700],
+            onPressed: () => _showClearDialog(context),
+            child: Icon(Icons.delete_sweep, color: Colors.white),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showClearDialog(BuildContext context) {
+    final allUsers = MockUsers.users.where((u) => !u.isAdmin).toList();
+    final l10n = AppLocalizations.of(context)!;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: Text('Clear Bookings'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView(
+              shrinkWrap: true,
+              children: [
+                ListTile(
+                  leading: CircleAvatar(
+                    radius: 20,
+                    backgroundColor: Color(0xFFDD2C00),
+                    child: Icon(Icons.group, color: Colors.white, size: 20),
+                  ),
+                  title: Text('All Users', style: TextStyle(fontWeight: FontWeight.w600)),
+                  subtitle: Text(
+                    '${BookingStorage().bookings.value.length} total bookings',
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  ),
+                  onTap: () async {
+                    Navigator.pop(dialogContext);
+                    await _confirmAndClear(context, null, 'all users');
+                  },
                 ),
-              )
-            : _buildBookingsList(context, bookings);
+                Divider(),
+                ...allUsers.map((user) {
+                  final count = BookingStorage().countBookingsForUser(user.id)['total'] ?? 0;
+                  final photoUrl = user.profilePhotoUrl;
+                  final hasPhoto = photoUrl != null && photoUrl.isNotEmpty;
+
+                  return ListTile(
+                    leading: CircleAvatar(
+                      radius: 20,
+                      backgroundImage: hasPhoto ? AssetImage(photoUrl) : null,
+                      backgroundColor: Colors.grey[300],
+                      child: !hasPhoto ? Icon(Icons.person, color: Colors.grey[600]) : null,
+                    ),
+                    title: Text('${user.name} ${user.surname}'),
+                    subtitle: Text('$count bookings', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                    trailing: count > 0
+                        ? Container(
+                            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Color(0xFFDD2C00).withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text('$count', style: TextStyle(color: Color(0xFFDD2C00), fontWeight: FontWeight.w600, fontSize: 12)),
+                          )
+                        : null,
+                    onTap: count > 0
+                        ? () async {
+                            Navigator.pop(dialogContext);
+                            await _confirmAndClear(context, user.id, '${user.name} ${user.surname}');
+                          }
+                        : null,
+                    enabled: count > 0,
+                  );
+                }),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(l10n.cancel, style: TextStyle(color: Color(0xFFDD2C00))),
+            ),
+          ],
+        );
       },
     );
+  }
+
+  Future<void> _confirmAndClear(BuildContext context, String? userId, String displayName) async {
+    final l10n = AppLocalizations.of(context)!;
+    final content = userId == null
+        ? 'Are you sure you want to clear ALL bookings for all users?'
+        : 'Are you sure you want to clear all bookings for $displayName?';
+
+    final confirmed = await DialogHelper.showConfirmDialog(
+      context: context,
+      title: 'Clear Bookings',
+      content: content,
+      cancelText: l10n.cancel,
+      confirmText: 'Clear',
+      isDangerous: true,
+    );
+
+    if (!confirmed) return;
+
+    int clearedCount;
+    if (userId == null) {
+      clearedCount = BookingStorage().bookings.value.length;
+      BookingStorage().clearAllBookings();
+    } else {
+      clearedCount = BookingStorage().clearBookingsForUser(userId);
+    }
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Cleared $clearedCount bookings'),
+          backgroundColor: Color(0xFF00C853),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   Widget _buildBookingsList(BuildContext context, List bookings) {
@@ -468,7 +600,8 @@ class _BookingsTab extends StatelessWidget {
             title: 'Upcoming',
             count: upcomingBookings.length,
             bookings: upcomingBookings,
-            buildBookingCard: (booking) => _buildBookingCard(context, booking, cardsCollapsible: false),
+            buildBookingCard: (booking) => _buildBookingCard(context, booking, cardsCollapsible: true),
+            startCollapsed: true,
             color: Colors.blue[700],
           ),
         if (ongoingBookings.isNotEmpty)
@@ -476,7 +609,7 @@ class _BookingsTab extends StatelessWidget {
             title: 'Ongoing',
             count: ongoingBookings.length,
             bookings: ongoingBookings,
-            buildBookingCard: (booking) => _buildBookingCard(context, booking, cardsCollapsible: false),
+            buildBookingCard: (booking) => _buildBookingCard(context, booking, cardsCollapsible: true),
             startCollapsed: false,
             color: Colors.orange[700],
           ),
@@ -500,7 +633,7 @@ class _BookingsTab extends StatelessWidget {
           ),
         if (archivedBookings.isNotEmpty)
           _CollapsibleBookingSection(
-            title: 'Archive',
+            title: 'Archived',
             count: archivedBookings.length,
             bookings: archivedBookings,
             buildBookingCard: (booking) => _buildBookingCard(context, booking, cardsCollapsible: true),
@@ -549,176 +682,324 @@ class _BookingsTab extends StatelessWidget {
 }
 
 // Messages Management Tab
-class _MessagesTab extends StatelessWidget {
+class _MessagesTab extends StatefulWidget {
+  @override
+  State<_MessagesTab> createState() => _MessagesTabState();
+}
+
+class _MessagesTabState extends State<_MessagesTab> {
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder(
-      valueListenable: MessagingService().conversations,
-      builder: (context, conversations, _) {
-        if (conversations.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.message, size: 64, color: Colors.grey[300]),
-                SizedBox(height: 16),
-                Text(
-                  'No conversations yet',
-                  style: TextStyle(fontSize: 18, color: Colors.grey[600]),
-                ),
-              ],
-            ),
-          );
-        }
-
-        // Show all conversations
-        final allConversations = conversations.toList()
-          ..sort((a, b) {
-            final aLast = a.lastMessage?.timestamp ?? a.arrivalTime;
-            final bLast = b.lastMessage?.timestamp ?? b.arrivalTime;
-            return bLast.compareTo(aLast);
-          });
-
-        return ListView.builder(
-          padding: EdgeInsets.all(16),
-          itemCount: allConversations.length,
-          itemBuilder: (context, index) {
-            final conversation = allConversations[index];
-            final messageCount = conversation.messages.length;
-            final unreadCount = conversation.getUnreadCount('admin');
-
-            return Card(
-              margin: EdgeInsets.only(bottom: 12),
-              child: ListTile(
-                onTap: () {
-                  // Navigate to chat screen to view conversation in admin mode
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ChatScreen(
-                        conversation: conversation,
-                        isAdminView: true,
-                      ),
-                    ),
-                  );
-                },
-                leading: CircleAvatar(
-                  backgroundColor: conversation.id.startsWith('support_')
-                      ? Color(0xFFDD2C00)
-                      : Colors.blue,
-                  child: Icon(
-                    conversation.id.startsWith('support_')
-                        ? Icons.support_agent
-                        : Icons.message,
-                    color: Colors.white,
-                  ),
-                ),
-                title: Row(
+    return Stack(
+      children: [
+        ValueListenableBuilder(
+          valueListenable: MessagingService().conversations,
+          builder: (context, conversations, _) {
+            if (conversations.isEmpty) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Expanded(
-                      child: Text(
-                        conversation.routeName,
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-                      ),
+                    Icon(Icons.message, size: 64, color: Colors.grey[300]),
+                    SizedBox(height: 16),
+                    Text(
+                      'No conversations yet',
+                      style: TextStyle(fontSize: 18, color: Colors.grey[600]),
                     ),
-                    if (conversation.isHidden)
-                      Container(
-                        margin: EdgeInsets.only(left: 4),
-                        padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: Colors.purple[100],
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(color: Colors.purple[300]!, width: 1),
-                        ),
-                        child: Text(
-                          'Hidden',
-                          style: TextStyle(
-                            fontSize: 9,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.purple[700],
+                  ],
+                ),
+              );
+            }
+
+            // Show all conversations
+            final allConversations = conversations.toList()
+              ..sort((a, b) {
+                final aLast = a.lastMessage?.timestamp ?? a.arrivalTime;
+                final bLast = b.lastMessage?.timestamp ?? b.arrivalTime;
+                return bLast.compareTo(aLast);
+              });
+
+            return ListView.builder(
+              padding: EdgeInsets.all(16),
+              itemCount: allConversations.length,
+              itemBuilder: (context, index) {
+                final conversation = allConversations[index];
+                final messageCount = conversation.messages.length;
+                final unreadCount = conversation.getUnreadCount('admin');
+
+                return Card(
+                  margin: EdgeInsets.only(bottom: 12),
+                  child: ListTile(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ChatScreen(
+                            conversation: conversation,
+                            isAdminView: true,
                           ),
                         ),
-                      ),
-                  ],
-                ),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SizedBox(height: 4),
-                    Text(
-                      '${conversation.driverName} ↔ ${conversation.riderName}',
-                      style: TextStyle(fontSize: 14),
-                    ),
-                    if (conversation.lastMessage != null)
-                      Text(
-                        conversation.lastMessage!.content,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                      ),
-                  ],
-                ),
-                trailing: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      '$messageCount',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
+                      );
+                    },
+                    leading: CircleAvatar(
+                      backgroundColor: conversation.id.startsWith('support_')
+                          ? Color(0xFFDD2C00)
+                          : Colors.blue,
+                      child: Icon(
+                        conversation.id.startsWith('support_')
+                            ? Icons.support_agent
+                            : Icons.message,
+                        color: Colors.white,
                       ),
                     ),
-                    Text(
-                      'messages',
-                      style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+                    title: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            conversation.routeName,
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                          ),
+                        ),
+                        if (conversation.isHidden)
+                          Container(
+                            margin: EdgeInsets.only(left: 4),
+                            padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.purple[100],
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(color: Colors.purple[300]!, width: 1),
+                            ),
+                            child: Text(
+                              'Hidden',
+                              style: TextStyle(
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.purple[700],
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
-                    if (unreadCount > 0)
-                      Container(
-                        margin: EdgeInsets.only(top: 4),
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(height: 4),
+                        Text(
+                          '${conversation.driverName} ↔ ${conversation.riderName}',
+                          style: TextStyle(fontSize: 14),
                         ),
-                        decoration: BoxDecoration(
-                          color: Color(0xFFDD2C00),
-                          borderRadius: BorderRadius.circular(10),
+                        if (conversation.lastMessage != null)
+                          Text(
+                            conversation.lastMessage!.content,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                          ),
+                      ],
+                    ),
+                    trailing: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          '$messageCount',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                        child: Text(
-                          '$unreadCount',
-                          style: TextStyle(fontSize: 10, color: Colors.white),
+                        Text(
+                          'messages',
+                          style: TextStyle(fontSize: 10, color: Colors.grey[600]),
                         ),
-                      ),
-                  ],
-                ),
-              ),
+                        if (unreadCount > 0)
+                          Container(
+                            margin: EdgeInsets.only(top: 4),
+                            padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Color(0xFFDD2C00),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              '$unreadCount',
+                              style: TextStyle(fontSize: 10, color: Colors.white),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                );
+              },
             );
           },
+        ),
+        Positioned(
+          right: 16,
+          bottom: 16,
+          child: FloatingActionButton(
+            heroTag: 'clear_messages',
+            backgroundColor: Colors.orange[700],
+            onPressed: () => _showClearDialog(context),
+            child: Icon(Icons.delete_sweep, color: Colors.white),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showClearDialog(BuildContext context) {
+    final allUsers = MockUsers.users.where((u) => !u.isAdmin).toList();
+    final l10n = AppLocalizations.of(context)!;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: Text('Clear Messages'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView(
+              shrinkWrap: true,
+              children: [
+                ListTile(
+                  leading: CircleAvatar(
+                    radius: 20,
+                    backgroundColor: Color(0xFFDD2C00),
+                    child: Icon(Icons.group, color: Colors.white, size: 20),
+                  ),
+                  title: Text('All Users', style: TextStyle(fontWeight: FontWeight.w600)),
+                  subtitle: Text(
+                    '${MessagingService().conversations.value.length} total conversations',
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  ),
+                  onTap: () async {
+                    Navigator.pop(dialogContext);
+                    await _confirmAndClear(context, null, 'all users');
+                  },
+                ),
+                Divider(),
+                ...allUsers.map((user) {
+                  final count = MessagingService.countConversationsForUser(user.id);
+                  final photoUrl = user.profilePhotoUrl;
+                  final hasPhoto = photoUrl != null && photoUrl.isNotEmpty;
+
+                  return ListTile(
+                    leading: CircleAvatar(
+                      radius: 20,
+                      backgroundImage: hasPhoto ? AssetImage(photoUrl) : null,
+                      backgroundColor: Colors.grey[300],
+                      child: !hasPhoto ? Icon(Icons.person, color: Colors.grey[600]) : null,
+                    ),
+                    title: Text('${user.name} ${user.surname}'),
+                    subtitle: Text('$count conversations', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                    trailing: count > 0
+                        ? Container(
+                            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Color(0xFFDD2C00).withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text('$count', style: TextStyle(color: Color(0xFFDD2C00), fontWeight: FontWeight.w600, fontSize: 12)),
+                          )
+                        : null,
+                    onTap: count > 0
+                        ? () async {
+                            Navigator.pop(dialogContext);
+                            await _confirmAndClear(context, user.id, '${user.name} ${user.surname}');
+                          }
+                        : null,
+                    enabled: count > 0,
+                  );
+                }),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(l10n.cancel, style: TextStyle(color: Color(0xFFDD2C00))),
+            ),
+          ],
         );
       },
     );
   }
+
+  Future<void> _confirmAndClear(BuildContext context, String? userId, String displayName) async {
+    final l10n = AppLocalizations.of(context)!;
+    final content = userId == null
+        ? 'Are you sure you want to clear ALL conversations for all users?'
+        : 'Are you sure you want to clear all conversations for $displayName?';
+
+    final confirmed = await DialogHelper.showConfirmDialog(
+      context: context,
+      title: 'Clear Messages',
+      content: content,
+      cancelText: l10n.cancel,
+      confirmText: 'Clear',
+      isDangerous: true,
+    );
+
+    if (!confirmed) return;
+
+    int clearedCount;
+    if (userId == null) {
+      clearedCount = MessagingService().conversations.value.length;
+      await MessagingService.clearAllConversations();
+    } else {
+      clearedCount = await MessagingService.clearConversationsForUser(userId);
+    }
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Cleared $clearedCount conversations'),
+          backgroundColor: Color(0xFF00C853),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
 }
 
 // Ratings Management Tab
-class _RatingsTab extends StatelessWidget {
+class _RatingsTab extends StatefulWidget {
+  @override
+  State<_RatingsTab> createState() => _RatingsTabState();
+}
+
+class _RatingsTabState extends State<_RatingsTab> {
   @override
   Widget build(BuildContext context) {
     final allRatings = RatingService().getAllRatings();
 
     if (allRatings.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.star_border, size: 64, color: Colors.grey[300]),
-            SizedBox(height: 16),
-            Text(
-              'No ratings yet',
-              style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+      return Stack(
+        children: [
+          Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.star_border, size: 64, color: Colors.grey[300]),
+                SizedBox(height: 16),
+                Text(
+                  'No ratings yet',
+                  style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+          Positioned(
+            right: 16,
+            bottom: 16,
+            child: FloatingActionButton(
+              heroTag: 'clear_ratings',
+              backgroundColor: Colors.orange[700],
+              onPressed: () => _showClearDialog(context),
+              child: Icon(Icons.delete_sweep, color: Colors.white),
+            ),
+          ),
+        ],
       );
     }
 
@@ -726,15 +1007,17 @@ class _RatingsTab extends StatelessWidget {
     final sortedRatings = allRatings.toList()
       ..sort((a, b) => b.ratedAt.compareTo(a.ratedAt));
 
-    return ListView.builder(
-      padding: EdgeInsets.all(16),
-      itemCount: sortedRatings.length,
-      itemBuilder: (context, index) {
-        final rating = sortedRatings[index];
-        final fromUser = MockUsers.getUserById(rating.fromUserId);
-        final toUser = MockUsers.getUserById(rating.toUserId);
+    return Stack(
+      children: [
+        ListView.builder(
+          padding: EdgeInsets.all(16),
+          itemCount: sortedRatings.length,
+          itemBuilder: (context, index) {
+            final rating = sortedRatings[index];
+            final fromUser = MockUsers.getUserById(rating.fromUserId);
+            final toUser = MockUsers.getUserById(rating.toUserId);
 
-        return Card(
+            return Card(
           margin: EdgeInsets.only(bottom: 12),
           child: Padding(
             padding: EdgeInsets.all(16),
@@ -868,7 +1151,105 @@ class _RatingsTab extends StatelessWidget {
           ),
         );
       },
+        ),
+        Positioned(
+          right: 16,
+          bottom: 16,
+          child: FloatingActionButton(
+            heroTag: 'clear_ratings',
+            backgroundColor: Colors.orange[700],
+            onPressed: () => _showClearDialog(context),
+            child: Icon(Icons.delete_sweep, color: Colors.white),
+          ),
+        ),
+      ],
     );
+  }
+
+  void _showClearDialog(BuildContext context) {
+    final ratingService = RatingService();
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text('Clear Ratings'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView(
+            shrinkWrap: true,
+            children: [
+              ListTile(
+                leading: Icon(Icons.select_all, color: Colors.red),
+                title: Text('All Ratings'),
+                subtitle: Text('${ratingService.getAllRatings().length} ratings'),
+                onTap: () async {
+                  Navigator.pop(dialogContext);
+                  await _confirmAndClear(context, null);
+                },
+              ),
+              Divider(),
+              ...MockUsers.users.map((user) {
+                final count = ratingService.getRatingsForUser(user.id).length;
+                return ListTile(
+                  leading: CircleAvatar(
+                    radius: 16,
+                    backgroundColor: Colors.grey[300],
+                    backgroundImage: user.profilePhotoUrl != null
+                        ? AssetImage(user.profilePhotoUrl!)
+                        : null,
+                    child: user.profilePhotoUrl == null
+                        ? Icon(Icons.person, size: 16, color: Colors.white)
+                        : null,
+                  ),
+                  title: Text(user.fullName),
+                  subtitle: Text('$count ratings received'),
+                  onTap: () async {
+                    Navigator.pop(dialogContext);
+                    await _confirmAndClear(context, user.id);
+                  },
+                );
+              }),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _confirmAndClear(BuildContext context, String? userId) async {
+    final ratingService = RatingService();
+    final userName = userId != null
+        ? MockUsers.getUserById(userId)?.fullName ?? 'Unknown'
+        : 'all users';
+
+    final confirmed = await DialogHelper.showConfirmDialog(
+      context: context,
+      title: 'Clear Ratings',
+      content: 'Are you sure you want to clear ratings for $userName? This cannot be undone.',
+      confirmText: 'Clear',
+      isDangerous: true,
+    );
+
+    if (confirmed && context.mounted) {
+      if (userId != null) {
+        ratingService.clearRatingsForUser(userId);
+      } else {
+        ratingService.clearAll();
+      }
+      setState(() {});
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Ratings cleared for $userName'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   Widget _buildRatingChip(String label) {
@@ -975,39 +1356,36 @@ class _CollapsibleBookingSectionState
                 });
               },
               child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          _isExpanded ? Icons.expand_less : Icons.expand_more,
+                padding: EdgeInsets.symmetric(horizontal: 16),
+                child: SizedBox(
+                  height: 50,
+                  child: Row(
+                    children: [
+                      Icon(
+                        _isExpanded ? Icons.expand_less : Icons.expand_more,
+                        size: 20,
+                        color: sectionColor,
+                      ),
+                      SizedBox(width: 4),
+                      Text(
+                        widget.title,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
                           color: sectionColor,
-                          size: 20,
                         ),
-                        SizedBox(width: 4),
-                        Text(
-                          widget.title,
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: sectionColor,
-                          ),
+                      ),
+                      SizedBox(width: 8),
+                      Text(
+                        '(${widget.count})',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: sectionColor,
                         ),
-                        SizedBox(width: 8),
-                        Text(
-                          '(${widget.count})',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: sectionColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -1044,7 +1422,17 @@ class _UserDetailsContent extends StatefulWidget {
 }
 
 class _UserDetailsContentState extends State<_UserDetailsContent> {
-  bool _userInfoExpanded = true;
+  bool _userInfoExpanded = false;
+
+  void _copyToClipboard(String text, String label) {
+    Clipboard.setData(ClipboardData(text: text));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$label copied'),
+        duration: Duration(seconds: 1),
+      ),
+    );
+  }
   bool _messagesExpanded = false;
   bool _ratingsExpanded = false;
 
@@ -1052,7 +1440,7 @@ class _UserDetailsContentState extends State<_UserDetailsContent> {
   bool _bookingsExpanded = false;
 
   // Booking category expansion states
-  bool _upcomingExpanded = true;
+  bool _upcomingExpanded = false;
   bool _ongoingExpanded = false;
   bool _completedExpanded = false;
   bool _canceledExpanded = false;
@@ -1072,9 +1460,29 @@ class _UserDetailsContentState extends State<_UserDetailsContent> {
           isExpanded: _userInfoExpanded,
           onTap: () => setState(() => _userInfoExpanded = !_userInfoExpanded),
           children: [
-            Text(
-              'Personal Information',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            // Personal Information subtitle with copy all
+            Row(
+              children: [
+                Text(
+                  'Personal Information',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                ),
+                GestureDetector(
+                  onTap: () {
+                    final personalInfo = 'ID: ${widget.user.id}\n'
+                        'Name: ${widget.user.name}\n'
+                        'Surname: ${widget.user.surname}\n'
+                        'Email: ${widget.user.email}\n'
+                        'Phone: ${widget.user.formattedPhone}'
+                        '${widget.user.isAdmin ? '\nRole: Admin' : ''}';
+                    _copyToClipboard(personalInfo, 'Personal Information');
+                  },
+                  child: Padding(
+                    padding: EdgeInsets.only(left: 6),
+                    child: Icon(Icons.copy, size: 14, color: Colors.grey[400]),
+                  ),
+                ),
+              ],
             ),
             SizedBox(height: 8),
             _buildInfoRow('ID', widget.user.id),
@@ -1085,9 +1493,27 @@ class _UserDetailsContentState extends State<_UserDetailsContent> {
             if (widget.user.isAdmin) _buildInfoRow('Role', 'Admin'),
             if (widget.user.hasVehicle) ...[
               Divider(height: 24),
-              Text(
-                'Vehicle Information',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              // Vehicle Information subtitle with copy all
+              Row(
+                children: [
+                  Text(
+                    'Vehicle Information',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      final vehicleInfo = 'Make: ${widget.user.vehicleBrand ?? ''}\n'
+                          'Model: ${widget.user.vehicleModel ?? ''}\n'
+                          'Color: ${widget.user.vehicleColor ?? ''}\n'
+                          'Plate: ${widget.user.licensePlate ?? ''}';
+                      _copyToClipboard(vehicleInfo, 'Vehicle Information');
+                    },
+                    child: Padding(
+                      padding: EdgeInsets.only(left: 6),
+                      child: Icon(Icons.copy, size: 14, color: Colors.grey[400]),
+                    ),
+                  ),
+                ],
               ),
               SizedBox(height: 8),
               _buildInfoRow('Make', widget.user.vehicleBrand ?? ''),
@@ -1100,16 +1526,61 @@ class _UserDetailsContentState extends State<_UserDetailsContent> {
 
         SizedBox(height: 16),
 
-        // Bookings Section
-        _buildCollapsibleSection(
-          title: 'Bookings',
-          count: widget.bookings.length,
-          isExpanded: _bookingsExpanded,
-          onTap: () => setState(() => _bookingsExpanded = !_bookingsExpanded),
-          children: [
-            _buildBookingsContent(),
-          ],
+        // Bookings Section - custom header without nested padding
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                offset: Offset(0, 1),
+                blurRadius: 2,
+              ),
+            ],
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () => setState(() => _bookingsExpanded = !_bookingsExpanded),
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Icon(
+                      _bookingsExpanded ? Icons.expand_less : Icons.expand_more,
+                      color: Color(0xFFDD2C00),
+                    ),
+                    SizedBox(width: 8),
+                    Text(
+                      'Bookings',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    Text(
+                      '(${widget.bookings.length})',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
         ),
+
+        // Booking categories - directly in ListView without extra padding
+        if (_bookingsExpanded) ...[
+          SizedBox(height: 8),
+          _buildBookingsContent(),
+        ],
 
         SizedBox(height: 16),
 
@@ -1323,8 +1794,17 @@ class _UserDetailsContentState extends State<_UserDetailsContent> {
             child: Text(
               value,
               style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
+          if (value.isNotEmpty)
+            GestureDetector(
+              onTap: () => _copyToClipboard(value, label),
+              child: Padding(
+                padding: EdgeInsets.only(left: 4),
+                child: Icon(Icons.copy, size: 12, color: Colors.grey[400]),
+              ),
+            ),
         ],
       ),
     );
@@ -1377,7 +1857,7 @@ class _UserDetailsContentState extends State<_UserDetailsContent> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Upcoming bookings - seats always visible (no chevron on cards)
+        // Upcoming bookings - collapsible cards
         if (upcoming.isNotEmpty)
           _buildBookingCategory(
             'Upcoming',
@@ -1386,10 +1866,10 @@ class _UserDetailsContentState extends State<_UserDetailsContent> {
             _upcomingExpanded,
             () => setState(() => _upcomingExpanded = !_upcomingExpanded),
             isPast: false,
-            cardsCollapsible: false,
+            cardsCollapsible: true,
           ),
 
-        // Ongoing bookings - seats always visible (no chevron on cards)
+        // Ongoing bookings - collapsible cards
         if (ongoing.isNotEmpty) ...[
           SizedBox(height: 8),
           _buildBookingCategory(
@@ -1400,7 +1880,7 @@ class _UserDetailsContentState extends State<_UserDetailsContent> {
             () => setState(() => _ongoingExpanded = !_ongoingExpanded),
             isPast: false,
             isOngoing: true,
-            cardsCollapsible: false,
+            cardsCollapsible: true,
           ),
         ],
 
@@ -1433,11 +1913,11 @@ class _UserDetailsContentState extends State<_UserDetailsContent> {
           ),
         ],
 
-        // Archive bookings - seats collapsed with chevron
+        // Archived bookings - seats collapsed with chevron
         if (archived.isNotEmpty) ...[
           SizedBox(height: 8),
           _buildBookingCategory(
-            'Archive',
+            'Archived',
             archived,
             Colors.grey[700]!,
             _archivedExpanded,
@@ -1560,8 +2040,11 @@ class _UserDetailsContentState extends State<_UserDetailsContent> {
                 isCollapsible: cardsCollapsible,
                 initiallyExpanded: false,
                 buildMiniatureSeatLayout: (seats, booking) {
-                  // Simple seat layout for admin panel
-                  return Container();
+                  return SeatLayoutWidget(
+                    booking: booking,
+                    isInteractive: false,
+                    currentUserId: null,
+                  );
                 },
               )),
         ],

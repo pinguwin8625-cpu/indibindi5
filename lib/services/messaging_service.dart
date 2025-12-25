@@ -199,6 +199,35 @@ class MessagingService {
     }
   }
 
+  // Clear conversations for a specific user
+  // Returns the count of conversations removed
+  static Future<int> clearConversationsForUser(String userId) async {
+    final userConversations = _instance.conversations.value
+        .where((c) => c.driverId == userId || c.riderId == userId)
+        .toList();
+    final count = userConversations.length;
+
+    if (count == 0) return 0;
+
+    _instance.conversations.value = _instance.conversations.value
+        .where((c) => c.driverId != userId && c.riderId != userId)
+        .toList();
+    await _instance._saveConversations();
+
+    if (kDebugMode) {
+      print('💬 Cleared $count conversations for user $userId');
+    }
+
+    return count;
+  }
+
+  // Count conversations for a specific user
+  static int countConversationsForUser(String userId) {
+    return _instance.conversations.value
+        .where((c) => c.driverId == userId || c.riderId == userId)
+        .length;
+  }
+
   // Ensure conversations are loaded
   Future<void> ensureLoaded() async {
     await _loadConversations();

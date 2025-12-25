@@ -124,43 +124,46 @@ class _BookingCardState extends State<BookingCard> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                // Status note (at very top) - show for archived items, upcoming items, or completed items
-                if (widget.isArchived ||
-                    (!widget.isPast && !widget.isCanceled && !widget.isOngoing) ||
-                    (widget.isPast && !widget.isCanceled && !widget.isArchived && !widget.isOngoing))
-                  Padding(
-                    padding: EdgeInsets.only(bottom: 12),
-                    child: Container(
-                      width: double.infinity,
-                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: widget.isArchived
-                            ? (widget.booking.isCanceled == true
-                                ? Colors.red.withOpacity(0.1)
-                                : Colors.green.withOpacity(0.1))
-                            : (widget.isPast ? Colors.green.withOpacity(0.1) : Colors.blue.withOpacity(0.1)),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Center(
-                        child: Text(
-                          (widget.isArchived
-                              ? (widget.booking.isCanceled == true
-                                  ? l10n.canceled
-                                  : l10n.completed)
-                              : (widget.isPast ? l10n.completed : l10n.upcoming)) + _getStatusSuffix(),
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: widget.isArchived
-                                ? (widget.booking.isCanceled == true
-                                    ? Colors.red[700]
-                                    : Colors.green[700])
-                                : (widget.isPast ? Colors.green[700] : Colors.blue[700]),
-                          ),
+                // Status note (at very top) - always show status label
+                Padding(
+                  padding: EdgeInsets.only(bottom: 12),
+                  child: Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: widget.isArchived
+                          ? Colors.grey.withOpacity(0.1)
+                          : widget.isCanceled
+                              ? Colors.red.withOpacity(0.1)
+                              : widget.isOngoing
+                                  ? Colors.orange.withOpacity(0.1)
+                                  : (widget.isPast ? Colors.green.withOpacity(0.1) : Colors.blue.withOpacity(0.1)),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Center(
+                      child: Text(
+                        widget.isArchived
+                            ? '${l10n.archived} (${widget.isCanceled ? l10n.canceled : l10n.completed})'
+                            : (widget.isCanceled
+                                ? l10n.canceled
+                                : widget.isOngoing
+                                    ? l10n.ongoing
+                                    : (widget.isPast ? l10n.completed : l10n.upcoming)) + _getStatusSuffix(),
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: widget.isArchived
+                              ? Colors.grey[700]
+                              : widget.isCanceled
+                                  ? Colors.red[700]
+                                  : widget.isOngoing
+                                      ? Colors.orange[700]
+                                      : (widget.isPast ? Colors.green[700] : Colors.blue[700]),
                         ),
                       ),
                     ),
                   ),
+                ),
 
                 // Route name and date
                 Row(
@@ -207,106 +210,106 @@ class _BookingCardState extends State<BookingCard> {
                   ],
                 ),
 
-                // Show details only if expanded
-                if (_isExpanded) ...[
-                  SizedBox(height: 12),
+                SizedBox(height: 12),
 
-                  // Origin with departure time - simple inline design
-                  Row(
-                    children: [
-                      // Green circle marker
-                      Container(
-                        width: 12,
-                        height: 12,
-                        decoration: BoxDecoration(
-                          color: Colors.green,
-                          shape: BoxShape.circle,
-                        ),
+                // Origin with departure time - simple inline design (always visible)
+                Row(
+                  children: [
+                    // Green circle marker
+                    Container(
+                      width: 12,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: Colors.green,
+                        shape: BoxShape.circle,
                       ),
-                      SizedBox(width: 8),
-                      // Time
-                      Text(
-                        formatTimeHHmm(widget.booking.departureTime),
+                    ),
+                    SizedBox(width: 8),
+                    // Time
+                    Text(
+                      formatTimeHHmm(widget.booking.departureTime),
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.green[700],
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    // Stop name
+                    Expanded(
+                      child: Text(
+                        widget.booking.originName,
                         style: TextStyle(
                           fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.green[700],
+                          color: Color(0xFF2E2E2E),
                         ),
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      SizedBox(width: 8),
-                      // Stop name
-                      Expanded(
-                        child: Text(
-                          widget.booking.originName,
+                    ),
+                  ],
+                ),
+
+                SizedBox(height: 8),
+
+                // Destination with arrival time - simple inline design (always visible)
+                Row(
+                  children: [
+                    // Red circle marker
+                    Container(
+                      width: 12,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    // Time with +1 indicator if needed
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          formatTimeHHmm(widget.booking.arrivalTime),
                           style: TextStyle(
                             fontSize: 14,
-                            color: Color(0xFF2E2E2E),
+                            fontWeight: FontWeight.w600,
+                            color: Colors.red[700],
                           ),
-                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                    ],
-                  ),
-
-                  SizedBox(height: 8),
-
-                  // Destination with arrival time - simple inline design
-                  Row(
-                    children: [
-                      // Red circle marker
-                      Container(
-                        width: 12,
-                        height: 12,
-                        decoration: BoxDecoration(
-                          color: Colors.red,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      SizedBox(width: 8),
-                      // Time with +1 indicator if needed
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            formatTimeHHmm(widget.booking.arrivalTime),
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.red[700],
-                            ),
-                          ),
-                          // Show +1 if arrival is on a different day
-                          if (widget.booking.arrivalTime.day != widget.booking.departureTime.day ||
-                              widget.booking.arrivalTime.month != widget.booking.departureTime.month ||
-                              widget.booking.arrivalTime.year != widget.booking.departureTime.year)
-                            Padding(
-                              padding: EdgeInsets.only(left: 2),
-                              child: Text(
-                                '+1',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.red[400],
-                                ),
+                        // Show +1 if arrival is on a different day
+                        if (widget.booking.arrivalTime.day != widget.booking.departureTime.day ||
+                            widget.booking.arrivalTime.month != widget.booking.departureTime.month ||
+                            widget.booking.arrivalTime.year != widget.booking.departureTime.year)
+                          Padding(
+                            padding: EdgeInsets.only(left: 2),
+                            child: Text(
+                              '+1',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.red[400],
                               ),
                             ),
-                        ],
-                      ),
-                      SizedBox(width: 8),
-                      // Stop name
-                      Expanded(
-                        child: Text(
-                          widget.booking.destinationName,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Color(0xFF2E2E2E),
                           ),
-                          overflow: TextOverflow.ellipsis,
+                      ],
+                    ),
+                    SizedBox(width: 8),
+                    // Stop name
+                    Expanded(
+                      child: Text(
+                        widget.booking.destinationName,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Color(0xFF2E2E2E),
                         ),
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
+                ),
 
+                // Show seat layout only if expanded
+                if (_isExpanded) ...[
                   // Miniature seat layout
                   // Hide seats entirely for canceled bookings (unless admin panel)
                   if (!widget.isCanceled || widget.showSeatsForCanceled) ...[
@@ -330,27 +333,6 @@ class _BookingCardState extends State<BookingCard> {
 
                   ], // End of seat layout section
                 ], // End of _isExpanded section
-
-                // Chevron button at bottom center for collapsible cards
-                if (widget.isCollapsible)
-                  Padding(
-                    padding: EdgeInsets.only(top: _isExpanded ? 8 : 12),
-                    child: Center(
-                      child: Container(
-                        padding: EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[100],
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: Colors.grey[300]!),
-                        ),
-                        child: Icon(
-                          _isExpanded ? Icons.expand_less : Icons.expand_more,
-                          size: 16,
-                          color: Colors.grey[700],
-                        ),
-                      ),
-                    ),
-                  ),
 
                 // Cancel/Archive button at the bottom (hidden for ongoing rides and archived items)
                 if (_isExpanded && widget.showActions && !widget.isOngoing && !widget.isArchived)

@@ -8,8 +8,6 @@ import 'auth_screen.dart';
 import 'admin_panel_screen.dart';
 import '../l10n/app_localizations.dart';
 import '../services/auth_service.dart';
-import '../services/booking_storage.dart';
-import '../services/messaging_service.dart';
 import '../services/rating_service.dart';
 import '../services/mock_users.dart';
 import '../utils/dialog_helper.dart';
@@ -351,105 +349,14 @@ class _AccountScreenState extends State<AccountScreen> {
                   }
                 },
               ),
-              // Show Clear All Bookings option for admin users
-              if (user?.isAdmin == true)
+              // Hide delete account for admin users
+              if (user?.isAdmin != true)
                 _buildProfileOption(
-                  icon: Icons.delete_sweep,
-                  title: 'Clear All Bookings',
-                  titleColor: Colors.orange[700],
-                  onTap: () async {
-                    final confirmed = await DialogHelper.showConfirmDialog(
-                      context: context,
-                      title: 'Clear All Bookings?',
-                      content:
-                          'This will permanently delete ALL bookings from ALL users. This action cannot be undone.',
-                      cancelText: l10n.cancel,
-                      confirmText: 'Clear All',
-                      isDangerous: true,
-                    );
-
-                    if (confirmed) {
-                      BookingStorage().clearAllBookings();
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(l10n.snackbarBookingsCleared),
-                            duration: Duration(seconds: 3),
-                            behavior: SnackBarBehavior.floating,
-                          ),
-                        );
-                      }
-                    }
-                  },
+                  icon: Icons.delete_forever,
+                  title: l10n.deleteAccount,
+                  titleColor: Colors.red[700],
+                  onTap: () {},
                 ),
-              // Show Clear All Conversations option for admin users
-              if (user?.isAdmin == true)
-                _buildProfileOption(
-                  icon: Icons.chat_bubble_outline,
-                  title: 'Clear All Conversations',
-                  titleColor: Colors.orange[700],
-                  onTap: () async {
-                    final confirmed = await DialogHelper.showConfirmDialog(
-                      context: context,
-                      title: 'Clear All Conversations?',
-                      content:
-                          'This will permanently delete ALL conversations from ALL users. This action cannot be undone.',
-                      cancelText: l10n.cancel,
-                      confirmText: 'Clear All',
-                      isDangerous: true,
-                    );
-
-                    if (confirmed) {
-                      MessagingService.clearAllConversations();
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(l10n.snackbarConversationsCleared),
-                            duration: Duration(seconds: 3),
-                            behavior: SnackBarBehavior.floating,
-                          ),
-                        );
-                      }
-                    }
-                  },
-                ),
-              // Show Clear All Ratings option for admin users
-              if (user?.isAdmin == true)
-                _buildProfileOption(
-                  icon: Icons.star_outline,
-                  title: 'Clear All Ratings',
-                  titleColor: Colors.orange[700],
-                  onTap: () async {
-                    final confirmed = await DialogHelper.showConfirmDialog(
-                      context: context,
-                      title: 'Clear All Ratings?',
-                      content:
-                          'This will permanently delete ALL ratings from ALL users. All user ratings will be reset to 0. This action cannot be undone.',
-                      cancelText: l10n.cancel,
-                      confirmText: 'Clear All',
-                      isDangerous: true,
-                    );
-
-                    if (confirmed) {
-                      await RatingService().clearAll();
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(l10n.snackbarRatingsCleared),
-                            duration: Duration(seconds: 3),
-                            behavior: SnackBarBehavior.floating,
-                          ),
-                        );
-                      }
-                    }
-                  },
-                ),
-              _buildProfileOption(
-                icon: Icons.delete_forever,
-                title: l10n.deleteAccount,
-                titleColor: Colors.red[700],
-                onTap: () {},
-              ),
 
               SizedBox(height: 24),
             ],

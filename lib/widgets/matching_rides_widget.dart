@@ -337,19 +337,18 @@ class _MatchingRidesWidgetState extends State<MatchingRidesWidget> {
                           letterSpacing: 0.5,
                         ),
                       ),
-                      if (AuthService.currentUser?.shouldShowOnboardingHints ?? true)
-                        Padding(
-                          padding: EdgeInsets.only(top: 4),
-                          child: Text(
-                            l10n.hintMatchingRides,
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Color(0xFF5D4037).withOpacity(0.6),
-                              fontStyle: FontStyle.italic,
-                            ),
-                            textAlign: TextAlign.center,
+                      Padding(
+                        padding: EdgeInsets.only(top: 4),
+                        child: Text(
+                          l10n.hintMatchingRides,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Color(0xFF5D4037).withOpacity(0.6),
+                            fontStyle: FontStyle.italic,
                           ),
+                          textAlign: TextAlign.center,
                         ),
+                      ),
                     ],
                   ),
                 ),

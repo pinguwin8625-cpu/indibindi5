@@ -6,7 +6,6 @@ import '../widgets/booking_button_widget.dart';
 import '../widgets/scroll_indicator.dart';
 import '../widgets/ride_details_bar.dart';
 import '../l10n/app_localizations.dart';
-import '../services/auth_service.dart';
 
 class BookingLayerWidget extends StatefulWidget {
   final String userRole;
@@ -94,19 +93,18 @@ class _BookingLayerWidgetState extends State<BookingLayerWidget> {
                               letterSpacing: 0.5,
                             ),
                           ),
-                          if (AuthService.currentUser?.shouldShowOnboardingHints ?? true)
-                            Padding(
-                              padding: EdgeInsets.only(top: 4),
-                              child: Text(
-                                l10n.hintSeatSelectionDriver,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Color(0xFF5D4037).withOpacity(0.6),
-                                  fontStyle: FontStyle.italic,
-                                ),
-                                textAlign: TextAlign.center,
+                          Padding(
+                            padding: EdgeInsets.only(top: 4),
+                            child: Text(
+                              l10n.hintSeatSelectionDriver,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Color(0xFF5D4037).withOpacity(0.6),
+                                fontStyle: FontStyle.italic,
                               ),
+                              textAlign: TextAlign.center,
                             ),
+                          ),
                         ],
                       ),
                     ),

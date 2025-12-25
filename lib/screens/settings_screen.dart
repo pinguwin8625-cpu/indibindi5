@@ -6,6 +6,8 @@ import '../l10n/app_localizations.dart';
 import '../providers/locale_provider.dart';
 import '../utils/dialog_helper.dart';
 import '../widgets/scroll_indicator.dart';
+import '../services/auth_service.dart';
+import '../services/mock_users.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -104,6 +106,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               SizedBox(height: 16),
             ],
 
+            // User Selection (for testing)
+            _buildUserSelectionTile(context, l10n),
+            SizedBox(height: 16),
+
             // App Version
             Center(
               child: Text(
@@ -201,6 +207,117 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         onTap: () => _showLanguageDialog(context, l10n, localeProvider),
       ),
+    );
+  }
+
+  Widget _buildUserSelectionTile(BuildContext context, AppLocalizations l10n) {
+    final currentUser = AuthService.currentUser;
+    final displayName = currentUser != null
+        ? '${currentUser.name} ${currentUser.surname}'
+        : 'Not logged in';
+
+    return Container(
+      height: 56,
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey[400]!),
+      ),
+      child: ListTile(
+        contentPadding: EdgeInsets.symmetric(horizontal: 16),
+        leading: Icon(Icons.person_outline, color: Color(0xFFDD2C00), size: 24),
+        title: Text(
+          'Switch User',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              displayName,
+              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+            ),
+            SizedBox(width: 8),
+            Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+          ],
+        ),
+        onTap: () => _showUserSelectionDialog(context),
+      ),
+    );
+  }
+
+  void _showUserSelectionDialog(BuildContext context) {
+    final allUsers = MockUsers.users;
+    final currentUser = AuthService.currentUser;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: Text('Select User'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: allUsers.length,
+              itemBuilder: (context, index) {
+                final user = allUsers[index];
+                final isSelected = currentUser?.id == user.id;
+                final hasVehicle = user.hasVehicle;
+
+                final photoUrl = user.profilePhotoUrl;
+                final hasPhoto = photoUrl != null && photoUrl.isNotEmpty;
+
+                return ListTile(
+                  leading: CircleAvatar(
+                    radius: 20,
+                    backgroundImage: hasPhoto
+                        ? AssetImage(photoUrl)
+                        : null,
+                    backgroundColor: Colors.grey[300],
+                    child: !hasPhoto
+                        ? Icon(Icons.person, color: Colors.grey[600])
+                        : null,
+                  ),
+                  title: Text(
+                    '${user.name} ${user.surname}',
+                    style: TextStyle(
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                      color: isSelected ? Color(0xFFDD2C00) : Colors.black,
+                    ),
+                  ),
+                  subtitle: Text(
+                    hasVehicle
+                        ? '${user.vehicleBrand} ${user.vehicleModel}'
+                        : 'No vehicle',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  trailing: isSelected
+                      ? Icon(Icons.check, color: Color(0xFFDD2C00), size: 20)
+                      : null,
+                  onTap: () {
+                    AuthService.loginWithId(user.id);
+                    Navigator.pop(dialogContext);
+                    setState(() {}); // Refresh to show new user
+                  },
+                );
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(
+                'Cancel',
+                style: TextStyle(color: Color(0xFFDD2C00)),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
