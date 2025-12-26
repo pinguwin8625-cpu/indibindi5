@@ -1,3 +1,5 @@
+import '../services/booking_storage.dart';
+
 class Message {
   final String id;
   final String conversationId; // Links to a specific booking
@@ -87,33 +89,61 @@ class Conversation {
     this.isDeleted = false,
   });
 
-  // Check if messaging is still allowed (within 3 days after arrival)
+  // Check if messaging is still allowed (synced with booking - not archived)
   bool get isMessagingAllowed {
-    final now = DateTime.now();
-    final cutoffTime = arrivalTime.add(Duration(days: 3));
-    return now.isBefore(cutoffTime);
+    // Support conversations don't have a booking - use time-based logic
+    if (bookingId.startsWith('support')) {
+      final now = DateTime.now();
+      final cutoffTime = arrivalTime.add(Duration(days: 3));
+      return now.isBefore(cutoffTime);
+    }
+    // For ride conversations, sync with booking archive status
+    final booking = BookingStorage().getBookingById(bookingId);
+    if (booking == null) return false;
+    return booking.isArchived != true;
   }
 
-  // Check if conversation is archived (3-7 days after arrival - no messaging but still visible)
+  // Check if conversation is archived (synced with booking)
   bool get isArchived {
-    final now = DateTime.now();
-    final archiveCutoff = arrivalTime.add(Duration(days: 3));
-    final hideCutoff = arrivalTime.add(Duration(days: 7));
-    return now.isAfter(archiveCutoff) && now.isBefore(hideCutoff);
+    // Support conversations - use time-based logic
+    if (bookingId.startsWith('support')) {
+      final now = DateTime.now();
+      final archiveCutoff = arrivalTime.add(Duration(days: 3));
+      final hideCutoff = arrivalTime.add(Duration(days: 7));
+      return now.isAfter(archiveCutoff) && now.isBefore(hideCutoff);
+    }
+    // For ride conversations, sync with booking
+    final booking = BookingStorage().getBookingById(bookingId);
+    if (booking == null) return true;
+    return booking.isArchived == true && booking.isHidden != true;
   }
 
-  // Check if conversation should be visible in inbox (within 7 days after arrival)
+  // Check if conversation should be visible in inbox (synced with booking - not hidden)
   bool get isVisible {
-    final now = DateTime.now();
-    final cutoffTime = arrivalTime.add(Duration(days: 7));
-    return now.isBefore(cutoffTime);
+    // Support conversations - use time-based logic
+    if (bookingId.startsWith('support')) {
+      final now = DateTime.now();
+      final cutoffTime = arrivalTime.add(Duration(days: 7));
+      return now.isBefore(cutoffTime);
+    }
+    // For ride conversations, sync with booking
+    final booking = BookingStorage().getBookingById(bookingId);
+    if (booking == null) return false;
+    return booking.isHidden != true;
   }
 
-  // Check if conversation is hidden (more than 7 days after arrival)
+  // Check if conversation is hidden (synced with booking)
   bool get isHidden {
-    final now = DateTime.now();
-    final cutoffTime = arrivalTime.add(Duration(days: 7));
-    return now.isAfter(cutoffTime);
+    // Support conversations - use time-based logic
+    if (bookingId.startsWith('support')) {
+      final now = DateTime.now();
+      final cutoffTime = arrivalTime.add(Duration(days: 7));
+      return now.isAfter(cutoffTime);
+    }
+    // For ride conversations, sync with booking
+    final booking = BookingStorage().getBookingById(bookingId);
+    if (booking == null) return true;
+    return booking.isHidden == true;
   }
 
   // Get the other user's name based on current user

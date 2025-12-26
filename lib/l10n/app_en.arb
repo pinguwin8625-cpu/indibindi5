@@ -899,6 +899,11 @@
     "description": "Support message type - complaint"
   },
 
+  "question": "Question",
+  "@question": {
+    "description": "Support message type - ask a question"
+  },
+
   "delete": "Delete",
   "@delete": {
     "description": "Delete action"

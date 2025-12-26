@@ -113,35 +113,48 @@ class DialogHelper {
             title,
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
-          content: Text(content),
+          contentPadding: EdgeInsets.fromLTRB(24, 8, 24, 0),
+          actionsPadding: EdgeInsets.fromLTRB(8, 0, 8, 4),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: choices.map((choice) => InkWell(
+              onTap: () => Navigator.of(dialogContext).pop(choice.value),
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 6),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (choice.icon != null) ...[
+                      Icon(choice.icon, size: 22, color: choice.color ?? Colors.green),
+                      SizedBox(width: 8),
+                    ],
+                    Text(
+                      choice.label,
+                      style: TextStyle(
+                        color: choice.color ?? Colors.green,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 15,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )).toList(),
+          ),
           actions: [
             if (showCancelButton)
               TextButton(
                 onPressed: () => Navigator.of(dialogContext).pop(),
-                style: TextButton.styleFrom(
-                  foregroundColor: Colors.green,
-                ),
                 child: Text(
                   'Cancel',
                   style: TextStyle(
-                    color: Colors.green,
-                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ),
-            ...choices.map((choice) => TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(choice.value),
-              style: TextButton.styleFrom(
-                foregroundColor: choice.color ?? Colors.green,
-              ),
-              child: Text(
-                choice.label,
-                style: TextStyle(
-                  color: choice.color ?? Colors.green,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            )),
           ],
         );
       },
@@ -154,10 +167,12 @@ class DialogChoice<T> {
   final String label;
   final T value;
   final Color? color;
+  final IconData? icon;
 
   const DialogChoice({
     required this.label,
     required this.value,
     this.color,
+    this.icon,
   });
 }

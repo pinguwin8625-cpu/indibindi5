@@ -727,7 +727,6 @@ class _MessagesTabState extends State<_MessagesTab> {
               itemCount: allConversations.length,
               itemBuilder: (context, index) {
                 final conversation = allConversations[index];
-                final messageCount = conversation.messages.length;
                 final unreadCount = conversation.getUnreadCount('admin');
                 final isSupport = conversation.id.startsWith('support_');
 
@@ -803,26 +802,11 @@ class _MessagesTabState extends State<_MessagesTab> {
                                 ],
                               ),
                             ),
-                            // Center: Message count and info
+                            // Center: Status badges
                             Expanded(
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  SizedBox(height: 4),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(Icons.message, size: 16, color: Colors.grey[600]),
-                                      SizedBox(width: 4),
-                                      Text(
-                                        '$messageCount',
-                                        style: TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
                                   if (unreadCount > 0)
                                     Container(
                                       margin: EdgeInsets.only(top: 4),
@@ -935,7 +919,11 @@ class _MessagesTabState extends State<_MessagesTab> {
       Color typeColor;
       IconData typeIcon;
 
-      if (routeName.startsWith('Suggestion')) {
+      if (routeName.startsWith('Question')) {
+        supportType = 'Question';
+        typeColor = Colors.blue;
+        typeIcon = Icons.help_outline;
+      } else if (routeName.startsWith('Suggestion')) {
         supportType = 'Suggestion';
         typeColor = Colors.green;
         typeIcon = Icons.lightbulb_outline;
@@ -1840,25 +1828,148 @@ class _UserDetailsContentState extends State<_UserDetailsContent> {
                     ),
                   )
                 ]
-              : widget.conversations
-                  .map((conv) => Padding(
-                        padding: EdgeInsets.only(bottom: 8),
-                        child: Card(
-                          child: ListTile(
-                            title: Text(conv.routeName),
-                            subtitle: Text(
-                              conv.lastMessage?.content ?? 'No messages yet',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            trailing: Text(
-                              '${conv.messages.length} msgs',
-                              style: TextStyle(fontSize: 12),
+              : widget.conversations.map((conv) {
+                  final isSupport = conv.id.startsWith('support_');
+                  final unreadCount = conv.getUnreadCount('admin');
+                  final driver = MockUsers.getUserById(conv.driverId);
+                  final rider = MockUsers.getUserById(conv.riderId);
+                  final driverRating = driver != null ? RatingService().getUserAverageRating(driver.id) : 0.0;
+                  final riderRating = rider != null ? RatingService().getUserAverageRating(rider.id) : 0.0;
+                  final cardColor = unreadCount > 0 ? Colors.blue[100] : Colors.blue[50];
+
+                  return Padding(
+                    padding: EdgeInsets.only(bottom: 8),
+                    child: InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ChatScreen(
+                              conversation: conv,
+                              isAdminView: true,
                             ),
                           ),
+                        );
+                      },
+                      child: Container(
+                        padding: EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: cardColor,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey[300]!, width: 0.5),
                         ),
-                      ))
-                  .toList(),
+                        child: Column(
+                          children: [
+                            _buildUserConversationTopRow(conv, isSupport),
+                            SizedBox(height: 8),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Driver on left
+                                SizedBox(
+                                  width: 60,
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      _buildUserAvatar(driver?.profilePhotoUrl, isDriver: true),
+                                      SizedBox(height: 4),
+                                      Text(
+                                        driver != null
+                                            ? '${driver.name} ${driver.surname.isNotEmpty ? '${driver.surname[0]}.' : ''}'
+                                            : conv.driverName,
+                                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
+                                        textAlign: TextAlign.center,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      if (driver != null && !isSupport) ...[
+                                        SizedBox(height: 2),
+                                        Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(Icons.star, size: 10, color: Colors.amber),
+                                            SizedBox(width: 2),
+                                            Text(driverRating.toStringAsFixed(1), style: TextStyle(fontSize: 10)),
+                                          ],
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                                // Center: Status badges
+                                Expanded(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      if (unreadCount > 0)
+                                        Container(
+                                          margin: EdgeInsets.only(top: 4),
+                                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: Color(0xFFDD2C00),
+                                            borderRadius: BorderRadius.circular(10),
+                                          ),
+                                          child: Text(
+                                            '$unreadCount new',
+                                            style: TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.bold),
+                                          ),
+                                        ),
+                                      if (conv.isHidden)
+                                        Container(
+                                          margin: EdgeInsets.only(top: 4),
+                                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: Colors.purple[100],
+                                            borderRadius: BorderRadius.circular(4),
+                                            border: Border.all(color: Colors.purple[300]!, width: 1),
+                                          ),
+                                          child: Text(
+                                            'Hidden',
+                                            style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: Colors.purple[700]),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                                // Rider on right
+                                SizedBox(
+                                  width: 60,
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      _buildUserAvatar(rider?.profilePhotoUrl, isDriver: false),
+                                      SizedBox(height: 4),
+                                      Text(
+                                        rider != null
+                                            ? '${rider.name} ${rider.surname.isNotEmpty ? '${rider.surname[0]}.' : ''}'
+                                            : conv.riderName,
+                                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
+                                        textAlign: TextAlign.center,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      if (rider != null) ...[
+                                        SizedBox(height: 2),
+                                        Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(Icons.star, size: 10, color: Colors.amber),
+                                            SizedBox(width: 2),
+                                            Text(riderRating.toStringAsFixed(1), style: TextStyle(fontSize: 10)),
+                                          ],
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
         ),
 
         SizedBox(height: 16),
@@ -1998,6 +2109,179 @@ class _UserDetailsContentState extends State<_UserDetailsContent> {
           ],
         );
       },
+    );
+  }
+
+  // Format date for miniature conversation card
+  String _formatMiniDate(DateTime date) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final target = DateTime(date.year, date.month, date.day);
+    final diffDays = target.difference(today).inDays;
+
+    if (diffDays == 0) return 'Today';
+    if (diffDays == 1) return 'Tmrw';
+    if (diffDays == -1) return 'Yday';
+
+    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return '${date.day} ${months[date.month - 1]}';
+  }
+
+  Widget _buildUserConversationTopRow(Conversation conversation, bool isSupport) {
+    if (isSupport) {
+      final routeName = conversation.routeName;
+      String supportType;
+      Color typeColor;
+      IconData typeIcon;
+
+      if (routeName.startsWith('Question')) {
+        supportType = 'Question';
+        typeColor = Colors.blue;
+        typeIcon = Icons.help_outline;
+      } else if (routeName.startsWith('Suggestion')) {
+        supportType = 'Suggestion';
+        typeColor = Colors.green;
+        typeIcon = Icons.lightbulb_outline;
+      } else if (routeName.startsWith('Complaint')) {
+        supportType = 'Complaint';
+        typeColor = Colors.red;
+        typeIcon = Icons.report_problem_outlined;
+      } else if (routeName.startsWith('New Route Suggestion')) {
+        supportType = 'New Route';
+        typeColor = Colors.blue;
+        typeIcon = Icons.add_road;
+      } else if (routeName.startsWith('New Stop Suggestion')) {
+        supportType = 'New Stop';
+        typeColor = Colors.teal;
+        typeIcon = Icons.add_location;
+      } else {
+        supportType = 'Support';
+        typeColor = Colors.amber;
+        typeIcon = Icons.support_agent;
+      }
+
+      return Container(
+        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: typeColor.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(color: typeColor.withValues(alpha: 0.3), width: 0.5),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(typeIcon, color: typeColor, size: 11),
+            SizedBox(width: 4),
+            Text(supportType, style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: typeColor)),
+          ],
+        ),
+      );
+    }
+
+    // For regular conversations - miniature version of Messages tab top row
+    return Row(
+      children: [
+        // Date badge
+        Container(
+          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          decoration: BoxDecoration(
+            color: Colors.grey.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Text(
+            _formatMiniDate(conversation.departureTime),
+            style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.black87),
+          ),
+        ),
+        SizedBox(width: 6),
+        // Departure
+        Expanded(
+          child: Row(
+            children: [
+              Icon(Icons.location_on, color: Colors.green, size: 10),
+              SizedBox(width: 2),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 3, vertical: 1),
+                decoration: BoxDecoration(
+                  color: Colors.green.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(3),
+                ),
+                child: Text(
+                  formatTimeHHmm(conversation.departureTime),
+                  style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: Colors.green[700]),
+                ),
+              ),
+              SizedBox(width: 2),
+              Expanded(
+                child: Text(
+                  conversation.originName,
+                  style: TextStyle(fontSize: 8, color: Colors.black87),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ),
+        SizedBox(width: 4),
+        // Arrival
+        Expanded(
+          child: Row(
+            children: [
+              Icon(Icons.flag, color: Colors.red, size: 10),
+              SizedBox(width: 2),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 3, vertical: 1),
+                decoration: BoxDecoration(
+                  color: Colors.red.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(3),
+                ),
+                child: Text(
+                  formatTimeHHmm(conversation.arrivalTime),
+                  style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: Colors.red[700]),
+                ),
+              ),
+              SizedBox(width: 2),
+              Expanded(
+                child: Text(
+                  conversation.destinationName,
+                  style: TextStyle(fontSize: 8, color: Colors.black87),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildUserAvatar(String? profilePhotoUrl, {required bool isDriver}) {
+    final defaultIcon = isDriver ? Icons.drive_eta : Icons.person;
+    final defaultColor = isDriver ? Colors.blue : Colors.green;
+
+    if (profilePhotoUrl != null && profilePhotoUrl.isNotEmpty) {
+      if (profilePhotoUrl.startsWith('assets/')) {
+        return CircleAvatar(
+          radius: 16,
+          backgroundImage: AssetImage(profilePhotoUrl),
+        );
+      } else {
+        final photoFile = File(profilePhotoUrl);
+        if (photoFile.existsSync()) {
+          return CircleAvatar(
+            radius: 16,
+            backgroundImage: FileImage(photoFile),
+          );
+        }
+      }
+    }
+
+    return CircleAvatar(
+      radius: 16,
+      backgroundColor: defaultColor.withValues(alpha: 0.1),
+      child: Icon(defaultIcon, color: defaultColor, size: 16),
     );
   }
 

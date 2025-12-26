@@ -1342,6 +1342,12 @@ abstract class AppLocalizations {
   /// **'Complaint'**
   String get complaint;
 
+  /// Support message type - ask a question
+  ///
+  /// In en, this message translates to:
+  /// **'Question'**
+  String get question;
+
   /// Delete action
   ///
   /// In en, this message translates to:

@@ -649,6 +649,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get complaint => 'Complaint';
 
   @override
+  String get question => 'Question';
+
+  @override
   String get delete => 'Delete';
 
   @override

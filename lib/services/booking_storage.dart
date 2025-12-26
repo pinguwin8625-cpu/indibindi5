@@ -230,6 +230,15 @@ class BookingStorage {
     return false;
   }
 
+  /// Get a booking by its ID
+  Booking? getBookingById(String bookingId) {
+    try {
+      return bookings.value.firstWhere((b) => b.id == bookingId);
+    } catch (e) {
+      return null;
+    }
+  }
+
   /// Get the conflicting booking details for user-friendly error messages
   Booking? getConflictingBooking({
     required String userId,

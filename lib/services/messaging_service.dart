@@ -653,7 +653,7 @@ class MessagingService {
       id: ticketId,
       bookingId: 'support',
       driverId: 'admin', // Admin is always the receiver
-      driverName: 'Support',
+      driverName: type, // Use type as label (Question/Suggestion/Complaint)
       riderId: userId,
       riderName: userName,
       routeName: '$type - $referenceNumber',

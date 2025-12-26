@@ -60,14 +60,22 @@ class _InboxScreenState extends State<InboxScreen> with WidgetsBindingObserver {
         showCancelButton: false,
         choices: [
           DialogChoice(
+            label: 'Question',
+            value: 'Question',
+            color: Colors.blue,
+            icon: Icons.help_outline,
+          ),
+          DialogChoice(
             label: 'Suggestion',
             value: 'Suggestion',
             color: Colors.green,
+            icon: Icons.lightbulb_outline,
           ),
           DialogChoice(
             label: 'Complaint',
             value: 'Complaint',
             color: Colors.red,
+            icon: Icons.report_problem_outlined,
           ),
         ],
       );
@@ -441,7 +449,11 @@ class _InboxScreenState extends State<InboxScreen> with WidgetsBindingObserver {
       Color typeColor;
       IconData typeIcon;
 
-      if (routeName.startsWith('Suggestion')) {
+      if (routeName.startsWith('Question')) {
+        supportType = l10n.question;
+        typeColor = Colors.blue;
+        typeIcon = Icons.help_outline;
+      } else if (routeName.startsWith('Suggestion')) {
         supportType = l10n.suggestion;
         typeColor = Colors.green;
         typeIcon = Icons.lightbulb_outline;

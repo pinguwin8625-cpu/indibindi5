@@ -349,14 +349,13 @@ class _AccountScreenState extends State<AccountScreen> {
                   }
                 },
               ),
-              // Hide delete account for admin users
-              if (user?.isAdmin != true)
-                _buildProfileOption(
-                  icon: Icons.delete_forever,
-                  title: l10n.deleteAccount,
-                  titleColor: Colors.red[700],
-                  onTap: () {},
-                ),
+              // Delete account option
+              _buildProfileOption(
+                icon: Icons.delete_forever,
+                title: l10n.deleteAccount,
+                titleColor: Colors.red[700],
+                onTap: () {},
+              ),
 
               SizedBox(height: 24),
             ],
