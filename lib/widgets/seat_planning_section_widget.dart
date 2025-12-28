@@ -47,22 +47,17 @@ class SeatPlanningSectionWidget extends StatelessWidget {
       return null;
     }
 
-    // Calculate available and unavailable seats
+    // Calculate available seats count
     int availableCount = 0;
-    int unavailableCount = 0;
     for (int i = 0; i < 4; i++) {
       if (userRole.toLowerCase() == 'driver') {
         // For driver: selectedSeats are available
         if (selectedSeats.contains(i)) {
           availableCount++;
-        } else {
-          unavailableCount++;
         }
       } else {
-        // For rider: selectedSeats are occupied (unavailable)
-        if (selectedSeats.contains(i)) {
-          unavailableCount++;
-        } else {
+        // For rider: selectedSeats are occupied, so available = not in list
+        if (!selectedSeats.contains(i)) {
           availableCount++;
         }
       }
@@ -72,164 +67,146 @@ class SeatPlanningSectionWidget extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          // Available seats count at the top - compact display
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: Color(0xFF00C853).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Color(0xFF00C853).withValues(alpha: 0.3), width: 1),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.event_seat, color: Color(0xFF00C853), size: 20),
+                SizedBox(width: 8),
+                Text(
+                  '${l10n.available}: ',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF00C853),
+                  ),
+                ),
+                TweenAnimationBuilder<double>(
+                  key: ValueKey('available-$availableCount'),
+                  tween: Tween<double>(begin: 2.0, end: 1.0),
+                  duration: Duration(milliseconds: 600),
+                  curve: Curves.elasticOut,
+                  builder: (context, scale, child) {
+                    return Transform.scale(
+                      scale: scale,
+                      child: Text(
+                        '$availableCount',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF00C853),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+          SizedBox(height: 24),
+          // Helper text
+          Text(
+            l10n.hintSeatSelectionDriver,
+            style: TextStyle(
+              fontSize: 14,
+              color: Color(0xFF5D4037).withValues(alpha: 0.6),
+              fontStyle: FontStyle.italic,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: 28),
+          // Seat layout
           FittedBox(
             fit: BoxFit.scaleDown,
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 // Left column - Back seats (1, 2, 3)
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Row(
-                    children: [
-                      _buildSeatLabel(getRiderName(1), getRiderRating(1)),
-                      SizedBox(width: 4),
-                      _buildMiniSeat(
-                        context: context,
-                        seatIndex: 1,
-                        isSelected: selectedSeats.contains(1),
-                        passengerName: getRiderName(1),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 4),
-                  Row(
-                    children: [
-                      _buildSeatLabel(getRiderName(3), getRiderRating(3)),
-                      SizedBox(width: 4),
-                      _buildMiniSeat(
-                        context: context,
-                        seatIndex: 3,
-                        isSelected: selectedSeats.contains(3),
-                        passengerName: getRiderName(3),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 4),
-                  Row(
-                    children: [
-                      _buildSeatLabel(getRiderName(2), getRiderRating(2)),
-                      SizedBox(width: 4),
-                      _buildMiniSeat(
-                        context: context,
-                        seatIndex: 2,
-                        isSelected: selectedSeats.contains(2),
-                        passengerName: getRiderName(2),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-
-          SizedBox(width: 12),
-
-          // Right column - Front seats (Driver and Rider 1)
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  _buildMiniSeat(
-                    context: context,
-                    isDriver: true,
-                    passengerName: driverDisplayName,
-                  ),
-                  SizedBox(width: 4),
-                  _buildSeatLabel(driverDisplayName, driverRating),
-                ],
-              ),
-              SizedBox(height: 12),
-              Row(
-                children: [
-                  _buildMiniSeat(
-                    context: context,
-                    seatIndex: 0,
-                    isSelected: selectedSeats.contains(0),
-                    passengerName: getRiderName(0),
-                  ),
-                  SizedBox(width: 4),
-                  _buildSeatLabel(getRiderName(0), getRiderRating(0)),
-                ],
-              ),
-            ],
-          ),
-        ],
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Row(
+                      children: [
+                        _buildSeatLabel(getRiderName(1), getRiderRating(1)),
+                        SizedBox(width: 4),
+                        _buildMiniSeat(
+                          context: context,
+                          seatIndex: 1,
+                          isSelected: selectedSeats.contains(1),
+                          passengerName: getRiderName(1),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 4),
+                    Row(
+                      children: [
+                        _buildSeatLabel(getRiderName(3), getRiderRating(3)),
+                        SizedBox(width: 4),
+                        _buildMiniSeat(
+                          context: context,
+                          seatIndex: 3,
+                          isSelected: selectedSeats.contains(3),
+                          passengerName: getRiderName(3),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 4),
+                    Row(
+                      children: [
+                        _buildSeatLabel(getRiderName(2), getRiderRating(2)),
+                        SizedBox(width: 4),
+                        _buildMiniSeat(
+                          context: context,
+                          seatIndex: 2,
+                          isSelected: selectedSeats.contains(2),
+                          passengerName: getRiderName(2),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                SizedBox(width: 12),
+                // Right column - Front seats (Driver and Rider 1)
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        _buildMiniSeat(
+                          context: context,
+                          isDriver: true,
+                          passengerName: driverDisplayName,
+                        ),
+                        SizedBox(width: 4),
+                        _buildSeatLabel(driverDisplayName, driverRating),
+                      ],
+                    ),
+                    SizedBox(height: 12),
+                    Row(
+                      children: [
+                        _buildMiniSeat(
+                          context: context,
+                          seatIndex: 0,
+                          isSelected: selectedSeats.contains(0),
+                          passengerName: getRiderName(0),
+                        ),
+                        SizedBox(width: 4),
+                        _buildSeatLabel(getRiderName(0), getRiderRating(0)),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
             ),
-          ),
-          // Availability summary below seats (stacked vertically)
-          SizedBox(height: 32),
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Available row
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    '${l10n.available}: ',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                  TweenAnimationBuilder<double>(
-                    key: ValueKey('available-$availableCount'),
-                    tween: Tween<double>(begin: 2.0, end: 1.0),
-                    duration: Duration(milliseconds: 600),
-                    curve: Curves.elasticOut,
-                    builder: (context, scale, child) {
-                      return Transform.scale(
-                        scale: scale,
-                        child: Text(
-                          '$availableCount',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF00C853),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ),
-              SizedBox(height: 4),
-              // Unavailable row
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    '${l10n.unavailable}: ',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                  TweenAnimationBuilder<double>(
-                    key: ValueKey('unavailable-$unavailableCount'),
-                    tween: Tween<double>(begin: 2.0, end: 1.0),
-                    duration: Duration(milliseconds: 600),
-                    curve: Curves.elasticOut,
-                    builder: (context, scale, child) {
-                      return Transform.scale(
-                        scale: scale,
-                        child: Text(
-                          '$unavailableCount',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFFDD2C00),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ],
           ),
         ],
       ),

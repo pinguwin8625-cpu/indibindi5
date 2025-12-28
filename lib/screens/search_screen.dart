@@ -21,13 +21,30 @@ class SearchScreenState extends State<SearchScreen>
   bool _hasSelectedRole = false; // Shared role selection state
   Key _driverBookingKey = UniqueKey();
   Key _riderBookingKey = UniqueKey();
+  BookingLayer _currentLayer = BookingLayer.routeSelection;
 
   void resetBookingLayers() {
     setState(() {
       _hasSelectedRole = false; // Reset role selection to show question first
       _driverBookingKey = UniqueKey();
       _riderBookingKey = UniqueKey();
+      _currentLayer = BookingLayer.routeSelection;
     });
+  }
+
+  String _getScreenTitle(AppLocalizations l10n) {
+    if (!_hasSelectedRole) {
+      return l10n.screenTitleRole;
+    }
+    switch (_currentLayer) {
+      case BookingLayer.routeSelection:
+        return l10n.screenTitleRoute;
+      case BookingLayer.stopsSelection:
+        return l10n.screenTitleStopsTime;
+      case BookingLayer.timeAndSeats:
+      case BookingLayer.matchingRides:
+        return l10n.screenTitleSeat;
+    }
   }
 
   @override
@@ -97,7 +114,7 @@ class SearchScreenState extends State<SearchScreen>
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          l10n.home,
+          _getScreenTitle(l10n),
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         backgroundColor: Color(
@@ -127,6 +144,12 @@ class SearchScreenState extends State<SearchScreen>
             onBackToRoleSelection: () {
               setState(() {
                 _hasSelectedRole = false;
+                _currentLayer = BookingLayer.routeSelection;
+              });
+            },
+            onLayerChanged: (layer) {
+              setState(() {
+                _currentLayer = layer;
               });
             },
             onBookingCompleted: () =>
@@ -145,6 +168,12 @@ class SearchScreenState extends State<SearchScreen>
             onBackToRoleSelection: () {
               setState(() {
                 _hasSelectedRole = false;
+                _currentLayer = BookingLayer.routeSelection;
+              });
+            },
+            onLayerChanged: (layer) {
+              setState(() {
+                _currentLayer = layer;
               });
             },
             onBookingCompleted: () =>

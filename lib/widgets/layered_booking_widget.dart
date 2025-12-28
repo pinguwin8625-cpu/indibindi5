@@ -21,6 +21,7 @@ class LayeredBookingWidget extends StatefulWidget {
   final bool hasSelectedRole;
   final VoidCallback? onRoleSelected;
   final VoidCallback? onBackToRoleSelection;
+  final void Function(BookingLayer layer)? onLayerChanged;
 
   const LayeredBookingWidget({
     super.key,
@@ -30,6 +31,7 @@ class LayeredBookingWidget extends StatefulWidget {
     this.hasSelectedRole = false,
     this.onRoleSelected,
     this.onBackToRoleSelection,
+    this.onLayerChanged,
   });
 
   @override
@@ -55,11 +57,13 @@ class _LayeredBookingWidgetState extends State<LayeredBookingWidget> {
     setState(() {
       currentLayer = layer;
     });
+    widget.onLayerChanged?.call(layer);
   }
 
   void _goBack() {
     print('🔙 LayeredBooking: _goBack called, currentLayer: $currentLayer');
     print('🔙 LayeredBooking: Stack trace: ${StackTrace.current}');
+    BookingLayer newLayer = currentLayer;
     setState(() {
       switch (currentLayer) {
         case BookingLayer.stopsSelection:
@@ -74,6 +78,7 @@ class _LayeredBookingWidgetState extends State<LayeredBookingWidget> {
           selectedSeats = [];
           hasSelectedDateTime = false;
           currentLayer = BookingLayer.routeSelection;
+          newLayer = BookingLayer.routeSelection;
           break;
         case BookingLayer.timeAndSeats:
           print(
@@ -85,6 +90,7 @@ class _LayeredBookingWidgetState extends State<LayeredBookingWidget> {
           selectedSeats = [];
           hasSelectedDateTime = false;
           currentLayer = BookingLayer.stopsSelection;
+          newLayer = BookingLayer.stopsSelection;
           break;
         case BookingLayer.matchingRides:
           print(
@@ -96,6 +102,7 @@ class _LayeredBookingWidgetState extends State<LayeredBookingWidget> {
           riderTimeChoice = null;
           hasSelectedDateTime = false;
           currentLayer = BookingLayer.stopsSelection;
+          newLayer = BookingLayer.stopsSelection;
           break;
         case BookingLayer.routeSelection:
           print('🔙 LayeredBooking: Already at routeSelection (first layer)');
@@ -103,6 +110,7 @@ class _LayeredBookingWidgetState extends State<LayeredBookingWidget> {
           break;
       }
     });
+    widget.onLayerChanged?.call(newLayer);
     print('🔙 LayeredBooking: After _goBack, new currentLayer: $currentLayer');
   }
 

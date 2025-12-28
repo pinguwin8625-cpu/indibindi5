@@ -17,8 +17,241 @@ import '../utils/dialog_helper.dart';
 import '../utils/date_time_helpers.dart';
 import 'chat_screen.dart';
 
-class AdminPanelScreen extends StatelessWidget {
+/// Navigation context for preserving exact state when navigating to user cards
+class AdminNavigationContext {
+  final int sourceTabIndex;
+  final Conversation? conversation; // For returning to ChatScreen
+  final Booking? booking; // For scrolling to specific booking
+  final String? ratingId; // For scrolling to specific rating
+  final bool fromChatScreen; // True if navigation started from inside a chat
+
+  AdminNavigationContext({
+    required this.sourceTabIndex,
+    this.conversation,
+    this.booking,
+    this.ratingId,
+    this.fromChatScreen = false,
+  });
+}
+
+class AdminPanelScreen extends StatefulWidget {
   const AdminPanelScreen({super.key});
+
+  @override
+  State<AdminPanelScreen> createState() => _AdminPanelScreenState();
+}
+
+class _AdminPanelScreenState extends State<AdminPanelScreen> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  final GlobalKey<_BookingsTabState> _bookingsTabKey = GlobalKey<_BookingsTabState>();
+  final GlobalKey<_MessagesTabState> _messagesTabKey = GlobalKey<_MessagesTabState>();
+  final GlobalKey<_RatingsTabState> _ratingsTabKey = GlobalKey<_RatingsTabState>();
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 4, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  void _navigateToUser(User user, {AdminNavigationContext? navContext}) {
+    // Use provided context or create one from current tab
+    final context = navContext ?? AdminNavigationContext(
+      sourceTabIndex: _tabController.index,
+    );
+
+    // Switch to Users tab (index 0)
+    _tabController.animateTo(0);
+    // Show user details modal with navigation context
+    Future.delayed(Duration(milliseconds: 300), () {
+      if (mounted) {
+        _showUserDetails(this.context, user, navContext: context);
+      }
+    });
+  }
+
+  String _getTabName(int index) {
+    switch (index) {
+      case 0: return 'Users';
+      case 1: return 'Bookings';
+      case 2: return 'Messages';
+      case 3: return 'Ratings';
+      default: return '';
+    }
+  }
+
+  String _getBackLabel(AdminNavigationContext navContext) {
+    // If coming from a chat, show "Chat"
+    if (navContext.conversation != null) {
+      return 'Chat';
+    }
+    return _getTabName(navContext.sourceTabIndex);
+  }
+
+  void _navigateBack(AdminNavigationContext navContext) {
+    // First switch to the source tab
+    _tabController.animateTo(navContext.sourceTabIndex);
+
+    // If we need to restore a chat screen (only if came from inside a chat, not from message list)
+    if (navContext.conversation != null && navContext.fromChatScreen && navContext.sourceTabIndex == 2) {
+      Future.delayed(Duration(milliseconds: 300), () {
+        if (mounted) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ChatScreen(
+                conversation: navContext.conversation!,
+                isAdminView: true,
+                onNavigateToUser: (user, conv) {
+                  Navigator.pop(context);
+                  _navigateToUser(
+                    user,
+                    navContext: AdminNavigationContext(
+                      sourceTabIndex: 2,
+                      conversation: conv,
+                      fromChatScreen: true,
+                    ),
+                  );
+                },
+              ),
+            ),
+          );
+        }
+      });
+    }
+
+    // If we need to scroll to a specific booking
+    if (navContext.booking != null && navContext.sourceTabIndex == 1) {
+      Future.delayed(Duration(milliseconds: 300), () {
+        _bookingsTabKey.currentState?.scrollToBooking(navContext.booking!);
+      });
+    }
+
+    // If we need to scroll to a specific rating
+    if (navContext.ratingId != null && navContext.sourceTabIndex == 3) {
+      Future.delayed(Duration(milliseconds: 300), () {
+        _ratingsTabKey.currentState?.scrollToRating(navContext.ratingId!);
+      });
+    }
+  }
+
+  void _showUserDetails(BuildContext context, User user, {AdminNavigationContext? navContext}) {
+    final bookings = BookingStorage().getBookingsForUser(user.id);
+    final conversations = MessagingService()
+        .getConversationsForUser(user.id)
+        .where((c) => c.messages.isNotEmpty)
+        .toList();
+    final ratings = RatingService().getRatingsForUser(user.id);
+
+    // Only show back button if navigating from a different tab
+    final showBackButton = navContext != null && navContext.sourceTabIndex != 0;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        maxChildSize: 0.9,
+        minChildSize: 0.5,
+        expand: false,
+        builder: (context, scrollController) => Column(
+          children: [
+            Container(
+              padding: EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Color(0xFFDD2C00),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              ),
+              child: Row(
+                children: [
+                  // Back button to source location
+                  if (showBackButton)
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.pop(context);
+                        _navigateBack(navContext);
+                      },
+                      child: Container(
+                        padding: EdgeInsets.all(8),
+                        margin: EdgeInsets.only(right: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.chevron_left, color: Colors.white, size: 20),
+                            Text(
+                              _getBackLabel(navContext),
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  CircleAvatar(
+                    radius: 30,
+                    backgroundColor: Colors.white,
+                    backgroundImage: user.profilePhotoUrl != null
+                        ? (user.profilePhotoUrl!.startsWith('http')
+                            ? NetworkImage(user.profilePhotoUrl!) as ImageProvider
+                            : AssetImage(user.profilePhotoUrl!))
+                        : null,
+                    child: user.profilePhotoUrl == null
+                        ? Icon(
+                            user.isAdmin ? Icons.admin_panel_settings : Icons.person,
+                            color: Color(0xFFDD2C00),
+                            size: 30,
+                          )
+                        : null,
+                  ),
+                  SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          user.fullName,
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.close, color: Colors.white),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: _UserDetailsContent(
+                user: user,
+                bookings: bookings,
+                conversations: conversations,
+                ratings: ratings,
+                scrollController: scrollController,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -37,25 +270,69 @@ class AdminPanelScreen extends StatelessWidget {
       );
     }
 
-    return DefaultTabController(
-      length: 4,
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text('Admin Panel'),
-          backgroundColor: Color(0xFFDD2C00),
-          bottom: TabBar(
-            indicatorColor: Colors.white,
-            tabs: [
-              Tab(icon: Icon(Icons.people), text: 'Users'),
-              Tab(icon: Icon(Icons.directions_car), text: 'Bookings'),
-              Tab(icon: Icon(Icons.message), text: 'Messages'),
-              Tab(icon: Icon(Icons.star), text: 'Ratings'),
-            ],
-          ),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Admin Panel'),
+        backgroundColor: Color(0xFFDD2C00),
+        bottom: TabBar(
+          controller: _tabController,
+          indicatorColor: Colors.white,
+          labelColor: Colors.white,
+          unselectedLabelColor: Colors.white70,
+          labelStyle: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+          unselectedLabelStyle: TextStyle(fontSize: 11),
+          tabs: [
+            Tab(
+              icon: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.person, size: 14),
+                  Icon(Icons.person, size: 14),
+                ],
+              ),
+              text: 'Users',
+            ),
+            Tab(
+              icon: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.event_seat, size: 14),
+                  Icon(Icons.event_seat, size: 14),
+                ],
+              ),
+              text: 'Bookings',
+            ),
+            Tab(
+              icon: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.message, size: 14),
+                  Icon(Icons.message, size: 14),
+                ],
+              ),
+              text: 'Messages',
+            ),
+            Tab(
+              icon: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.star, size: 14),
+                  Icon(Icons.star, size: 14),
+                ],
+              ),
+              text: 'Ratings',
+            ),
+          ],
         ),
-        body: TabBarView(
-          children: [_UsersTab(), _BookingsTab(), _MessagesTab(), _RatingsTab()],
-        ),
+      ),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          _UsersTab(onNavigateToUser: _navigateToUser),
+          _BookingsTab(key: _bookingsTabKey, onNavigateToUser: _navigateToUser),
+          _MessagesTab(key: _messagesTabKey, onNavigateToUser: _navigateToUser),
+          _RatingsTab(key: _ratingsTabKey, onNavigateToUser: _navigateToUser),
+        ],
       ),
     );
   }
@@ -63,66 +340,16 @@ class AdminPanelScreen extends StatelessWidget {
 
 // Users Management Tab
 class _UsersTab extends StatelessWidget {
+  final void Function(User user, {AdminNavigationContext? navContext})? onNavigateToUser;
+
+  const _UsersTab({this.onNavigateToUser});
+
   void _copyToClipboard(BuildContext context, String text, String label) {
     Clipboard.setData(ClipboardData(text: text));
-    final l10n = AppLocalizations.of(context)!;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(l10n.snackbarCopiedToClipboard(label)),
-        duration: Duration(seconds: 2),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
-  void _navigateToSupportChat(BuildContext context, User user) {
-    final currentUser = AuthService.currentUser;
-    if (currentUser == null) return;
-
-    // Don't allow messaging yourself
-    if (currentUser.id == user.id) {
-      final l10n = AppLocalizations.of(context)!;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l10n.snackbarCannotMessageYourself),
-          duration: Duration(seconds: 3),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      return;
-    }
-
-    // Create a support conversation ID (use smaller user ID first for consistency)
-    final userId1 = currentUser.id;
-    final userId2 = user.id;
-    final conversationId = userId1.compareTo(userId2) < 0
-        ? 'support_${userId1}_$userId2'
-        : 'support_${userId2}_$userId1';
-
-    // Get or create conversation - don't add until first message is sent
-    var conversation = MessagingService().getConversation(conversationId) ??
-        Conversation(
-          id: conversationId,
-          bookingId: conversationId,
-          driverId: currentUser.id,
-          driverName: currentUser.fullName,
-          riderId: user.id,
-          riderName: user.fullName,
-          routeName: 'Support',
-          originName: '',
-          destinationName: '',
-          departureTime: DateTime.now(),
-          arrivalTime: DateTime.now().add(Duration(days: 365)), // Never expires
-          messages: [],
-        );
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ChatScreen(
-          conversation: conversation,
-          createConversationOnFirstMessage: true,
-        ),
+        content: Text('$label copied'),
+        duration: Duration(seconds: 1),
       ),
     );
   }
@@ -130,7 +357,6 @@ class _UsersTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final users = MockUsers.users;
-    final currentUser = AuthService.currentUser;
 
     return ListView.builder(
       padding: EdgeInsets.all(16),
@@ -141,150 +367,121 @@ class _UsersTab extends StatelessWidget {
         final liveRating = RatingService().getUserAverageRating(user.id);
         final userWithLiveRating = user.copyWith(rating: liveRating);
 
-        // Check if this is the current user's own card
-        final isSelf = currentUser != null && userWithLiveRating.id == currentUser.id;
-
-        // Extract country info for display
-        final countryInfo = User.getCountryInfo(userWithLiveRating.countryCode);
-
         return Card(
           margin: EdgeInsets.only(bottom: 8),
           child: InkWell(
             onTap: () => _showUserDetails(context, userWithLiveRating),
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              child: Row(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Profile photo and rating
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
+                  // Top row: Profile photo + User info
+                  Row(
                     children: [
-                      CircleAvatar(
-                        radius: 24,
-                        backgroundColor: Colors.grey[300],
-                        backgroundImage: userWithLiveRating.profilePhotoUrl != null
-                            ? (userWithLiveRating.profilePhotoUrl!.startsWith('http')
-                                ? NetworkImage(userWithLiveRating.profilePhotoUrl!) as ImageProvider
-                                : AssetImage(userWithLiveRating.profilePhotoUrl!))
-                            : null,
-                        child: userWithLiveRating.profilePhotoUrl == null
-                            ? Icon(
-                                userWithLiveRating.isAdmin ? Icons.admin_panel_settings : Icons.person,
-                                color: Colors.white,
-                                size: 24,
-                              )
-                            : null,
-                      ),
-                      SizedBox(height: 4),
-                      Row(
+                      // Profile photo and rating
+                      Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.star, size: 12, color: Colors.amber),
-                          SizedBox(width: 2),
-                          Text(
-                            userWithLiveRating.rating.toStringAsFixed(1),
-                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF2E2E2E)),
+                          CircleAvatar(
+                            radius: 24,
+                            backgroundColor: Colors.grey[300],
+                            backgroundImage: userWithLiveRating.profilePhotoUrl != null
+                                ? (userWithLiveRating.profilePhotoUrl!.startsWith('http')
+                                    ? NetworkImage(userWithLiveRating.profilePhotoUrl!) as ImageProvider
+                                    : AssetImage(userWithLiveRating.profilePhotoUrl!))
+                                : null,
+                            child: userWithLiveRating.profilePhotoUrl == null
+                                ? Icon(
+                                    userWithLiveRating.isAdmin ? Icons.admin_panel_settings : Icons.person,
+                                    color: Colors.white,
+                                    size: 24,
+                                  )
+                                : null,
+                          ),
+                          SizedBox(height: 4),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.star, size: 12, color: Colors.amber),
+                              SizedBox(width: 2),
+                              Text(
+                                userWithLiveRating.rating.toStringAsFixed(1),
+                                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF2E2E2E)),
+                              ),
+                            ],
                           ),
                         ],
                       ),
+                      SizedBox(width: 12),
+                      // User information
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Name with admin badge and copy icon
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Row(
+                                    children: [
+                                      Flexible(
+                                        child: Text(
+                                          userWithLiveRating.fullName,
+                                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF2E2E2E)),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      if (userWithLiveRating.isAdmin)
+                                        Container(
+                                          margin: EdgeInsets.only(left: 6),
+                                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: Colors.orange[50],
+                                            borderRadius: BorderRadius.circular(4),
+                                          ),
+                                          child: Text(
+                                            'Admin',
+                                            style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.orange[900]),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                                GestureDetector(
+                                  onTap: () => _copyToClipboard(context, userWithLiveRating.fullName, 'Name'),
+                                  child: Padding(
+                                    padding: EdgeInsets.only(left: 8),
+                                    child: Icon(Icons.copy, size: 14, color: Colors.grey[400]),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 2),
+                            // ID with copy icon
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    'ID: ${userWithLiveRating.id}',
+                                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                                  ),
+                                ),
+                                GestureDetector(
+                                  onTap: () => _copyToClipboard(context, userWithLiveRating.id, 'ID'),
+                                  child: Padding(
+                                    padding: EdgeInsets.only(left: 8),
+                                    child: Icon(Icons.copy, size: 12, color: Colors.grey[400]),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
-                  SizedBox(width: 12),
-                  // User information
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Name with admin badge
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Row(
-                                children: [
-                                  Flexible(
-                                    child: Text(
-                                      userWithLiveRating.fullName,
-                                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF2E2E2E)),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                  GestureDetector(
-                                    onTap: () => _copyToClipboard(context, userWithLiveRating.fullName, 'Name'),
-                                    child: Padding(
-                                      padding: EdgeInsets.only(left: 4),
-                                      child: Icon(Icons.copy, size: 12, color: Colors.grey[400]),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            if (userWithLiveRating.isAdmin)
-                              Container(
-                                margin: EdgeInsets.only(left: 6),
-                                padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: Colors.orange[50],
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Text(
-                                  'Admin',
-                                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.orange[900]),
-                                ),
-                              ),
-                          ],
-                        ),
-                        SizedBox(height: 4),
-                        // Phone
-                        Row(
-                          children: [
-                            Text(
-                              userWithLiveRating.formattedPhone,
-                              style: TextStyle(fontSize: 13, color: Colors.grey[700]),
-                            ),
-                            GestureDetector(
-                              onTap: () {
-                                final phoneDigits = '${countryInfo['code']}${userWithLiveRating.phoneNumber}';
-                                _copyToClipboard(context, phoneDigits, 'Phone');
-                              },
-                              child: Padding(
-                                padding: EdgeInsets.only(left: 4),
-                                child: Icon(Icons.copy, size: 12, color: Colors.grey[400]),
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 2),
-                        // Email
-                        Row(
-                          children: [
-                            Flexible(
-                              child: Text(
-                                userWithLiveRating.email,
-                                style: TextStyle(fontSize: 13, color: Colors.grey[700]),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            GestureDetector(
-                              onTap: () => _copyToClipboard(context, userWithLiveRating.email, 'Email'),
-                              child: Padding(
-                                padding: EdgeInsets.only(left: 4),
-                                child: Icon(Icons.copy, size: 12, color: Colors.grey[400]),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  // Message button
-                  if (!isSelf)
-                    IconButton(
-                      onPressed: () => _navigateToSupportChat(context, userWithLiveRating),
-                      icon: Icon(Icons.message, size: 20, color: Theme.of(context).primaryColor),
-                      constraints: BoxConstraints(minWidth: 36, minHeight: 36),
-                      padding: EdgeInsets.zero,
-                    ),
                 ],
               ),
             ),
@@ -378,11 +575,80 @@ class _UsersTab extends StatelessWidget {
 
 // Bookings Management Tab
 class _BookingsTab extends StatefulWidget {
+  final void Function(User user, {AdminNavigationContext? navContext})? onNavigateToUser;
+
+  const _BookingsTab({super.key, this.onNavigateToUser});
+
   @override
   State<_BookingsTab> createState() => _BookingsTabState();
 }
 
 class _BookingsTabState extends State<_BookingsTab> {
+  final ScrollController _scrollController = ScrollController();
+  String? _highlightedBookingId;
+  final GlobalKey _highlightedBookingKey = GlobalKey();
+  bool _isScrollingToBooking = false; // Prevents clearing highlight during auto-scroll
+
+  @override
+  void initState() {
+    super.initState();
+    // Clear highlight when user manually scrolls
+    _scrollController.addListener(_onUserScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onUserScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onUserScroll() {
+    // Only clear highlight if user is manually scrolling (not auto-scroll)
+    if (_highlightedBookingId != null && !_isScrollingToBooking) {
+      setState(() {
+        _highlightedBookingId = null;
+      });
+    }
+  }
+
+  /// Scrolls to and highlights a specific booking
+  void scrollToBooking(Booking booking) {
+    setState(() {
+      _highlightedBookingId = booking.id;
+      _isScrollingToBooking = true;
+    });
+
+    // After the widget rebuilds and section expands, scroll to the booking
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Small additional delay to ensure section expansion animation completes
+      Future.delayed(Duration(milliseconds: 100), () {
+        if (mounted && _highlightedBookingKey.currentContext != null) {
+          Scrollable.ensureVisible(
+            _highlightedBookingKey.currentContext!,
+            duration: Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            alignment: 0.3, // Position booking 30% from top
+          ).then((_) {
+            // Allow user scroll to clear highlight after auto-scroll completes
+            if (mounted) {
+              setState(() {
+                _isScrollingToBooking = false;
+              });
+            }
+          });
+        } else {
+          // If we couldn't scroll, still allow clearing
+          if (mounted) {
+            setState(() {
+              _isScrollingToBooking = false;
+            });
+          }
+        }
+      });
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Stack(
@@ -594,6 +860,7 @@ class _BookingsTabState extends State<_BookingsTab> {
       ..sort((a, b) => b.departureTime.compareTo(a.departureTime));
 
     return ListView(
+      controller: _scrollController,
       padding: EdgeInsets.all(16),
       children: [
         if (upcomingBookings.isNotEmpty)
@@ -604,6 +871,7 @@ class _BookingsTabState extends State<_BookingsTab> {
             buildBookingCard: (booking) => _buildBookingCard(context, booking, cardsCollapsible: true),
             startCollapsed: true,
             color: Colors.blue[700],
+            highlightedBookingId: _highlightedBookingId,
           ),
         if (ongoingBookings.isNotEmpty)
           _CollapsibleBookingSection(
@@ -613,6 +881,7 @@ class _BookingsTabState extends State<_BookingsTab> {
             buildBookingCard: (booking) => _buildBookingCard(context, booking, cardsCollapsible: true),
             startCollapsed: false,
             color: Colors.orange[700],
+            highlightedBookingId: _highlightedBookingId,
           ),
         if (completedBookings.isNotEmpty)
           _CollapsibleBookingSection(
@@ -622,6 +891,7 @@ class _BookingsTabState extends State<_BookingsTab> {
             buildBookingCard: (booking) => _buildBookingCard(context, booking, cardsCollapsible: true),
             startCollapsed: true,
             color: Colors.green[700],
+            highlightedBookingId: _highlightedBookingId,
           ),
         if (canceledBookings.isNotEmpty)
           _CollapsibleBookingSection(
@@ -631,6 +901,7 @@ class _BookingsTabState extends State<_BookingsTab> {
             buildBookingCard: (booking) => _buildBookingCard(context, booking, cardsCollapsible: true),
             startCollapsed: true,
             color: Colors.red[700],
+            highlightedBookingId: _highlightedBookingId,
           ),
         if (archivedBookings.isNotEmpty)
           _CollapsibleBookingSection(
@@ -640,6 +911,7 @@ class _BookingsTabState extends State<_BookingsTab> {
             buildBookingCard: (booking) => _buildBookingCard(context, booking, cardsCollapsible: true),
             startCollapsed: true,
             color: Colors.grey[700],
+            highlightedBookingId: _highlightedBookingId,
           ),
         if (hiddenBookings.isNotEmpty)
           _CollapsibleBookingSection(
@@ -649,6 +921,7 @@ class _BookingsTabState extends State<_BookingsTab> {
             buildBookingCard: (booking) => _buildBookingCard(context, booking, cardsCollapsible: true),
             startCollapsed: true,
             color: Colors.purple[700],
+            highlightedBookingId: _highlightedBookingId,
           ),
       ],
     );
@@ -657,8 +930,9 @@ class _BookingsTabState extends State<_BookingsTab> {
   Widget _buildBookingCard(BuildContext context, Booking booking, {bool cardsCollapsible = false}) {
     final isPast = booking.arrivalTime.isBefore(DateTime.now());
     final isOngoing = booking.departureTime.isBefore(DateTime.now()) && booking.arrivalTime.isAfter(DateTime.now());
+    final isHighlighted = _highlightedBookingId == booking.id;
 
-    return BookingCard(
+    Widget card = BookingCard(
       booking: booking,
       isPast: isPast,
       isCanceled: booking.isCanceled == true,
@@ -667,10 +941,34 @@ class _BookingsTabState extends State<_BookingsTab> {
       showActions: false, // Admin panel doesn't show action buttons
       showSeatsForCanceled: true, // Admin can see seats even for canceled rides
       isCollapsible: cardsCollapsible,
-      initiallyExpanded: false,
+      initiallyExpanded: isHighlighted, // Expand if highlighted
       buildMiniatureSeatLayout: (selectedSeats, booking) =>
           _buildMiniatureSeatLayout(selectedSeats, booking),
     );
+
+    // Add highlight effect when this booking is the one we navigated back to
+    if (isHighlighted) {
+      return Container(
+        key: _highlightedBookingKey, // GlobalKey for scrolling
+        child: AnimatedContainer(
+          duration: Duration(milliseconds: 300),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Color(0xFFDD2C00), width: 3),
+            boxShadow: [
+              BoxShadow(
+                color: Color(0xFFDD2C00).withValues(alpha: 0.3),
+                blurRadius: 8,
+                spreadRadius: 2,
+              ),
+            ],
+          ),
+          child: card,
+        ),
+      );
+    }
+
+    return card;
   }
 
   Widget _buildMiniatureSeatLayout(List<int> selectedSeats, Booking booking) {
@@ -678,12 +976,52 @@ class _BookingsTabState extends State<_BookingsTab> {
       booking: booking,
       isInteractive: false,
       currentUserId: null, // Admin view doesn't highlight specific users
+      onDriverPhotoTap: widget.onNavigateToUser != null
+          ? () {
+              final driverId = booking.driverUserId ?? booking.userId;
+              final driver = MockUsers.getUserById(driverId);
+              if (driver != null) {
+                widget.onNavigateToUser!(
+                  driver,
+                  navContext: AdminNavigationContext(
+                    sourceTabIndex: 1, // Bookings tab
+                    booking: booking,
+                  ),
+                );
+              }
+            }
+          : null,
+      onRiderPhotoTap: widget.onNavigateToUser != null
+          ? (seatIndex) {
+              if (booking.riders != null) {
+                for (var rider in booking.riders!) {
+                  if (rider.seatIndex == seatIndex) {
+                    final riderUser = MockUsers.getUserById(rider.userId);
+                    if (riderUser != null) {
+                      widget.onNavigateToUser!(
+                        riderUser,
+                        navContext: AdminNavigationContext(
+                          sourceTabIndex: 1, // Bookings tab
+                          booking: booking,
+                        ),
+                      );
+                    }
+                    break;
+                  }
+                }
+              }
+            }
+          : null,
     );
   }
 }
 
 // Messages Management Tab
 class _MessagesTab extends StatefulWidget {
+  final void Function(User user, {AdminNavigationContext? navContext})? onNavigateToUser;
+
+  const _MessagesTab({super.key, this.onNavigateToUser});
+
   @override
   State<_MessagesTab> createState() => _MessagesTabState();
 }
@@ -699,12 +1037,7 @@ class _MessagesTabState extends State<_MessagesTab> {
             // Show all conversations with at least one message (same filter as inbox)
             final allConversations = conversations
                 .where((c) => c.messages.isNotEmpty)
-                .toList()
-              ..sort((a, b) {
-                final aLast = a.lastMessage?.timestamp ?? a.arrivalTime;
-                final bLast = b.lastMessage?.timestamp ?? b.arrivalTime;
-                return bLast.compareTo(aLast);
-              });
+                .toList();
 
             if (allConversations.isEmpty) {
               return Center(
@@ -722,163 +1055,7 @@ class _MessagesTabState extends State<_MessagesTab> {
               );
             }
 
-            return ListView.builder(
-              padding: EdgeInsets.all(16),
-              itemCount: allConversations.length,
-              itemBuilder: (context, index) {
-                final conversation = allConversations[index];
-                final unreadCount = conversation.getUnreadCount('admin');
-                final isSupport = conversation.id.startsWith('support_');
-
-                // Get driver and rider info
-                final driver = MockUsers.getUserById(conversation.driverId);
-                final rider = MockUsers.getUserById(conversation.riderId);
-                final driverRating = driver != null ? RatingService().getUserAverageRating(driver.id) : 0.0;
-                final riderRating = rider != null ? RatingService().getUserAverageRating(rider.id) : 0.0;
-
-                // Card color based on unread status
-                final cardColor = unreadCount > 0 ? Colors.blue[100] : Colors.blue[50];
-
-                return InkWell(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ChatScreen(
-                          conversation: conversation,
-                          isAdminView: true,
-                        ),
-                      ),
-                    );
-                  },
-                  child: Container(
-                    margin: EdgeInsets.only(bottom: 12),
-                    padding: EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: cardColor,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey[300]!, width: 0.5),
-                    ),
-                    child: Column(
-                      children: [
-                        // Top row: Date and route info (or support type)
-                        _buildConversationTopRow(conversation, isSupport),
-                        SizedBox(height: 8),
-                        // Middle row: Driver avatar (left) - message count - Rider avatar (right)
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Driver on left
-                            SizedBox(
-                              width: 70,
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  _buildAvatar(driver?.profilePhotoUrl, isDriver: true),
-                                  SizedBox(height: 4),
-                                  Text(
-                                    driver != null
-                                        ? '${driver.name} ${driver.surname.isNotEmpty ? '${driver.surname[0]}.' : ''}'
-                                        : conversation.driverName,
-                                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
-                                    textAlign: TextAlign.center,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  if (driver != null) ...[
-                                    SizedBox(height: 2),
-                                    Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(Icons.star, size: 12, color: Colors.amber),
-                                        SizedBox(width: 2),
-                                        Text(
-                                          driverRating.toStringAsFixed(1),
-                                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ],
-                              ),
-                            ),
-                            // Center: Status badges
-                            Expanded(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  if (unreadCount > 0)
-                                    Container(
-                                      margin: EdgeInsets.only(top: 4),
-                                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                      decoration: BoxDecoration(
-                                        color: Color(0xFFDD2C00),
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                      child: Text(
-                                        '$unreadCount new',
-                                        style: TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold),
-                                      ),
-                                    ),
-                                  if (conversation.isHidden)
-                                    Container(
-                                      margin: EdgeInsets.only(top: 4),
-                                      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                      decoration: BoxDecoration(
-                                        color: Colors.purple[100],
-                                        borderRadius: BorderRadius.circular(4),
-                                        border: Border.all(color: Colors.purple[300]!, width: 1),
-                                      ),
-                                      child: Text(
-                                        'Hidden',
-                                        style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.purple[700]),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ),
-                            // Rider on right
-                            SizedBox(
-                              width: 70,
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  _buildAvatar(rider?.profilePhotoUrl, isDriver: false),
-                                  SizedBox(height: 4),
-                                  Text(
-                                    rider != null
-                                        ? '${rider.name} ${rider.surname.isNotEmpty ? '${rider.surname[0]}.' : ''}'
-                                        : conversation.riderName,
-                                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
-                                    textAlign: TextAlign.center,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  if (rider != null) ...[
-                                    SizedBox(height: 2),
-                                    Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(Icons.star, size: 12, color: Colors.amber),
-                                        SizedBox(width: 2),
-                                        Text(
-                                          riderRating.toStringAsFixed(1),
-                                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            );
+            return _buildConversationsList(context, allConversations);
           },
         ),
         Positioned(
@@ -892,6 +1069,447 @@ class _MessagesTabState extends State<_MessagesTab> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildConversationsList(BuildContext context, List<Conversation> conversations) {
+    final now = DateTime.now();
+
+    // Helper to check booking status for a conversation
+    bool isOngoing(Conversation c) {
+      if (c.id.startsWith('support_')) return false;
+      final booking = BookingStorage().getBookingById(c.bookingId);
+      if (booking == null) return false;
+      return booking.departureTime.isBefore(now) &&
+          booking.arrivalTime.isAfter(now) &&
+          booking.isCanceled != true &&
+          booking.isArchived != true;
+    }
+
+    bool isCompleted(Conversation c) {
+      if (c.id.startsWith('support_')) return false;
+      final booking = BookingStorage().getBookingById(c.bookingId);
+      if (booking == null) return false;
+      return booking.arrivalTime.isBefore(now) &&
+          booking.isCanceled != true &&
+          booking.isArchived != true;
+    }
+
+    bool isUpcoming(Conversation c) {
+      if (c.id.startsWith('support_')) return false;
+      final booking = BookingStorage().getBookingById(c.bookingId);
+      if (booking == null) return false;
+      return booking.departureTime.isAfter(now) &&
+          booking.isCanceled != true &&
+          booking.isArchived != true;
+    }
+
+    // Categorize conversations
+    final upcoming = conversations
+        .where((c) => isUpcoming(c) && !c.isHidden)
+        .toList()
+      ..sort((a, b) => a.departureTime.compareTo(b.departureTime));
+
+    final ongoing = conversations
+        .where((c) => isOngoing(c) && !c.isHidden)
+        .toList()
+      ..sort((a, b) => b.departureTime.compareTo(a.departureTime));
+
+    final completed = conversations
+        .where((c) => isCompleted(c) && !c.isHidden)
+        .toList()
+      ..sort((a, b) => b.departureTime.compareTo(a.departureTime));
+
+    // Support subcategories - Question, Suggestion, Complaint
+    // Support messages are never archived or hidden
+    final supportQuestion = conversations
+        .where((c) => c.id.startsWith('support_') && c.routeName.startsWith('Question'))
+        .toList()
+      ..sort((a, b) {
+        final aLast = a.lastMessage?.timestamp ?? a.arrivalTime;
+        final bLast = b.lastMessage?.timestamp ?? b.arrivalTime;
+        return bLast.compareTo(aLast);
+      });
+
+    final supportSuggestion = conversations
+        .where((c) => c.id.startsWith('support_') &&
+            (c.routeName.startsWith('Suggestion') || c.routeName.startsWith('New Route') || c.routeName.startsWith('New Stop')))
+        .toList()
+      ..sort((a, b) {
+        final aLast = a.lastMessage?.timestamp ?? a.arrivalTime;
+        final bLast = b.lastMessage?.timestamp ?? b.arrivalTime;
+        return bLast.compareTo(aLast);
+      });
+
+    final supportComplaint = conversations
+        .where((c) => c.id.startsWith('support_') && c.routeName.startsWith('Complaint'))
+        .toList()
+      ..sort((a, b) {
+        final aLast = a.lastMessage?.timestamp ?? a.arrivalTime;
+        final bLast = b.lastMessage?.timestamp ?? b.arrivalTime;
+        return bLast.compareTo(aLast);
+      });
+
+    // Other support (fallback)
+    final supportOther = conversations
+        .where((c) => c.id.startsWith('support_') &&
+            !c.routeName.startsWith('Question') &&
+            !c.routeName.startsWith('Complaint') &&
+            !c.routeName.startsWith('Suggestion') &&
+            !c.routeName.startsWith('New Route') &&
+            !c.routeName.startsWith('New Stop'))
+        .toList()
+      ..sort((a, b) {
+        final aLast = a.lastMessage?.timestamp ?? a.arrivalTime;
+        final bLast = b.lastMessage?.timestamp ?? b.arrivalTime;
+        return bLast.compareTo(aLast);
+      });
+
+    final archived = conversations
+        .where((c) =>
+            !c.id.startsWith('support_') &&
+            c.isArchived &&
+            !c.isHidden)
+        .toList()
+      ..sort((a, b) => b.departureTime.compareTo(a.departureTime));
+
+    final hidden = conversations
+        .where((c) => !c.id.startsWith('support_') && c.isHidden)
+        .toList()
+      ..sort((a, b) => b.departureTime.compareTo(a.departureTime));
+
+    // Check if any support conversations exist
+    final hasSupport = supportQuestion.isNotEmpty || supportComplaint.isNotEmpty ||
+        supportSuggestion.isNotEmpty || supportOther.isNotEmpty;
+    final totalSupport = supportQuestion.length + supportComplaint.length +
+        supportSuggestion.length + supportOther.length;
+
+    return ListView(
+      padding: EdgeInsets.all(16),
+      children: [
+        // Support section at top with subcategories
+        if (hasSupport)
+          _CollapsibleSupportSection(
+            totalCount: totalSupport,
+            questionConversations: supportQuestion,
+            suggestionConversations: supportSuggestion,
+            complaintConversations: supportComplaint,
+            otherConversations: supportOther,
+            buildConversationCard: (c) => _buildConversationCard(context, c),
+          ),
+        if (upcoming.isNotEmpty)
+          _CollapsibleMessageSection(
+            title: 'Upcoming',
+            count: upcoming.length,
+            conversations: upcoming,
+            buildConversationCard: (c) => _buildConversationCard(context, c),
+            startCollapsed: true,
+            color: Colors.blue[700],
+          ),
+        if (ongoing.isNotEmpty)
+          _CollapsibleMessageSection(
+            title: 'Ongoing',
+            count: ongoing.length,
+            conversations: ongoing,
+            buildConversationCard: (c) => _buildConversationCard(context, c),
+            startCollapsed: false,
+            color: Colors.orange[700],
+          ),
+        if (completed.isNotEmpty)
+          _CollapsibleMessageSection(
+            title: 'Completed',
+            count: completed.length,
+            conversations: completed,
+            buildConversationCard: (c) => _buildConversationCard(context, c),
+            startCollapsed: true,
+            color: Colors.green[700],
+          ),
+        if (archived.isNotEmpty)
+          _CollapsibleMessageSection(
+            title: 'Archived',
+            count: archived.length,
+            conversations: archived,
+            buildConversationCard: (c) => _buildConversationCard(context, c),
+            startCollapsed: true,
+            color: Colors.grey[700],
+          ),
+        if (hidden.isNotEmpty)
+          _CollapsibleMessageSection(
+            title: 'Hidden',
+            count: hidden.length,
+            conversations: hidden,
+            buildConversationCard: (c) => _buildConversationCard(context, c),
+            startCollapsed: true,
+            color: Colors.purple[700],
+          ),
+      ],
+    );
+  }
+
+  Widget _buildConversationCard(BuildContext context, Conversation conversation) {
+    final unreadCount = conversation.getUnreadCount('admin');
+    final isSupport = conversation.id.startsWith('support_');
+
+    // Get driver and rider info
+    final driver = MockUsers.getUserById(conversation.driverId);
+    final rider = MockUsers.getUserById(conversation.riderId);
+    final driverRating = driver != null ? RatingService().getUserAverageRating(driver.id) : 0.0;
+    final riderRating = rider != null ? RatingService().getUserAverageRating(rider.id) : 0.0;
+
+    // Card color based on unread status
+    final cardColor = unreadCount > 0 ? Colors.blue[100] : Colors.blue[50];
+
+    // For support: driver is admin, rider is user
+    // Determine which one is admin based on isAdmin property
+    final isDriverAdmin = driver?.isAdmin == true;
+    final leftLabel = isSupport ? (isDriverAdmin ? 'Admin' : 'User') : 'Driver';
+    final rightLabel = isSupport ? (isDriverAdmin ? 'User' : 'Admin') : 'Rider';
+    final leftIcon = isSupport ? (isDriverAdmin ? Icons.admin_panel_settings : Icons.person) : Icons.directions_car;
+    final rightIcon = isSupport ? (isDriverAdmin ? Icons.person : Icons.admin_panel_settings) : Icons.person;
+
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ChatScreen(
+              conversation: conversation,
+              isAdminView: true,
+              onNavigateToUser: widget.onNavigateToUser != null
+                  ? (user, conv) {
+                      // Pop back to messages tab first
+                      Navigator.pop(context);
+                      // Navigate to user with conversation context for back navigation
+                      widget.onNavigateToUser!(
+                        user,
+                        navContext: AdminNavigationContext(
+                          sourceTabIndex: 2, // Messages tab
+                          conversation: conv,
+                          fromChatScreen: true, // Mark that we came from inside the chat
+                        ),
+                      );
+                    }
+                  : null,
+            ),
+          ),
+        );
+      },
+      child: Container(
+        margin: EdgeInsets.only(bottom: 10),
+        padding: EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: cardColor,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey[300]!, width: 0.5),
+        ),
+        child: Column(
+          children: [
+            // Top row: Date and route info (or support type)
+            _buildConversationTopRow(conversation, isSupport),
+            SizedBox(height: 10),
+            // Middle row: Left person - status badges - Right person
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Left section with label and nested avatar
+                Expanded(
+                  child: Row(
+                    children: [
+                      // Left label with semi-circle cutout
+                      Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          // Label background
+                          Container(
+                            padding: EdgeInsets.only(left: 8, right: 28, top: 8, bottom: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(leftIcon, size: 16, color: Colors.grey[600]),
+                                SizedBox(height: 2),
+                                Text(
+                                  leftLabel,
+                                  style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.grey[600]),
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Avatar positioned to overlap (create cutout effect)
+                          Positioned(
+                            right: -18,
+                            top: 0,
+                            bottom: 0,
+                            child: Center(
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: Colors.grey.withValues(alpha: 0.15), width: 2),
+                                ),
+                                child: _buildAvatar(driver?.profilePhotoUrl, isDriver: !isSupport, user: driver),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(width: 24),
+                      // Name and rating
+                      Expanded(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              driver != null
+                                  ? '${driver.name} ${driver.surname.isNotEmpty ? '${driver.surname[0]}.' : ''}'
+                                  : conversation.driverName,
+                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            if (driver != null && !isSupport) ...[
+                              SizedBox(height: 2),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.star, size: 11, color: Colors.amber),
+                                  SizedBox(width: 2),
+                                  Text(
+                                    driverRating.toStringAsFixed(1),
+                                    style: TextStyle(fontSize: 11),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Center: Status badges
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 4),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (unreadCount > 0)
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: Color(0xFFDD2C00),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            '$unreadCount new',
+                            style: TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      if (conversation.isHidden)
+                        Container(
+                          margin: EdgeInsets.only(top: 4),
+                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.purple[100],
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(color: Colors.purple[300]!, width: 1),
+                          ),
+                          child: Text(
+                            'Hidden',
+                            style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.purple[700]),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                // Right section with label and nested avatar (mirrored)
+                Expanded(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      // Name and rating
+                      Expanded(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              rider != null
+                                  ? '${rider.name} ${rider.surname.isNotEmpty ? '${rider.surname[0]}.' : ''}'
+                                  : conversation.riderName,
+                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            if (rider != null && !isSupport) ...[
+                              SizedBox(height: 2),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.star, size: 11, color: Colors.amber),
+                                  SizedBox(width: 2),
+                                  Text(
+                                    riderRating.toStringAsFixed(1),
+                                    style: TextStyle(fontSize: 11),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      SizedBox(width: 24),
+                      // Right label with semi-circle cutout
+                      Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          // Label background
+                          Container(
+                            padding: EdgeInsets.only(left: 28, right: 8, top: 8, bottom: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(rightIcon, size: 16, color: Colors.grey[600]),
+                                SizedBox(height: 2),
+                                Text(
+                                  rightLabel,
+                                  style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.grey[600]),
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Avatar positioned to overlap (create cutout effect)
+                          Positioned(
+                            left: -18,
+                            top: 0,
+                            bottom: 0,
+                            child: Center(
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: Colors.grey.withValues(alpha: 0.15), width: 2),
+                                ),
+                                child: _buildAvatar(rider?.profilePhotoUrl, isDriver: false, user: rider),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -1046,33 +1664,57 @@ class _MessagesTabState extends State<_MessagesTab> {
   }
 
   // Build avatar widget
-  Widget _buildAvatar(String? profilePhotoUrl, {required bool isDriver}) {
-    final defaultIcon = isDriver ? Icons.drive_eta : Icons.person;
+  Widget _buildAvatar(String? profilePhotoUrl, {required bool isDriver, User? user}) {
+    final defaultIcon = isDriver ? Icons.directions_car : Icons.person;
     final defaultColor = isDriver ? Colors.blue : Colors.green;
 
+    Widget avatar;
     if (profilePhotoUrl != null && profilePhotoUrl.isNotEmpty) {
       if (profilePhotoUrl.startsWith('assets/')) {
-        return CircleAvatar(
+        avatar = CircleAvatar(
           radius: 20,
           backgroundImage: AssetImage(profilePhotoUrl),
         );
       } else {
         final photoFile = File(profilePhotoUrl);
         if (photoFile.existsSync()) {
-          return CircleAvatar(
+          avatar = CircleAvatar(
             radius: 20,
             backgroundImage: FileImage(photoFile),
           );
+        } else {
+          avatar = CircleAvatar(
+            radius: 20,
+            backgroundColor: defaultColor.withValues(alpha: 0.1),
+            child: Icon(defaultIcon, color: defaultColor),
+          );
         }
       }
+    } else {
+      // Fallback to default icon
+      avatar = CircleAvatar(
+        radius: 20,
+        backgroundColor: defaultColor.withValues(alpha: 0.1),
+        child: Icon(defaultIcon, color: defaultColor),
+      );
     }
 
-    // Fallback to default icon
-    return CircleAvatar(
-      radius: 20,
-      backgroundColor: defaultColor.withValues(alpha: 0.1),
-      child: Icon(defaultIcon, color: defaultColor),
-    );
+    // Wrap with GestureDetector if user is provided and callback exists
+    if (user != null && widget.onNavigateToUser != null) {
+      return GestureDetector(
+        behavior: HitTestBehavior.opaque, // Prevent tap from bubbling to parent InkWell
+        onTap: () => widget.onNavigateToUser!(
+          user,
+          navContext: AdminNavigationContext(
+            sourceTabIndex: 2, // Messages tab
+            // Don't pass conversation - tapping from message list should just go back to list, not re-open chat
+          ),
+        ),
+        child: avatar,
+      );
+    }
+
+    return avatar;
   }
 
   void _showClearDialog(BuildContext context) {
@@ -1192,11 +1834,74 @@ class _MessagesTabState extends State<_MessagesTab> {
 
 // Ratings Management Tab
 class _RatingsTab extends StatefulWidget {
+  final void Function(User user, {AdminNavigationContext? navContext})? onNavigateToUser;
+
+  const _RatingsTab({super.key, this.onNavigateToUser});
+
   @override
   State<_RatingsTab> createState() => _RatingsTabState();
 }
 
 class _RatingsTabState extends State<_RatingsTab> {
+  final ScrollController _scrollController = ScrollController();
+  String? _highlightedRatingId;
+  final GlobalKey _highlightedRatingKey = GlobalKey();
+  bool _isScrollingToRating = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onUserScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onUserScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onUserScroll() {
+    if (_highlightedRatingId != null && !_isScrollingToRating) {
+      setState(() {
+        _highlightedRatingId = null;
+      });
+    }
+  }
+
+  /// Scrolls to and highlights a specific rating
+  void scrollToRating(String ratingId) {
+    setState(() {
+      _highlightedRatingId = ratingId;
+      _isScrollingToRating = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(Duration(milliseconds: 100), () {
+        if (mounted && _highlightedRatingKey.currentContext != null) {
+          Scrollable.ensureVisible(
+            _highlightedRatingKey.currentContext!,
+            duration: Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            alignment: 0.3,
+          ).then((_) {
+            if (mounted) {
+              setState(() {
+                _isScrollingToRating = false;
+              });
+            }
+          });
+        } else {
+          if (mounted) {
+            setState(() {
+              _isScrollingToRating = false;
+            });
+          }
+        }
+      });
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final allRatings = RatingService().getAllRatings();
@@ -1238,14 +1943,16 @@ class _RatingsTabState extends State<_RatingsTab> {
     return Stack(
       children: [
         ListView.builder(
+          controller: _scrollController,
           padding: EdgeInsets.all(16),
           itemCount: sortedRatings.length,
           itemBuilder: (context, index) {
             final rating = sortedRatings[index];
             final fromUser = MockUsers.getUserById(rating.fromUserId);
             final toUser = MockUsers.getUserById(rating.toUserId);
+            final isHighlighted = _highlightedRatingId == rating.id;
 
-            return Card(
+            Widget card = Card(
           margin: EdgeInsets.only(bottom: 12),
           child: Padding(
             padding: EdgeInsets.all(16),
@@ -1259,17 +1966,28 @@ class _RatingsTabState extends State<_RatingsTab> {
                     Expanded(
                       child: Row(
                         children: [
-                          CircleAvatar(
-                            radius: 20,
-                            backgroundColor: Colors.grey[300],
-                            backgroundImage: fromUser?.profilePhotoUrl != null
-                                ? (fromUser!.profilePhotoUrl!.startsWith('http')
-                                    ? NetworkImage(fromUser.profilePhotoUrl!) as ImageProvider
-                                    : AssetImage(fromUser.profilePhotoUrl!))
+                          GestureDetector(
+                            onTap: fromUser != null && widget.onNavigateToUser != null
+                                ? () => widget.onNavigateToUser!(
+                                    fromUser,
+                                    navContext: AdminNavigationContext(
+                                      sourceTabIndex: 3,
+                                      ratingId: rating.id,
+                                    ),
+                                  )
                                 : null,
-                            child: fromUser?.profilePhotoUrl == null
-                                ? Icon(Icons.person, color: Colors.white, size: 20)
-                                : null,
+                            child: CircleAvatar(
+                              radius: 20,
+                              backgroundColor: Colors.grey[300],
+                              backgroundImage: fromUser?.profilePhotoUrl != null
+                                  ? (fromUser!.profilePhotoUrl!.startsWith('http')
+                                      ? NetworkImage(fromUser.profilePhotoUrl!) as ImageProvider
+                                      : AssetImage(fromUser.profilePhotoUrl!))
+                                  : null,
+                              child: fromUser?.profilePhotoUrl == null
+                                  ? Icon(Icons.person, color: Colors.white, size: 20)
+                                  : null,
+                            ),
                           ),
                           SizedBox(width: 8),
                           Expanded(
@@ -1296,17 +2014,28 @@ class _RatingsTabState extends State<_RatingsTab> {
                     Expanded(
                       child: Row(
                         children: [
-                          CircleAvatar(
-                            radius: 20,
-                            backgroundColor: Colors.grey[300],
-                            backgroundImage: toUser?.profilePhotoUrl != null
-                                ? (toUser!.profilePhotoUrl!.startsWith('http')
-                                    ? NetworkImage(toUser.profilePhotoUrl!) as ImageProvider
-                                    : AssetImage(toUser.profilePhotoUrl!))
+                          GestureDetector(
+                            onTap: toUser != null && widget.onNavigateToUser != null
+                                ? () => widget.onNavigateToUser!(
+                                    toUser,
+                                    navContext: AdminNavigationContext(
+                                      sourceTabIndex: 3,
+                                      ratingId: rating.id,
+                                    ),
+                                  )
                                 : null,
-                            child: toUser?.profilePhotoUrl == null
-                                ? Icon(Icons.person, color: Colors.white, size: 20)
-                                : null,
+                            child: CircleAvatar(
+                              radius: 20,
+                              backgroundColor: Colors.grey[300],
+                              backgroundImage: toUser?.profilePhotoUrl != null
+                                  ? (toUser!.profilePhotoUrl!.startsWith('http')
+                                      ? NetworkImage(toUser.profilePhotoUrl!) as ImageProvider
+                                      : AssetImage(toUser.profilePhotoUrl!))
+                                  : null,
+                              child: toUser?.profilePhotoUrl == null
+                                  ? Icon(Icons.person, color: Colors.white, size: 20)
+                                  : null,
+                            ),
                           ),
                           SizedBox(width: 8),
                           Expanded(
@@ -1328,7 +2057,7 @@ class _RatingsTabState extends State<_RatingsTab> {
                     Container(
                       padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
-                        color: Colors.amber.withOpacity(0.2),
+                        color: Colors.amber.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(color: Colors.amber, width: 1.5),
                       ),
@@ -1378,6 +2107,30 @@ class _RatingsTabState extends State<_RatingsTab> {
             ),
           ),
         );
+
+            // Add highlight effect when this rating is the one we navigated back to
+            if (isHighlighted) {
+              return Container(
+                key: _highlightedRatingKey,
+                child: AnimatedContainer(
+                  duration: Duration(milliseconds: 300),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Color(0xFFDD2C00), width: 3),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Color(0xFFDD2C00).withValues(alpha: 0.3),
+                        blurRadius: 8,
+                        spreadRadius: 2,
+                      ),
+                    ],
+                  ),
+                  child: card,
+                ),
+              );
+            }
+
+            return card;
       },
         ),
         Positioned(
@@ -1484,7 +2237,7 @@ class _RatingsTabState extends State<_RatingsTab> {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.amber.withOpacity(0.15),
+        color: Colors.amber.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.amber[300]!, width: 1),
       ),
@@ -1532,6 +2285,7 @@ class _CollapsibleBookingSection extends StatefulWidget {
   final Widget Function(Booking) buildBookingCard;
   final bool startCollapsed;
   final Color? color; // Optional color for the section
+  final String? highlightedBookingId; // Booking ID to auto-expand for
 
   const _CollapsibleBookingSection({
     required this.title,
@@ -1540,6 +2294,7 @@ class _CollapsibleBookingSection extends StatefulWidget {
     required this.buildBookingCard,
     this.startCollapsed = false,
     this.color,
+    this.highlightedBookingId,
   });
 
   @override
@@ -1551,10 +2306,28 @@ class _CollapsibleBookingSectionState
     extends State<_CollapsibleBookingSection> {
   late bool _isExpanded;
 
+  bool _containsHighlightedBooking() {
+    if (widget.highlightedBookingId == null) return false;
+    return widget.bookings.any((b) => b.id == widget.highlightedBookingId);
+  }
+
   @override
   void initState() {
     super.initState();
-    _isExpanded = !widget.startCollapsed;
+    // Auto-expand if this section contains the highlighted booking
+    _isExpanded = !widget.startCollapsed || _containsHighlightedBooking();
+  }
+
+  @override
+  void didUpdateWidget(_CollapsibleBookingSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // If a new highlighted booking is in this section, expand it
+    if (widget.highlightedBookingId != oldWidget.highlightedBookingId &&
+        _containsHighlightedBooking()) {
+      setState(() {
+        _isExpanded = true;
+      });
+    }
   }
 
   @override
@@ -1569,7 +2342,7 @@ class _CollapsibleBookingSectionState
             color: Colors.white,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 offset: Offset(0, 1),
                 blurRadius: 2,
               ),
@@ -1629,6 +2402,310 @@ class _CollapsibleBookingSectionState
   }
 }
 
+// Collapsible section widget for message groups
+class _CollapsibleMessageSection extends StatefulWidget {
+  final String title;
+  final int count;
+  final List<Conversation> conversations;
+  final Widget Function(Conversation) buildConversationCard;
+  final bool startCollapsed;
+  final Color? color;
+
+  const _CollapsibleMessageSection({
+    required this.title,
+    required this.count,
+    required this.conversations,
+    required this.buildConversationCard,
+    this.startCollapsed = false,
+    this.color,
+  });
+
+  @override
+  State<_CollapsibleMessageSection> createState() =>
+      _CollapsibleMessageSectionState();
+}
+
+class _CollapsibleMessageSectionState
+    extends State<_CollapsibleMessageSection> {
+  late bool _isExpanded;
+
+  @override
+  void initState() {
+    super.initState();
+    _isExpanded = !widget.startCollapsed;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final sectionColor = widget.color ?? Colors.black87;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                offset: Offset(0, 1),
+                blurRadius: 2,
+              ),
+            ],
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () {
+                setState(() {
+                  _isExpanded = !_isExpanded;
+                });
+              },
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16),
+                child: SizedBox(
+                  height: 50,
+                  child: Row(
+                    children: [
+                      Icon(
+                        _isExpanded ? Icons.expand_less : Icons.expand_more,
+                        size: 20,
+                        color: sectionColor,
+                      ),
+                      SizedBox(width: 4),
+                      Text(
+                        widget.title,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: sectionColor,
+                        ),
+                      ),
+                      SizedBox(width: 8),
+                      Text(
+                        '(${widget.count})',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: sectionColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+        if (_isExpanded) ...[
+          SizedBox(height: 8),
+          ...widget.conversations.map((c) => widget.buildConversationCard(c)),
+        ],
+        SizedBox(height: 8),
+      ],
+    );
+  }
+}
+
+// Collapsible section widget for support messages with subcategories
+class _CollapsibleSupportSection extends StatefulWidget {
+  final int totalCount;
+  final List<Conversation> questionConversations;
+  final List<Conversation> complaintConversations;
+  final List<Conversation> suggestionConversations;
+  final List<Conversation> otherConversations;
+  final Widget Function(Conversation) buildConversationCard;
+
+  const _CollapsibleSupportSection({
+    required this.totalCount,
+    required this.questionConversations,
+    required this.complaintConversations,
+    required this.suggestionConversations,
+    required this.otherConversations,
+    required this.buildConversationCard,
+  });
+
+  @override
+  State<_CollapsibleSupportSection> createState() =>
+      _CollapsibleSupportSectionState();
+}
+
+class _CollapsibleSupportSectionState
+    extends State<_CollapsibleSupportSection> {
+  bool _isExpanded = false;
+  bool _questionExpanded = false;
+  bool _complaintExpanded = false;
+  bool _suggestionExpanded = false;
+  bool _otherExpanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final sectionColor = Colors.amber[700]!;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Main Support header
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                offset: Offset(0, 1),
+                blurRadius: 2,
+              ),
+            ],
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () {
+                setState(() {
+                  _isExpanded = !_isExpanded;
+                });
+              },
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16),
+                child: SizedBox(
+                  height: 50,
+                  child: Row(
+                    children: [
+                      Icon(
+                        _isExpanded ? Icons.expand_less : Icons.expand_more,
+                        size: 20,
+                        color: sectionColor,
+                      ),
+                      SizedBox(width: 4),
+                      Text(
+                        'Support',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: sectionColor,
+                        ),
+                      ),
+                      SizedBox(width: 8),
+                      Text(
+                        '(${widget.totalCount})',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: sectionColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+        if (_isExpanded) ...[
+          SizedBox(height: 8),
+          // Question subcategory (blue)
+          if (widget.questionConversations.isNotEmpty)
+            _buildSubcategory(
+              'Question',
+              widget.questionConversations,
+              Colors.blue,
+              Icons.help_outline,
+              _questionExpanded,
+              () => setState(() => _questionExpanded = !_questionExpanded),
+            ),
+          // Suggestion subcategory (green)
+          if (widget.suggestionConversations.isNotEmpty)
+            _buildSubcategory(
+              'Suggestion',
+              widget.suggestionConversations,
+              Colors.green,
+              Icons.lightbulb_outline,
+              _suggestionExpanded,
+              () => setState(() => _suggestionExpanded = !_suggestionExpanded),
+            ),
+          // Complaint subcategory (red) - last
+          if (widget.complaintConversations.isNotEmpty)
+            _buildSubcategory(
+              'Complaint',
+              widget.complaintConversations,
+              Colors.red,
+              Icons.report_problem_outlined,
+              _complaintExpanded,
+              () => setState(() => _complaintExpanded = !_complaintExpanded),
+            ),
+          // Other support (fallback)
+          if (widget.otherConversations.isNotEmpty)
+            _buildSubcategory(
+              'Other',
+              widget.otherConversations,
+              Colors.grey,
+              Icons.support_agent,
+              _otherExpanded,
+              () => setState(() => _otherExpanded = !_otherExpanded),
+            ),
+        ],
+        SizedBox(height: 8),
+      ],
+    );
+  }
+
+  Widget _buildSubcategory(
+    String title,
+    List<Conversation> conversations,
+    Color color,
+    IconData icon,
+    bool isExpanded,
+    VoidCallback onTap,
+  ) {
+    return Padding(
+      padding: EdgeInsets.only(left: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          InkWell(
+            onTap: onTap,
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: Row(
+                children: [
+                  Icon(
+                    isExpanded ? Icons.expand_less : Icons.expand_more,
+                    color: color,
+                    size: 18,
+                  ),
+                  SizedBox(width: 4),
+                  Icon(icon, color: color, size: 16),
+                  SizedBox(width: 6),
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: color,
+                    ),
+                  ),
+                  SizedBox(width: 6),
+                  Text(
+                    '(${conversations.length})',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: color,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (isExpanded) ...[
+            ...conversations.map((c) => widget.buildConversationCard(c)),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
 // User details content widget with collapsible sections
 class _UserDetailsContent extends StatefulWidget {
   final User user;
@@ -1675,6 +2752,14 @@ class _UserDetailsContentState extends State<_UserDetailsContent> {
   bool _archivedExpanded = false;
   bool _hiddenExpanded = false;
 
+  // Message category expansion states
+  bool _upcomingMessagesExpanded = false;
+  bool _ongoingMessagesExpanded = false;
+  bool _completedMessagesExpanded = false;
+  bool _supportMessagesExpanded = false;
+  bool _archivedMessagesExpanded = false;
+  bool _hiddenMessagesExpanded = false;
+
   @override
   Widget build(BuildContext context) {
     return ListView(
@@ -1687,6 +2772,25 @@ class _UserDetailsContentState extends State<_UserDetailsContent> {
           count: null,
           isExpanded: _userInfoExpanded,
           onTap: () => setState(() => _userInfoExpanded = !_userInfoExpanded),
+          trailing: GestureDetector(
+            onTap: () {
+              final personalInfo = 'ID: ${widget.user.id}\n'
+                  'Name: ${widget.user.name}\n'
+                  'Surname: ${widget.user.surname}\n'
+                  'Email: ${widget.user.email}\n'
+                  'Phone: ${widget.user.formattedPhone}'
+                  '${widget.user.isAdmin ? '\nRole: Admin' : ''}';
+              final vehicleInfo = widget.user.hasVehicle
+                  ? '\n\nVehicle:\n'
+                      'Make: ${widget.user.vehicleBrand ?? ''}\n'
+                      'Model: ${widget.user.vehicleModel ?? ''}\n'
+                      'Color: ${widget.user.vehicleColor ?? ''}\n'
+                      'Plate: ${widget.user.licensePlate ?? ''}'
+                  : '';
+              _copyToClipboard('$personalInfo$vehicleInfo', 'User Information');
+            },
+            child: Icon(Icons.copy, size: 16, color: Colors.grey[400]),
+          ),
           children: [
             // Personal Information subtitle with copy all
             Row(
@@ -1754,61 +2858,15 @@ class _UserDetailsContentState extends State<_UserDetailsContent> {
 
         SizedBox(height: 16),
 
-        // Bookings Section - custom header without nested padding
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(8),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                offset: Offset(0, 1),
-                blurRadius: 2,
-              ),
-            ],
-          ),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: () => setState(() => _bookingsExpanded = !_bookingsExpanded),
-              borderRadius: BorderRadius.circular(8),
-              child: Padding(
-                padding: EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Icon(
-                      _bookingsExpanded ? Icons.expand_less : Icons.expand_more,
-                      color: Color(0xFFDD2C00),
-                    ),
-                    SizedBox(width: 8),
-                    Text(
-                      'Bookings',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(width: 8),
-                    Text(
-                      '(${widget.bookings.length})',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
+        // Bookings Section
+        _buildCollapsibleSection(
+          title: 'Bookings',
+          count: widget.bookings.length,
+          isExpanded: _bookingsExpanded,
+          onTap: () => setState(() => _bookingsExpanded = !_bookingsExpanded),
+          children: _buildBookingsChildren(),
+          contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 12),
         ),
-
-        // Booking categories - directly in ListView without extra padding
-        if (_bookingsExpanded) ...[
-          SizedBox(height: 8),
-          _buildBookingsContent(),
-        ],
 
         SizedBox(height: 16),
 
@@ -1818,158 +2876,8 @@ class _UserDetailsContentState extends State<_UserDetailsContent> {
           count: widget.conversations.length,
           isExpanded: _messagesExpanded,
           onTap: () => setState(() => _messagesExpanded = !_messagesExpanded),
-          children: widget.conversations.isEmpty
-              ? [
-                  Padding(
-                    padding: EdgeInsets.all(16),
-                    child: Text(
-                      'No conversations found',
-                      style: TextStyle(color: Colors.grey[600]),
-                    ),
-                  )
-                ]
-              : widget.conversations.map((conv) {
-                  final isSupport = conv.id.startsWith('support_');
-                  final unreadCount = conv.getUnreadCount('admin');
-                  final driver = MockUsers.getUserById(conv.driverId);
-                  final rider = MockUsers.getUserById(conv.riderId);
-                  final driverRating = driver != null ? RatingService().getUserAverageRating(driver.id) : 0.0;
-                  final riderRating = rider != null ? RatingService().getUserAverageRating(rider.id) : 0.0;
-                  final cardColor = unreadCount > 0 ? Colors.blue[100] : Colors.blue[50];
-
-                  return Padding(
-                    padding: EdgeInsets.only(bottom: 8),
-                    child: InkWell(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => ChatScreen(
-                              conversation: conv,
-                              isAdminView: true,
-                            ),
-                          ),
-                        );
-                      },
-                      child: Container(
-                        padding: EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: cardColor,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey[300]!, width: 0.5),
-                        ),
-                        child: Column(
-                          children: [
-                            _buildUserConversationTopRow(conv, isSupport),
-                            SizedBox(height: 8),
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // Driver on left
-                                SizedBox(
-                                  width: 60,
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      _buildUserAvatar(driver?.profilePhotoUrl, isDriver: true),
-                                      SizedBox(height: 4),
-                                      Text(
-                                        driver != null
-                                            ? '${driver.name} ${driver.surname.isNotEmpty ? '${driver.surname[0]}.' : ''}'
-                                            : conv.driverName,
-                                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
-                                        textAlign: TextAlign.center,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      if (driver != null && !isSupport) ...[
-                                        SizedBox(height: 2),
-                                        Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Icon(Icons.star, size: 10, color: Colors.amber),
-                                            SizedBox(width: 2),
-                                            Text(driverRating.toStringAsFixed(1), style: TextStyle(fontSize: 10)),
-                                          ],
-                                        ),
-                                      ],
-                                    ],
-                                  ),
-                                ),
-                                // Center: Status badges
-                                Expanded(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      if (unreadCount > 0)
-                                        Container(
-                                          margin: EdgeInsets.only(top: 4),
-                                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                          decoration: BoxDecoration(
-                                            color: Color(0xFFDD2C00),
-                                            borderRadius: BorderRadius.circular(10),
-                                          ),
-                                          child: Text(
-                                            '$unreadCount new',
-                                            style: TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.bold),
-                                          ),
-                                        ),
-                                      if (conv.isHidden)
-                                        Container(
-                                          margin: EdgeInsets.only(top: 4),
-                                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                          decoration: BoxDecoration(
-                                            color: Colors.purple[100],
-                                            borderRadius: BorderRadius.circular(4),
-                                            border: Border.all(color: Colors.purple[300]!, width: 1),
-                                          ),
-                                          child: Text(
-                                            'Hidden',
-                                            style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: Colors.purple[700]),
-                                          ),
-                                        ),
-                                    ],
-                                  ),
-                                ),
-                                // Rider on right
-                                SizedBox(
-                                  width: 60,
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      _buildUserAvatar(rider?.profilePhotoUrl, isDriver: false),
-                                      SizedBox(height: 4),
-                                      Text(
-                                        rider != null
-                                            ? '${rider.name} ${rider.surname.isNotEmpty ? '${rider.surname[0]}.' : ''}'
-                                            : conv.riderName,
-                                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
-                                        textAlign: TextAlign.center,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      if (rider != null) ...[
-                                        SizedBox(height: 2),
-                                        Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Icon(Icons.star, size: 10, color: Colors.amber),
-                                            SizedBox(width: 2),
-                                            Text(riderRating.toStringAsFixed(1), style: TextStyle(fontSize: 10)),
-                                          ],
-                                        ),
-                                      ],
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                }).toList(),
+          contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+          children: _buildMessagesChildren(),
         ),
 
         SizedBox(height: 16),
@@ -2072,7 +2980,67 @@ class _UserDetailsContentState extends State<_UserDetailsContent> {
             ),
           ),
         ],
+
+        // Message Button (don't show for self)
+        if (AuthService.currentUser?.id != widget.user.id) ...[
+          SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => _navigateToSupportChat(context),
+              icon: Icon(Icons.message, size: 20),
+              label: Text('Message'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Theme.of(context).primaryColor,
+                side: BorderSide(color: Theme.of(context).primaryColor.withValues(alpha: 0.5)),
+                padding: EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+          ),
+        ],
       ],
+    );
+  }
+
+  void _navigateToSupportChat(BuildContext context) {
+    final currentUser = AuthService.currentUser;
+    if (currentUser == null) return;
+
+    // Create a support conversation ID (use smaller user ID first for consistency)
+    final userId1 = currentUser.id;
+    final userId2 = widget.user.id;
+    final conversationId = userId1.compareTo(userId2) < 0
+        ? 'support_${userId1}_$userId2'
+        : 'support_${userId2}_$userId1';
+
+    // Get or create conversation - don't add until first message is sent
+    var conversation = MessagingService().getConversation(conversationId) ??
+        Conversation(
+          id: conversationId,
+          bookingId: conversationId,
+          driverId: currentUser.id,
+          driverName: currentUser.fullName,
+          riderId: widget.user.id,
+          riderName: widget.user.fullName,
+          routeName: 'Support',
+          originName: '',
+          destinationName: '',
+          departureTime: DateTime.now(),
+          arrivalTime: DateTime.now().add(Duration(days: 365)), // Never expires
+          messages: [],
+        );
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ChatScreen(
+          conversation: conversation,
+          createConversationOnFirstMessage: true,
+        ),
+      ),
     );
   }
 
@@ -2161,61 +3129,61 @@ class _UserDetailsContentState extends State<_UserDetailsContent> {
       }
 
       return Container(
-        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
           color: typeColor.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(4),
+          borderRadius: BorderRadius.circular(6),
           border: Border.all(color: typeColor.withValues(alpha: 0.3), width: 0.5),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(typeIcon, color: typeColor, size: 11),
-            SizedBox(width: 4),
-            Text(supportType, style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: typeColor)),
+            Icon(typeIcon, color: typeColor, size: 14),
+            SizedBox(width: 5),
+            Text(supportType, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: typeColor)),
           ],
         ),
       );
     }
 
-    // For regular conversations - miniature version of Messages tab top row
+    // For regular conversations - readable version
     return Row(
       children: [
         // Date badge
         Container(
-          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
           decoration: BoxDecoration(
             color: Colors.grey.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(4),
           ),
           child: Text(
             _formatMiniDate(conversation.departureTime),
-            style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.black87),
+            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.black87),
           ),
         ),
-        SizedBox(width: 6),
+        SizedBox(width: 8),
         // Departure
         Expanded(
           child: Row(
             children: [
-              Icon(Icons.location_on, color: Colors.green, size: 10),
-              SizedBox(width: 2),
+              Icon(Icons.location_on, color: Colors.green, size: 12),
+              SizedBox(width: 3),
               Container(
-                padding: EdgeInsets.symmetric(horizontal: 3, vertical: 1),
+                padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                 decoration: BoxDecoration(
                   color: Colors.green.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(3),
+                  borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
                   formatTimeHHmm(conversation.departureTime),
-                  style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: Colors.green[700]),
+                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.green[700]),
                 ),
               ),
-              SizedBox(width: 2),
+              SizedBox(width: 3),
               Expanded(
                 child: Text(
                   conversation.originName,
-                  style: TextStyle(fontSize: 8, color: Colors.black87),
+                  style: TextStyle(fontSize: 10, color: Colors.black87),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -2223,29 +3191,29 @@ class _UserDetailsContentState extends State<_UserDetailsContent> {
             ],
           ),
         ),
-        SizedBox(width: 4),
+        SizedBox(width: 6),
         // Arrival
         Expanded(
           child: Row(
             children: [
-              Icon(Icons.flag, color: Colors.red, size: 10),
-              SizedBox(width: 2),
+              Icon(Icons.flag, color: Colors.red, size: 12),
+              SizedBox(width: 3),
               Container(
-                padding: EdgeInsets.symmetric(horizontal: 3, vertical: 1),
+                padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                 decoration: BoxDecoration(
                   color: Colors.red.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(3),
+                  borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
                   formatTimeHHmm(conversation.arrivalTime),
-                  style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: Colors.red[700]),
+                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.red[700]),
                 ),
               ),
-              SizedBox(width: 2),
+              SizedBox(width: 3),
               Expanded(
                 child: Text(
                   conversation.destinationName,
-                  style: TextStyle(fontSize: 8, color: Colors.black87),
+                  style: TextStyle(fontSize: 10, color: Colors.black87),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -2258,20 +3226,20 @@ class _UserDetailsContentState extends State<_UserDetailsContent> {
   }
 
   Widget _buildUserAvatar(String? profilePhotoUrl, {required bool isDriver}) {
-    final defaultIcon = isDriver ? Icons.drive_eta : Icons.person;
+    final defaultIcon = isDriver ? Icons.directions_car : Icons.person;
     final defaultColor = isDriver ? Colors.blue : Colors.green;
 
     if (profilePhotoUrl != null && profilePhotoUrl.isNotEmpty) {
       if (profilePhotoUrl.startsWith('assets/')) {
         return CircleAvatar(
-          radius: 16,
+          radius: 20,
           backgroundImage: AssetImage(profilePhotoUrl),
         );
       } else {
         final photoFile = File(profilePhotoUrl);
         if (photoFile.existsSync()) {
           return CircleAvatar(
-            radius: 16,
+            radius: 20,
             backgroundImage: FileImage(photoFile),
           );
         }
@@ -2279,9 +3247,9 @@ class _UserDetailsContentState extends State<_UserDetailsContent> {
     }
 
     return CircleAvatar(
-      radius: 16,
+      radius: 20,
       backgroundColor: defaultColor.withValues(alpha: 0.1),
-      child: Icon(defaultIcon, color: defaultColor, size: 16),
+      child: Icon(defaultIcon, color: defaultColor, size: 20),
     );
   }
 
@@ -2291,6 +3259,8 @@ class _UserDetailsContentState extends State<_UserDetailsContent> {
     required bool isExpanded,
     required VoidCallback onTap,
     required List<Widget> children,
+    EdgeInsets? contentPadding,
+    Widget? trailing,
   }) {
     return Container(
       decoration: BoxDecoration(
@@ -2306,47 +3276,57 @@ class _UserDetailsContentState extends State<_UserDetailsContent> {
       ),
       child: Column(
         children: [
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: onTap,
-              borderRadius: BorderRadius.circular(8),
-              child: Padding(
-                padding: EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Icon(
-                      isExpanded ? Icons.expand_less : Icons.expand_more,
-                      color: Color(0xFFDD2C00),
-                    ),
-                    SizedBox(width: 8),
-                    Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+          Padding(
+            padding: EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: onTap,
+                      borderRadius: BorderRadius.circular(8),
+                      child: Row(
+                        children: [
+                          Icon(
+                            isExpanded ? Icons.expand_less : Icons.expand_more,
+                            color: Color(0xFFDD2C00),
+                          ),
+                          SizedBox(width: 8),
+                          Text(
+                            title,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          if (count != null) ...[
+                            SizedBox(width: 8),
+                            Text(
+                              '($count)',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                     ),
-                    if (count != null) ...[
-                      SizedBox(width: 8),
-                      Text(
-                        '($count)',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                    ],
-                  ],
+                  ),
                 ),
-              ),
+                if (trailing != null) ...[
+                  SizedBox(width: 8),
+                  trailing,
+                ],
+              ],
             ),
           ),
           if (isExpanded) ...[
             Divider(height: 1),
             Padding(
-              padding: EdgeInsets.all(16),
+              padding: contentPadding ?? EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: children,
@@ -2391,7 +3371,16 @@ class _UserDetailsContentState extends State<_UserDetailsContent> {
     );
   }
 
-  Widget _buildBookingsContent() {
+  List<Widget> _buildBookingsChildren() {
+    if (widget.bookings.isEmpty) {
+      return [
+        Text(
+          'No bookings found',
+          style: TextStyle(color: Colors.grey[600]),
+        ),
+      ];
+    }
+
     final now = DateTime.now();
 
     // Categorize bookings
@@ -2435,106 +3424,85 @@ class _UserDetailsContentState extends State<_UserDetailsContent> {
         .toList()
       ..sort((a, b) => b.departureTime.compareTo(a.departureTime));
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Upcoming bookings - collapsible cards
-        if (upcoming.isNotEmpty)
-          _buildBookingCategory(
-            'Upcoming',
-            upcoming,
-            Colors.blue[700]!,
-            _upcomingExpanded,
-            () => setState(() => _upcomingExpanded = !_upcomingExpanded),
-            isPast: false,
-            cardsCollapsible: true,
-          ),
+    final List<Widget> children = [];
 
-        // Ongoing bookings - collapsible cards
-        if (ongoing.isNotEmpty) ...[
-          SizedBox(height: 8),
-          _buildBookingCategory(
-            'Ongoing',
-            ongoing,
-            Colors.orange[700]!,
-            _ongoingExpanded,
-            () => setState(() => _ongoingExpanded = !_ongoingExpanded),
-            isPast: false,
-            isOngoing: true,
-            cardsCollapsible: true,
-          ),
-        ],
+    if (upcoming.isNotEmpty) {
+      children.add(_buildBookingCategory(
+        'Upcoming',
+        upcoming,
+        Colors.blue[700]!,
+        _upcomingExpanded,
+        () => setState(() => _upcomingExpanded = !_upcomingExpanded),
+        isPast: false,
+        cardsCollapsible: true,
+      ));
+    }
 
-        // Completed bookings - seats collapsed with chevron
-        if (completed.isNotEmpty) ...[
-          SizedBox(height: 8),
-          _buildBookingCategory(
-            'Completed',
-            completed,
-            Colors.green[700]!,
-            _completedExpanded,
-            () => setState(() => _completedExpanded = !_completedExpanded),
-            isPast: true,
-            cardsCollapsible: true,
-          ),
-        ],
+    if (ongoing.isNotEmpty) {
+      children.add(_buildBookingCategory(
+        'Ongoing',
+        ongoing,
+        Colors.orange[700]!,
+        _ongoingExpanded,
+        () => setState(() => _ongoingExpanded = !_ongoingExpanded),
+        isPast: false,
+        isOngoing: true,
+        cardsCollapsible: true,
+      ));
+    }
 
-        // Canceled bookings - seats collapsed with chevron
-        if (canceled.isNotEmpty) ...[
-          SizedBox(height: 8),
-          _buildBookingCategory(
-            'Canceled',
-            canceled,
-            Colors.red[700]!,
-            _canceledExpanded,
-            () => setState(() => _canceledExpanded = !_canceledExpanded),
-            isPast: true,
-            isCanceled: true,
-            cardsCollapsible: true,
-          ),
-        ],
+    if (completed.isNotEmpty) {
+      children.add(_buildBookingCategory(
+        'Completed',
+        completed,
+        Colors.green[700]!,
+        _completedExpanded,
+        () => setState(() => _completedExpanded = !_completedExpanded),
+        isPast: true,
+        cardsCollapsible: true,
+      ));
+    }
 
-        // Archived bookings - seats collapsed with chevron
-        if (archived.isNotEmpty) ...[
-          SizedBox(height: 8),
-          _buildBookingCategory(
-            'Archived',
-            archived,
-            Colors.grey[700]!,
-            _archivedExpanded,
-            () => setState(() => _archivedExpanded = !_archivedExpanded),
-            isPast: true,
-            isArchived: true,
-            cardsCollapsible: true,
-          ),
-        ],
+    if (canceled.isNotEmpty) {
+      children.add(_buildBookingCategory(
+        'Canceled',
+        canceled,
+        Colors.red[700]!,
+        _canceledExpanded,
+        () => setState(() => _canceledExpanded = !_canceledExpanded),
+        isPast: true,
+        isCanceled: true,
+        cardsCollapsible: true,
+      ));
+    }
 
-        // Hidden bookings - seats collapsed with chevron
-        if (hidden.isNotEmpty) ...[
-          SizedBox(height: 8),
-          _buildBookingCategory(
-            'Hidden',
-            hidden,
-            Colors.purple[700]!,
-            _hiddenExpanded,
-            () => setState(() => _hiddenExpanded = !_hiddenExpanded),
-            isPast: true,
-            isArchived: true,
-            cardsCollapsible: true,
-          ),
-        ],
+    if (archived.isNotEmpty) {
+      children.add(_buildBookingCategory(
+        'Archived',
+        archived,
+        Colors.grey[700]!,
+        _archivedExpanded,
+        () => setState(() => _archivedExpanded = !_archivedExpanded),
+        isPast: true,
+        isArchived: true,
+        cardsCollapsible: true,
+      ));
+    }
 
-        // Show message if no bookings
-        if (widget.bookings.isEmpty)
-          Padding(
-            padding: EdgeInsets.all(16),
-            child: Text(
-              'No bookings found',
-              style: TextStyle(color: Colors.grey[600]),
-            ),
-          ),
-      ],
-    );
+    if (hidden.isNotEmpty) {
+      children.add(_buildBookingCategory(
+        'Hidden',
+        hidden,
+        Colors.purple[700]!,
+        _hiddenExpanded,
+        () => setState(() => _hiddenExpanded = !_hiddenExpanded),
+        isPast: true,
+        isArchived: true,
+        cardsCollapsible: true,
+      ));
+    }
+
+    return children;
   }
 
   Widget _buildBookingCategory(
@@ -2552,84 +3520,514 @@ class _UserDetailsContentState extends State<_UserDetailsContent> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Category header - matching main Bookings tab style
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                offset: Offset(0, 1),
-                blurRadius: 2,
-              ),
-            ],
+        // Category header - simple row inside parent card
+        InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: EdgeInsets.symmetric(vertical: 8),
+            child: Row(
+              children: [
+                Icon(
+                  isExpanded ? Icons.expand_less : Icons.expand_more,
+                  color: color,
+                  size: 20,
+                ),
+                SizedBox(width: 4),
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: color,
+                  ),
+                ),
+                SizedBox(width: 6),
+                Text(
+                  '(${bookings.length})',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: color,
+                  ),
+                ),
+              ],
+            ),
           ),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: onTap,
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+        ),
+        // Category bookings - full width
+        if (isExpanded) ...[
+          ...bookings.map((booking) => Padding(
+                padding: EdgeInsets.only(bottom: 6),
+                child: BookingCard(
+                  booking: booking,
+                  isPast: isPast,
+                  isCanceled: isCanceled,
+                  isOngoing: isOngoing,
+                  isArchived: isArchived,
+                  showActions: false,
+                  showSeatsForCanceled: true,
+                  isCollapsible: cardsCollapsible,
+                  initiallyExpanded: false,
+                  buildMiniatureSeatLayout: (seats, booking) {
+                    return SeatLayoutWidget(
+                      booking: booking,
+                      isInteractive: false,
+                      currentUserId: null,
+                    );
+                  },
+                ),
+              )),
+        ],
+      ],
+    );
+  }
+
+  List<Widget> _buildMessagesChildren() {
+    if (widget.conversations.isEmpty) {
+      return [
+        Text(
+          'No conversations found',
+          style: TextStyle(color: Colors.grey[600]),
+        ),
+      ];
+    }
+
+    final now = DateTime.now();
+
+    // Helper to check booking status for a conversation
+    bool isOngoing(Conversation c) {
+      if (c.id.startsWith('support_')) return false;
+      final booking = BookingStorage().getBookingById(c.bookingId);
+      if (booking == null) return false;
+      return booking.departureTime.isBefore(now) &&
+          booking.arrivalTime.isAfter(now) &&
+          booking.isCanceled != true &&
+          booking.isArchived != true;
+    }
+
+    bool isCompleted(Conversation c) {
+      if (c.id.startsWith('support_')) return false;
+      final booking = BookingStorage().getBookingById(c.bookingId);
+      if (booking == null) return false;
+      return booking.arrivalTime.isBefore(now) &&
+          booking.isCanceled != true &&
+          booking.isArchived != true;
+    }
+
+    bool isUpcoming(Conversation c) {
+      if (c.id.startsWith('support_')) return false;
+      final booking = BookingStorage().getBookingById(c.bookingId);
+      if (booking == null) return false;
+      return booking.departureTime.isAfter(now) &&
+          booking.isCanceled != true &&
+          booking.isArchived != true;
+    }
+
+    // Categorize conversations
+    final upcoming = widget.conversations
+        .where((c) => isUpcoming(c) && !c.isHidden)
+        .toList()
+      ..sort((a, b) => a.departureTime.compareTo(b.departureTime));
+
+    final ongoing = widget.conversations
+        .where((c) => isOngoing(c) && !c.isHidden)
+        .toList()
+      ..sort((a, b) => b.departureTime.compareTo(a.departureTime));
+
+    final completed = widget.conversations
+        .where((c) => isCompleted(c) && !c.isHidden)
+        .toList()
+      ..sort((a, b) => b.departureTime.compareTo(a.departureTime));
+
+    final support = widget.conversations
+        .where((c) => c.id.startsWith('support_') && !c.isHidden)
+        .toList()
+      ..sort((a, b) {
+        final aLast = a.lastMessage?.timestamp ?? a.arrivalTime;
+        final bLast = b.lastMessage?.timestamp ?? b.arrivalTime;
+        return bLast.compareTo(aLast);
+      });
+
+    final archived = widget.conversations
+        .where((c) =>
+            !c.id.startsWith('support_') &&
+            c.isArchived &&
+            !c.isHidden)
+        .toList()
+      ..sort((a, b) => b.departureTime.compareTo(a.departureTime));
+
+    final hidden = widget.conversations
+        .where((c) => c.isHidden)
+        .toList()
+      ..sort((a, b) => b.departureTime.compareTo(a.departureTime));
+
+    final List<Widget> children = [];
+
+    if (upcoming.isNotEmpty) {
+      children.add(_buildMessageCategory(
+        'Upcoming',
+        upcoming,
+        Colors.blue[700]!,
+        _upcomingMessagesExpanded,
+        () => setState(() => _upcomingMessagesExpanded = !_upcomingMessagesExpanded),
+      ));
+    }
+
+    if (ongoing.isNotEmpty) {
+      children.add(_buildMessageCategory(
+        'Ongoing',
+        ongoing,
+        Colors.orange[700]!,
+        _ongoingMessagesExpanded,
+        () => setState(() => _ongoingMessagesExpanded = !_ongoingMessagesExpanded),
+      ));
+    }
+
+    if (completed.isNotEmpty) {
+      children.add(_buildMessageCategory(
+        'Completed',
+        completed,
+        Colors.green[700]!,
+        _completedMessagesExpanded,
+        () => setState(() => _completedMessagesExpanded = !_completedMessagesExpanded),
+      ));
+    }
+
+    if (support.isNotEmpty) {
+      children.add(_buildMessageCategory(
+        'Support',
+        support,
+        Colors.amber[700]!,
+        _supportMessagesExpanded,
+        () => setState(() => _supportMessagesExpanded = !_supportMessagesExpanded),
+      ));
+    }
+
+    if (archived.isNotEmpty) {
+      children.add(_buildMessageCategory(
+        'Archived',
+        archived,
+        Colors.grey[700]!,
+        _archivedMessagesExpanded,
+        () => setState(() => _archivedMessagesExpanded = !_archivedMessagesExpanded),
+      ));
+    }
+
+    if (hidden.isNotEmpty) {
+      children.add(_buildMessageCategory(
+        'Hidden',
+        hidden,
+        Colors.purple[700]!,
+        _hiddenMessagesExpanded,
+        () => setState(() => _hiddenMessagesExpanded = !_hiddenMessagesExpanded),
+      ));
+    }
+
+    return children;
+  }
+
+  Widget _buildMessageCategory(
+    String title,
+    List<Conversation> conversations,
+    Color color,
+    bool isExpanded,
+    VoidCallback onTap,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Category header
+        InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: EdgeInsets.symmetric(vertical: 8),
+            child: Row(
+              children: [
+                Icon(
+                  isExpanded ? Icons.expand_less : Icons.expand_more,
+                  color: color,
+                  size: 20,
+                ),
+                SizedBox(width: 4),
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: color,
+                  ),
+                ),
+                SizedBox(width: 6),
+                Text(
+                  '(${conversations.length})',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: color,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        // Category conversations
+        if (isExpanded) ...[
+          ...conversations.map((conversation) => _buildMiniConversationCard(conversation)),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildMiniConversationCard(Conversation conversation) {
+    final isSupport = conversation.id.startsWith('support_');
+    final unreadCount = conversation.getUnreadCount(widget.user.id);
+
+    // Get driver and rider info
+    final driver = MockUsers.getUserById(conversation.driverId);
+    final rider = MockUsers.getUserById(conversation.riderId);
+    final driverRating = driver != null ? RatingService().getUserAverageRating(driver.id) : 0.0;
+    final riderRating = rider != null ? RatingService().getUserAverageRating(rider.id) : 0.0;
+
+    // Card color based on unread status
+    final cardColor = unreadCount > 0 ? Colors.blue[100] : Colors.blue[50];
+
+    // For support: determine admin vs user labels
+    final isDriverAdmin = driver?.isAdmin == true;
+    final leftLabel = isSupport ? (isDriverAdmin ? 'Admin' : 'User') : 'Driver';
+    final rightLabel = isSupport ? (isDriverAdmin ? 'User' : 'Admin') : 'Rider';
+    final leftIcon = isSupport ? (isDriverAdmin ? Icons.admin_panel_settings : Icons.person) : Icons.directions_car;
+    final rightIcon = isSupport ? (isDriverAdmin ? Icons.person : Icons.admin_panel_settings) : Icons.person;
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: 8),
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ChatScreen(
+                conversation: conversation,
+                isAdminView: true,
+              ),
+            ),
+          );
+        },
+        child: Container(
+          padding: EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: cardColor,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey[300]!, width: 0.5),
+          ),
+          child: Column(
+            children: [
+              // Top row: Date and route info (or support type)
+              _buildUserConversationTopRow(conversation, isSupport),
+              SizedBox(height: 10),
+              // Middle row: Left person - status badges - Right person
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // Left section with label and nested avatar
+                  Expanded(
+                    child: Row(
                       children: [
-                        Icon(
-                          isExpanded ? Icons.expand_less : Icons.expand_more,
-                          color: color,
-                          size: 20,
+                        // Left label with semi-circle cutout
+                        Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            // Label background
+                            Container(
+                              padding: EdgeInsets.only(left: 8, right: 28, top: 8, bottom: 8),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.withValues(alpha: 0.08),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(leftIcon, size: 16, color: Colors.grey[600]),
+                                  SizedBox(height: 2),
+                                  Text(
+                                    leftLabel,
+                                    style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.grey[600]),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            // Avatar positioned to overlap (create cutout effect)
+                            Positioned(
+                              right: -18,
+                              top: 0,
+                              bottom: 0,
+                              child: Center(
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: Colors.grey.withValues(alpha: 0.15), width: 2),
+                                  ),
+                                  child: _buildUserAvatar(driver?.profilePhotoUrl, isDriver: !isSupport),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                        SizedBox(width: 4),
-                        Text(
-                          title,
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: color,
-                          ),
-                        ),
-                        SizedBox(width: 8),
-                        Text(
-                          '(${bookings.length})',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: color,
+                        SizedBox(width: 24),
+                        // Name and rating
+                        Expanded(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                driver != null
+                                    ? '${driver.name} ${driver.surname.isNotEmpty ? '${driver.surname[0]}.' : ''}'
+                                    : conversation.driverName,
+                                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              if (driver != null && !isSupport) ...[
+                                SizedBox(height: 2),
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.star, size: 11, color: Colors.amber),
+                                    SizedBox(width: 2),
+                                    Text(
+                                      driverRating.toStringAsFixed(1),
+                                      style: TextStyle(fontSize: 11),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ],
                           ),
                         ),
                       ],
                     ),
-                  ],
-                ),
+                  ),
+                  // Center: Status badges
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 4),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        if (unreadCount > 0)
+                          Container(
+                            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: Color(0xFFDD2C00),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              '$unreadCount new',
+                              style: TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        if (conversation.isHidden)
+                          Container(
+                            margin: EdgeInsets.only(top: 4),
+                            padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.purple[100],
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(color: Colors.purple[300]!, width: 1),
+                            ),
+                            child: Text(
+                              'Hidden',
+                              style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.purple[700]),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  // Right section with label and nested avatar (mirrored)
+                  Expanded(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        // Name and rating
+                        Expanded(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                rider != null
+                                    ? '${rider.name} ${rider.surname.isNotEmpty ? '${rider.surname[0]}.' : ''}'
+                                    : conversation.riderName,
+                                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              if (rider != null && !isSupport) ...[
+                                SizedBox(height: 2),
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.star, size: 11, color: Colors.amber),
+                                    SizedBox(width: 2),
+                                    Text(
+                                      riderRating.toStringAsFixed(1),
+                                      style: TextStyle(fontSize: 11),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                        SizedBox(width: 24),
+                        // Right label with semi-circle cutout
+                        Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            // Label background
+                            Container(
+                              padding: EdgeInsets.only(left: 28, right: 8, top: 8, bottom: 8),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.withValues(alpha: 0.08),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(rightIcon, size: 16, color: Colors.grey[600]),
+                                  SizedBox(height: 2),
+                                  Text(
+                                    rightLabel,
+                                    style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.grey[600]),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            // Avatar positioned to overlap (create cutout effect)
+                            Positioned(
+                              left: -18,
+                              top: 0,
+                              bottom: 0,
+                              child: Center(
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: Colors.grey.withValues(alpha: 0.15), width: 2),
+                                  ),
+                                  child: _buildUserAvatar(rider?.profilePhotoUrl, isDriver: false),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ),
+            ],
           ),
         ),
-        // Category bookings
-        if (isExpanded) ...[
-          SizedBox(height: 8),
-          ...bookings.map((booking) => BookingCard(
-                booking: booking,
-                isPast: isPast,
-                isCanceled: isCanceled,
-                isOngoing: isOngoing,
-                isArchived: isArchived,
-                showActions: false,
-                showSeatsForCanceled: true,
-                isCollapsible: cardsCollapsible,
-                initiallyExpanded: false,
-                buildMiniatureSeatLayout: (seats, booking) {
-                  return SeatLayoutWidget(
-                    booking: booking,
-                    isInteractive: false,
-                    currentUserId: null,
-                  );
-                },
-              )),
-        ],
-      ],
+      ),
     );
   }
 
@@ -2637,7 +4035,7 @@ class _UserDetailsContentState extends State<_UserDetailsContent> {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.amber.withOpacity(0.2),
+        color: Colors.amber.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.amber, width: 1),
       ),

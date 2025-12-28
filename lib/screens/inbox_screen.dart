@@ -16,7 +16,8 @@ class InboxScreen extends StatefulWidget {
   State<InboxScreen> createState() => _InboxScreenState();
 }
 
-class _InboxScreenState extends State<InboxScreen> with WidgetsBindingObserver {
+class _InboxScreenState extends State<InboxScreen>
+    with WidgetsBindingObserver {
   final MessagingService _messagingService = MessagingService();
   String? _lastUserId;
   bool _showArchived = false; // Whether to show archived conversations section
@@ -127,47 +128,9 @@ class _InboxScreenState extends State<InboxScreen> with WidgetsBindingObserver {
 
       return Scaffold(
         appBar: AppBar(
-          leading: Padding(
-            padding: EdgeInsets.only(left: 12),
-            child: GestureDetector(
-              onTap: _sendSupportEmail,
-              child: Center(
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(color: Colors.white, width: 1),
-                      ),
-                      child: Text(
-                        '?',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ),
-                    // Speech bubble tail
-                    Positioned(
-                      bottom: -4,
-                      left: 4,
-                      child: CustomPaint(
-                        size: Size(6, 5),
-                        painter: _SpeechBubbleTailPainter(
-                          fillColor: Colors.white.withOpacity(0.2),
-                          borderColor: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+          leading: IconButton(
+            onPressed: _sendSupportEmail,
+            icon: Icon(Icons.headset_mic, color: Colors.white),
           ),
           title: Text(
             l10n.inbox,
@@ -831,40 +794,3 @@ class _BubbleTailPainterRight extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-// Custom painter for speech bubble tail (support button)
-class _SpeechBubbleTailPainter extends CustomPainter {
-  final Color fillColor;
-  final Color borderColor;
-
-  _SpeechBubbleTailPainter({required this.fillColor, required this.borderColor});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = fillColor
-      ..style = PaintingStyle.fill;
-
-    final borderPaint = Paint()
-      ..color = borderColor
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1;
-
-    final path = Path();
-    // Triangle pointing down-left
-    path.moveTo(0, 0);
-    path.lineTo(size.width, 0);
-    path.lineTo(0, size.height);
-    path.close();
-
-    canvas.drawPath(path, paint);
-
-    // Draw border on the outer edges
-    final borderPath = Path();
-    borderPath.moveTo(size.width, 0);
-    borderPath.lineTo(0, size.height);
-    canvas.drawPath(borderPath, borderPaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}

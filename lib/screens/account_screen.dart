@@ -315,7 +315,7 @@ class _AccountScreenState extends State<AccountScreen> {
                 },
               ),
               _buildProfileOption(
-                icon: Icons.help_outline,
+                icon: Icons.support,
                 title: l10n.help,
                 onTap: () {
                   Navigator.push(

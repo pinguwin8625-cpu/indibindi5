@@ -517,14 +517,14 @@ class _AuthScreenState extends State<AuthScreen> {
         final currentUser = AuthService.currentUser;
         if (currentUser?.isAdmin == true) {
           // Navigate to account tab (index 3) for admin
-          Navigator.of(
-            context,
-          ).pushReplacement(MaterialPageRoute(builder: (_) => MainScreen(initialIndex: 3)));
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => MainScreen(initialIndex: 3)),
+          );
         } else {
           // Navigate to main screen for regular users
-          Navigator.of(
-            context,
-          ).pushReplacement(MaterialPageRoute(builder: (_) => MainScreen()));
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => MainScreen()),
+          );
         }
       } else {
         setState(() {

@@ -66,6 +66,46 @@
     "description": "Prompt to choose a route"
   },
 
+  "selectRouteTitle": "Select Route",
+  "@selectRouteTitle": {
+    "description": "App bar title for route selection screen"
+  },
+
+  "selectStops": "Select Stops",
+  "@selectStops": {
+    "description": "App bar title for stops selection screen"
+  },
+
+  "findRides": "Find Rides",
+  "@findRides": {
+    "description": "App bar title for matching rides screen"
+  },
+
+  "screenTitleRole": "Role",
+  "@screenTitleRole": {
+    "description": "App bar title for role selection screen"
+  },
+
+  "screenTitleRoute": "Route",
+  "@screenTitleRoute": {
+    "description": "App bar title for route selection screen"
+  },
+
+  "screenTitleStopsTime": "Stops & Time",
+  "@screenTitleStopsTime": {
+    "description": "App bar title for stops and time selection screen"
+  },
+
+  "screenTitleSeat": "Seats",
+  "@screenTitleSeat": {
+    "description": "App bar title for seat selection screen"
+  },
+
+  "seatsHelperText": "Tap seats to mark them available/unavailable for riders. (All available by default!)",
+  "@seatsHelperText": {
+    "description": "Helper text for seat selection screen"
+  },
+
   "driver": "Driver",
   "@driver": {
     "description": "Driver role label"
@@ -939,6 +979,21 @@
     "description": "Hint for role selection screen"
   },
 
+  "hintRoleSelectionLine1": "do you want to post a ride? choose driver!",
+  "@hintRoleSelectionLine1": {
+    "description": "First line of role selection hint"
+  },
+
+  "hintRoleSelectionOr": "or",
+  "@hintRoleSelectionOr": {
+    "description": "Or text between role selection hints"
+  },
+
+  "hintRoleSelectionLine2": "do you want to get on a ride? choose rider!",
+  "@hintRoleSelectionLine2": {
+    "description": "Second line of role selection hint"
+  },
+
   "hintRouteSelection": "select the route you'll be traveling on",
   "@hintRouteSelection": {
     "description": "Hint for route selection"
@@ -959,7 +1014,7 @@
     "description": "Hint for time selection"
   },
 
-  "hintSeatSelectionDriver": "tap seats to mark them available for riders",
+  "hintSeatSelectionDriver": "Tap seats to edit availability",
   "@hintSeatSelectionDriver": {
     "description": "Hint for driver seat selection"
   },
@@ -1144,5 +1199,165 @@
   "snackbarConversationRestored": "Conversation restored",
   "@snackbarConversationRestored": {
     "description": "Snackbar when conversation is unarchived"
+  },
+
+  "skip": "Skip",
+  "@skip": {
+    "description": "Skip button for onboarding"
+  },
+
+  "getStarted": "Get Started",
+  "@getStarted": {
+    "description": "Get started button for onboarding"
+  },
+
+  "introWelcomeTitle": "Welcome to IndiBindi",
+  "@introWelcomeTitle": {
+    "description": "App intro slide 1 title"
+  },
+
+  "introWelcomeSubtitle": "Share rides, save money, travel together",
+  "@introWelcomeSubtitle": {
+    "description": "App intro slide 1 subtitle"
+  },
+
+  "introDriverTitle": "Offer Rides",
+  "@introDriverTitle": {
+    "description": "App intro slide 2 title"
+  },
+
+  "introDriverSubtitle": "Post your journey and share costs with fellow travelers",
+  "@introDriverSubtitle": {
+    "description": "App intro slide 2 subtitle"
+  },
+
+  "introRiderTitle": "Find Rides",
+  "@introRiderTitle": {
+    "description": "App intro slide 3 title"
+  },
+
+  "introRiderSubtitle": "Discover available rides and travel together",
+  "@introRiderSubtitle": {
+    "description": "App intro slide 3 subtitle"
+  },
+
+  "walkthroughRoleTitle": "Choose Your Role",
+  "@walkthroughRoleTitle": {
+    "description": "Feature walkthrough slide 1 title"
+  },
+
+  "walkthroughRoleDescription": "Select Driver to post rides or Rider to find rides. You can switch between roles anytime.",
+  "@walkthroughRoleDescription": {
+    "description": "Feature walkthrough slide 1 description"
+  },
+
+  "walkthroughRouteTitle": "Select Your Route",
+  "@walkthroughRouteTitle": {
+    "description": "Feature walkthrough slide 2 title"
+  },
+
+  "walkthroughRouteDescription": "Choose your route, then pick your origin and destination stops along the way.",
+  "@walkthroughRouteDescription": {
+    "description": "Feature walkthrough slide 2 description"
+  },
+
+  "walkthroughBookingTitle": "Set Your Journey",
+  "@walkthroughBookingTitle": {
+    "description": "Feature walkthrough slide 3 title"
+  },
+
+  "walkthroughBookingDescription": "Pick your travel date and time. Drivers can set available seats, riders can book them.",
+  "@walkthroughBookingDescription": {
+    "description": "Feature walkthrough slide 3 description"
+  },
+
+  "walkthroughMyBookingsTitle": "Manage Bookings",
+  "@walkthroughMyBookingsTitle": {
+    "description": "Feature walkthrough slide 4 title"
+  },
+
+  "walkthroughMyBookingsDescription": "View and manage your upcoming, ongoing, and completed rides all in one place.",
+  "@walkthroughMyBookingsDescription": {
+    "description": "Feature walkthrough slide 4 description"
+  },
+
+  "walkthroughMessagingTitle": "Stay Connected",
+  "@walkthroughMessagingTitle": {
+    "description": "Feature walkthrough slide 5 title"
+  },
+
+  "walkthroughMessagingDescription": "Chat with drivers and riders to coordinate your trip and share updates.",
+  "@walkthroughMessagingDescription": {
+    "description": "Feature walkthrough slide 5 description"
+  },
+
+  "tutorialSearchTitle1": "Choose Your Role",
+  "@tutorialSearchTitle1": {
+    "description": "Search screen tutorial step 1 title"
+  },
+
+  "tutorialSearchDesc1": "Tap Driver to offer rides, or Rider to find and book rides. You can switch anytime!",
+  "@tutorialSearchDesc1": {
+    "description": "Search screen tutorial step 1 description"
+  },
+
+  "tutorialSearchTitle2": "Select Route & Stops",
+  "@tutorialSearchTitle2": {
+    "description": "Search screen tutorial step 2 title"
+  },
+
+  "tutorialSearchDesc2": "Pick your travel route, then choose your origin and destination stops.",
+  "@tutorialSearchDesc2": {
+    "description": "Search screen tutorial step 2 description"
+  },
+
+  "tutorialSearchTitle3": "Set Time & Seats",
+  "@tutorialSearchTitle3": {
+    "description": "Search screen tutorial step 3 title"
+  },
+
+  "tutorialSearchDesc3": "Choose when you want to travel. Drivers set available seats, riders select their seat.",
+  "@tutorialSearchDesc3": {
+    "description": "Search screen tutorial step 3 description"
+  },
+
+  "tutorialBookingsTitle1": "Your Rides",
+  "@tutorialBookingsTitle1": {
+    "description": "Bookings screen tutorial step 1 title"
+  },
+
+  "tutorialBookingsDesc1": "View all your upcoming, ongoing, and completed rides in one place.",
+  "@tutorialBookingsDesc1": {
+    "description": "Bookings screen tutorial step 1 description"
+  },
+
+  "tutorialBookingsTitle2": "Manage Bookings",
+  "@tutorialBookingsTitle2": {
+    "description": "Bookings screen tutorial step 2 title"
+  },
+
+  "tutorialBookingsDesc2": "Tap any ride to see details, message participants, or cancel if needed.",
+  "@tutorialBookingsDesc2": {
+    "description": "Bookings screen tutorial step 2 description"
+  },
+
+  "tutorialInboxTitle1": "Your Messages",
+  "@tutorialInboxTitle1": {
+    "description": "Inbox screen tutorial step 1 title"
+  },
+
+  "tutorialInboxDesc1": "Chat with drivers and riders to coordinate pickup details and share updates.",
+  "@tutorialInboxDesc1": {
+    "description": "Inbox screen tutorial step 1 description"
+  },
+
+  "tutorialInboxTitle2": "Get Support",
+  "@tutorialInboxTitle2": {
+    "description": "Inbox screen tutorial step 2 title"
+  },
+
+  "tutorialInboxDesc2": "Need help? Use the support options to ask questions or share feedback.",
+  "@tutorialInboxDesc2": {
+    "description": "Inbox screen tutorial step 2 description"
   }
 }

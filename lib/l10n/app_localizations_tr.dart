@@ -48,6 +48,31 @@ class AppLocalizationsTr extends AppLocalizations {
   String get selectRoute => 'Başlamak için bir rota seçin';
 
   @override
+  String get selectRouteTitle => 'Select Route';
+
+  @override
+  String get selectStops => 'Select Stops';
+
+  @override
+  String get findRides => 'Find Rides';
+
+  @override
+  String get screenTitleRole => 'Role';
+
+  @override
+  String get screenTitleRoute => 'Route';
+
+  @override
+  String get screenTitleStopsTime => 'Stops & Time';
+
+  @override
+  String get screenTitleSeat => 'Seats';
+
+  @override
+  String get seatsHelperText =>
+      'Tap seats to mark them available/unavailable for riders. (All available by default!)';
+
+  @override
   String get driver => 'Sürücü';
 
   @override
@@ -669,6 +694,17 @@ class AppLocalizationsTr extends AppLocalizations {
       'yolculuk paylaşmak mı istiyorsun? sürücü seç! yoksa yolculuğa katılmak mı istiyorsun? yolcu seç!';
 
   @override
+  String get hintRoleSelectionLine1 =>
+      'do you want to post a ride? choose driver!';
+
+  @override
+  String get hintRoleSelectionOr => 'or';
+
+  @override
+  String get hintRoleSelectionLine2 =>
+      'do you want to get on a ride? choose rider!';
+
+  @override
   String get hintRouteSelection => 'seyahat edeceğiniz güzergahı seçin';
 
   @override
@@ -682,7 +718,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get hintSeatSelectionDriver =>
-      'koltukları yolculara açık hale getirmek için dokunun';
+      'Koltuklara dokunarak müsaitliğini düzenleyebilirsiniz';
 
   @override
   String get hintSeatSelectionRider =>
@@ -784,4 +820,114 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get snackbarConversationRestored => 'Konuşma geri yüklendi';
+
+  @override
+  String get skip => 'Skip';
+
+  @override
+  String get getStarted => 'Get Started';
+
+  @override
+  String get introWelcomeTitle => 'Welcome to IndiBindi';
+
+  @override
+  String get introWelcomeSubtitle => 'Share rides, save money, travel together';
+
+  @override
+  String get introDriverTitle => 'Offer Rides';
+
+  @override
+  String get introDriverSubtitle =>
+      'Post your journey and share costs with fellow travelers';
+
+  @override
+  String get introRiderTitle => 'Find Rides';
+
+  @override
+  String get introRiderSubtitle =>
+      'Discover available rides and travel together';
+
+  @override
+  String get walkthroughRoleTitle => 'Choose Your Role';
+
+  @override
+  String get walkthroughRoleDescription =>
+      'Select Driver to post rides or Rider to find rides. You can switch between roles anytime.';
+
+  @override
+  String get walkthroughRouteTitle => 'Select Your Route';
+
+  @override
+  String get walkthroughRouteDescription =>
+      'Choose your route, then pick your origin and destination stops along the way.';
+
+  @override
+  String get walkthroughBookingTitle => 'Set Your Journey';
+
+  @override
+  String get walkthroughBookingDescription =>
+      'Pick your travel date and time. Drivers can set available seats, riders can book them.';
+
+  @override
+  String get walkthroughMyBookingsTitle => 'Manage Bookings';
+
+  @override
+  String get walkthroughMyBookingsDescription =>
+      'View and manage your upcoming, ongoing, and completed rides all in one place.';
+
+  @override
+  String get walkthroughMessagingTitle => 'Stay Connected';
+
+  @override
+  String get walkthroughMessagingDescription =>
+      'Chat with drivers and riders to coordinate your trip and share updates.';
+
+  @override
+  String get tutorialSearchTitle1 => 'Choose Your Role';
+
+  @override
+  String get tutorialSearchDesc1 =>
+      'Tap Driver to offer rides, or Rider to find and book rides. You can switch anytime!';
+
+  @override
+  String get tutorialSearchTitle2 => 'Select Route & Stops';
+
+  @override
+  String get tutorialSearchDesc2 =>
+      'Pick your travel route, then choose your origin and destination stops.';
+
+  @override
+  String get tutorialSearchTitle3 => 'Set Time & Seats';
+
+  @override
+  String get tutorialSearchDesc3 =>
+      'Choose when you want to travel. Drivers set available seats, riders select their seat.';
+
+  @override
+  String get tutorialBookingsTitle1 => 'Your Rides';
+
+  @override
+  String get tutorialBookingsDesc1 =>
+      'View all your upcoming, ongoing, and completed rides in one place.';
+
+  @override
+  String get tutorialBookingsTitle2 => 'Manage Bookings';
+
+  @override
+  String get tutorialBookingsDesc2 =>
+      'Tap any ride to see details, message participants, or cancel if needed.';
+
+  @override
+  String get tutorialInboxTitle1 => 'Your Messages';
+
+  @override
+  String get tutorialInboxDesc1 =>
+      'Chat with drivers and riders to coordinate pickup details and share updates.';
+
+  @override
+  String get tutorialInboxTitle2 => 'Get Support';
+
+  @override
+  String get tutorialInboxDesc2 =>
+      'Need help? Use the support options to ask questions or share feedback.';
 }

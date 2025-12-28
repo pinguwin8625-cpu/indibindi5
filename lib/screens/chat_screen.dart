@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/message.dart';
+import '../models/user.dart';
 import '../services/messaging_service.dart';
 import '../services/auth_service.dart';
 import '../services/mock_users.dart';
@@ -13,6 +14,7 @@ class ChatScreen extends StatefulWidget {
   final bool createConversationOnFirstMessage;
   final String? initialMessagePrefix;
   final bool isAdminView;
+  final void Function(User user, Conversation conversation)? onNavigateToUser;
 
   const ChatScreen({
     super.key,
@@ -20,6 +22,7 @@ class ChatScreen extends StatefulWidget {
     this.createConversationOnFirstMessage = false,
     this.initialMessagePrefix,
     this.isAdminView = false,
+    this.onNavigateToUser,
   });
 
   @override
@@ -57,8 +60,9 @@ class _ChatScreenState extends State<ChatScreen> {
     final currentUser = AuthService.currentUser;
     if (currentUser == null) return;
 
-    // Prevent admins from sending messages in admin view mode
-    if (widget.isAdminView) {
+    // Prevent admins from sending messages in admin view mode (except for support)
+    final isSupport = widget.conversation.id.startsWith('support_');
+    if (widget.isAdminView && !isSupport) {
       final l10n = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(
@@ -176,6 +180,10 @@ class _ChatScreenState extends State<ChatScreen> {
       supportType = l10n.complaint;
       typeColor = Colors.red;
       typeIcon = Icons.report_problem_outlined;
+    } else if (routeName.startsWith('Question')) {
+      supportType = l10n.question;
+      typeColor = Colors.blue;
+      typeIcon = Icons.help_outline;
     } else {
       supportType = l10n.support;
       typeColor = Colors.amber;
@@ -487,7 +495,7 @@ class _ChatScreenState extends State<ChatScreen> {
     Widget? profilePhoto;
     if (widget.isAdminView) {
       final sender = MockUsers.getUserById(message.senderId);
-      profilePhoto = CircleAvatar(
+      Widget avatar = CircleAvatar(
         radius: 16,
         backgroundColor: Colors.grey[300],
         backgroundImage: sender?.profilePhotoUrl != null
@@ -499,6 +507,16 @@ class _ChatScreenState extends State<ChatScreen> {
             ? Icon(Icons.person, size: 14, color: Colors.grey[600])
             : null,
       );
+
+      // Make avatar tappable if callback is provided
+      if (widget.onNavigateToUser != null && sender != null) {
+        profilePhoto = GestureDetector(
+          onTap: () => widget.onNavigateToUser!(sender, widget.conversation),
+          child: avatar,
+        );
+      } else {
+        profilePhoto = avatar;
+      }
     }
 
     final messageContent = Container(
@@ -645,7 +663,9 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Widget _buildMessageInput() {
     final isExpired = !widget.conversation.isMessagingAllowed;
-    final isDisabled = isExpired || widget.isAdminView;
+    final isSupport = widget.conversation.id.startsWith('support_');
+    // Admin can send messages for support conversations only
+    final isDisabled = isExpired || (widget.isAdminView && !isSupport);
 
     return Container(
       padding: EdgeInsets.all(8),
@@ -666,7 +686,7 @@ class _ChatScreenState extends State<ChatScreen> {
               controller: _messageController,
               enabled: !isDisabled,
               decoration: InputDecoration(
-                hintText: widget.isAdminView
+                hintText: (widget.isAdminView && !isSupport)
                     ? 'Admin view (read-only)'
                     : isExpired
                         ? 'Messaging expired'

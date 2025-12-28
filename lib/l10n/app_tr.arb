@@ -211,7 +211,7 @@
   "hintOriginSelection": "yolculuğunuz nereden başlayacak?",
   "hintDestinationSelection": "yolculuğunuz nerede bitecek?",
   "hintTimeSelection": "ne zaman seyahat etmeyi planlıyorsunuz?",
-  "hintSeatSelectionDriver": "koltukları yolculara açık hale getirmek için dokunun",
+  "hintSeatSelectionDriver": "Koltuklara dokunarak müsaitliğini düzenleyebilirsiniz",
   "hintSeatSelectionRider": "yerinizi ayırtmak için bir koltuğa dokunun",
   "hintMatchingRides": "bu sürücüler güzergahınız ve saatinizle eşleşiyor",
   "hintPostRide": "yolculuk detaylarınızı gözden geçirin ve onaylayın",

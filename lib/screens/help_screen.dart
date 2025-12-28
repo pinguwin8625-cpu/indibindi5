@@ -26,7 +26,7 @@ class _HelpScreenState extends State<HelpScreen> {
     final currentUser = AuthService.currentUser;
     if (currentUser == null) return;
 
-    // Show dialog to choose between suggestion or complaint
+    // Show dialog to choose between question, suggestion or complaint
     final String? selectedType = await DialogHelper.showChoiceDialog<String>(
       context: context,
       title: 'Contact Support',
@@ -34,18 +34,26 @@ class _HelpScreenState extends State<HelpScreen> {
       showCancelButton: false,
       choices: [
         DialogChoice(
+          label: 'Question',
+          value: 'Question',
+          color: Colors.blue,
+          icon: Icons.help_outline,
+        ),
+        DialogChoice(
           label: 'Suggestion',
           value: 'Suggestion',
           color: Colors.green,
+          icon: Icons.lightbulb_outline,
         ),
         DialogChoice(
           label: 'Complaint',
           value: 'Complaint',
           color: Colors.red,
+          icon: Icons.report_problem_outlined,
         ),
       ],
     );
-    
+
     if (selectedType != null) {
       _openSupportChatWithType(context, selectedType);
     }
@@ -89,12 +97,6 @@ class _HelpScreenState extends State<HelpScreen> {
         ),
         backgroundColor: Theme.of(context).primaryColor,
         iconTheme: IconThemeData(color: Colors.white),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.support_agent, color: Colors.white),
-            onPressed: () => _openSupportChat(context),
-          ),
-        ],
       ),
       body: ScrollIndicator(
         scrollController: _scrollController,
@@ -103,7 +105,7 @@ class _HelpScreenState extends State<HelpScreen> {
           padding: EdgeInsets.all(16),
           children: [
           _buildHelpTile(
-            icon: Icons.question_answer_outlined,
+            icon: Icons.help_outline,
             title: l10n.faq,
             onTap: () {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -113,7 +115,7 @@ class _HelpScreenState extends State<HelpScreen> {
           ),
           SizedBox(height: 8),
           _buildHelpTile(
-            icon: Icons.support_agent,
+            icon: Icons.headset_mic,
             title: l10n.support,
             onTap: () => _openSupportChat(context),
           ),

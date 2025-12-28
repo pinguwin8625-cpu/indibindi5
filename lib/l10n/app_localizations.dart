@@ -196,6 +196,54 @@ abstract class AppLocalizations {
   /// **'Choose a route to get started'**
   String get selectRoute;
 
+  /// App bar title for route selection screen
+  ///
+  /// In en, this message translates to:
+  /// **'Select Route'**
+  String get selectRouteTitle;
+
+  /// App bar title for stops selection screen
+  ///
+  /// In en, this message translates to:
+  /// **'Select Stops'**
+  String get selectStops;
+
+  /// App bar title for matching rides screen
+  ///
+  /// In en, this message translates to:
+  /// **'Find Rides'**
+  String get findRides;
+
+  /// App bar title for role selection screen
+  ///
+  /// In en, this message translates to:
+  /// **'Role'**
+  String get screenTitleRole;
+
+  /// App bar title for route selection screen
+  ///
+  /// In en, this message translates to:
+  /// **'Route'**
+  String get screenTitleRoute;
+
+  /// App bar title for stops and time selection screen
+  ///
+  /// In en, this message translates to:
+  /// **'Stops & Time'**
+  String get screenTitleStopsTime;
+
+  /// App bar title for seat selection screen
+  ///
+  /// In en, this message translates to:
+  /// **'Seats'**
+  String get screenTitleSeat;
+
+  /// Helper text for seat selection screen
+  ///
+  /// In en, this message translates to:
+  /// **'Tap seats to mark them available/unavailable for riders. (All available by default!)'**
+  String get seatsHelperText;
+
   /// Driver role label
   ///
   /// In en, this message translates to:
@@ -1390,6 +1438,24 @@ abstract class AppLocalizations {
   /// **'do you want to post a ride? choose driver! or do you want to get on a ride? choose rider!'**
   String get hintRoleSelection;
 
+  /// First line of role selection hint
+  ///
+  /// In en, this message translates to:
+  /// **'do you want to post a ride? choose driver!'**
+  String get hintRoleSelectionLine1;
+
+  /// Or text between role selection hints
+  ///
+  /// In en, this message translates to:
+  /// **'or'**
+  String get hintRoleSelectionOr;
+
+  /// Second line of role selection hint
+  ///
+  /// In en, this message translates to:
+  /// **'do you want to get on a ride? choose rider!'**
+  String get hintRoleSelectionLine2;
+
   /// Hint for route selection
   ///
   /// In en, this message translates to:
@@ -1417,7 +1483,7 @@ abstract class AppLocalizations {
   /// Hint for driver seat selection
   ///
   /// In en, this message translates to:
-  /// **'tap seats to mark them available for riders'**
+  /// **'Tap seats to edit availability'**
   String get hintSeatSelectionDriver;
 
   /// Hint for rider seat selection
@@ -1563,6 +1629,198 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Conversation restored'**
   String get snackbarConversationRestored;
+
+  /// Skip button for onboarding
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get skip;
+
+  /// Get started button for onboarding
+  ///
+  /// In en, this message translates to:
+  /// **'Get Started'**
+  String get getStarted;
+
+  /// App intro slide 1 title
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome to IndiBindi'**
+  String get introWelcomeTitle;
+
+  /// App intro slide 1 subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Share rides, save money, travel together'**
+  String get introWelcomeSubtitle;
+
+  /// App intro slide 2 title
+  ///
+  /// In en, this message translates to:
+  /// **'Offer Rides'**
+  String get introDriverTitle;
+
+  /// App intro slide 2 subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Post your journey and share costs with fellow travelers'**
+  String get introDriverSubtitle;
+
+  /// App intro slide 3 title
+  ///
+  /// In en, this message translates to:
+  /// **'Find Rides'**
+  String get introRiderTitle;
+
+  /// App intro slide 3 subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Discover available rides and travel together'**
+  String get introRiderSubtitle;
+
+  /// Feature walkthrough slide 1 title
+  ///
+  /// In en, this message translates to:
+  /// **'Choose Your Role'**
+  String get walkthroughRoleTitle;
+
+  /// Feature walkthrough slide 1 description
+  ///
+  /// In en, this message translates to:
+  /// **'Select Driver to post rides or Rider to find rides. You can switch between roles anytime.'**
+  String get walkthroughRoleDescription;
+
+  /// Feature walkthrough slide 2 title
+  ///
+  /// In en, this message translates to:
+  /// **'Select Your Route'**
+  String get walkthroughRouteTitle;
+
+  /// Feature walkthrough slide 2 description
+  ///
+  /// In en, this message translates to:
+  /// **'Choose your route, then pick your origin and destination stops along the way.'**
+  String get walkthroughRouteDescription;
+
+  /// Feature walkthrough slide 3 title
+  ///
+  /// In en, this message translates to:
+  /// **'Set Your Journey'**
+  String get walkthroughBookingTitle;
+
+  /// Feature walkthrough slide 3 description
+  ///
+  /// In en, this message translates to:
+  /// **'Pick your travel date and time. Drivers can set available seats, riders can book them.'**
+  String get walkthroughBookingDescription;
+
+  /// Feature walkthrough slide 4 title
+  ///
+  /// In en, this message translates to:
+  /// **'Manage Bookings'**
+  String get walkthroughMyBookingsTitle;
+
+  /// Feature walkthrough slide 4 description
+  ///
+  /// In en, this message translates to:
+  /// **'View and manage your upcoming, ongoing, and completed rides all in one place.'**
+  String get walkthroughMyBookingsDescription;
+
+  /// Feature walkthrough slide 5 title
+  ///
+  /// In en, this message translates to:
+  /// **'Stay Connected'**
+  String get walkthroughMessagingTitle;
+
+  /// Feature walkthrough slide 5 description
+  ///
+  /// In en, this message translates to:
+  /// **'Chat with drivers and riders to coordinate your trip and share updates.'**
+  String get walkthroughMessagingDescription;
+
+  /// Search screen tutorial step 1 title
+  ///
+  /// In en, this message translates to:
+  /// **'Choose Your Role'**
+  String get tutorialSearchTitle1;
+
+  /// Search screen tutorial step 1 description
+  ///
+  /// In en, this message translates to:
+  /// **'Tap Driver to offer rides, or Rider to find and book rides. You can switch anytime!'**
+  String get tutorialSearchDesc1;
+
+  /// Search screen tutorial step 2 title
+  ///
+  /// In en, this message translates to:
+  /// **'Select Route & Stops'**
+  String get tutorialSearchTitle2;
+
+  /// Search screen tutorial step 2 description
+  ///
+  /// In en, this message translates to:
+  /// **'Pick your travel route, then choose your origin and destination stops.'**
+  String get tutorialSearchDesc2;
+
+  /// Search screen tutorial step 3 title
+  ///
+  /// In en, this message translates to:
+  /// **'Set Time & Seats'**
+  String get tutorialSearchTitle3;
+
+  /// Search screen tutorial step 3 description
+  ///
+  /// In en, this message translates to:
+  /// **'Choose when you want to travel. Drivers set available seats, riders select their seat.'**
+  String get tutorialSearchDesc3;
+
+  /// Bookings screen tutorial step 1 title
+  ///
+  /// In en, this message translates to:
+  /// **'Your Rides'**
+  String get tutorialBookingsTitle1;
+
+  /// Bookings screen tutorial step 1 description
+  ///
+  /// In en, this message translates to:
+  /// **'View all your upcoming, ongoing, and completed rides in one place.'**
+  String get tutorialBookingsDesc1;
+
+  /// Bookings screen tutorial step 2 title
+  ///
+  /// In en, this message translates to:
+  /// **'Manage Bookings'**
+  String get tutorialBookingsTitle2;
+
+  /// Bookings screen tutorial step 2 description
+  ///
+  /// In en, this message translates to:
+  /// **'Tap any ride to see details, message participants, or cancel if needed.'**
+  String get tutorialBookingsDesc2;
+
+  /// Inbox screen tutorial step 1 title
+  ///
+  /// In en, this message translates to:
+  /// **'Your Messages'**
+  String get tutorialInboxTitle1;
+
+  /// Inbox screen tutorial step 1 description
+  ///
+  /// In en, this message translates to:
+  /// **'Chat with drivers and riders to coordinate pickup details and share updates.'**
+  String get tutorialInboxDesc1;
+
+  /// Inbox screen tutorial step 2 title
+  ///
+  /// In en, this message translates to:
+  /// **'Get Support'**
+  String get tutorialInboxTitle2;
+
+  /// Inbox screen tutorial step 2 description
+  ///
+  /// In en, this message translates to:
+  /// **'Need help? Use the support options to ask questions or share feedback.'**
+  String get tutorialInboxDesc2;
 }
 
 class _AppLocalizationsDelegate

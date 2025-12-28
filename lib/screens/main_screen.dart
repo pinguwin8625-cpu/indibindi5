@@ -50,9 +50,17 @@ class _MainScreenState extends State<MainScreen> {
 
     // Rebuild screens list each build so InboxScreen gets fresh key when user changes
     final screens = [
-      SearchScreen(key: _searchScreenKey, onBookingCompleted: _switchToBookings),
-      MyBookingsScreen(key: _myBookingsKey, initialTabIndex: _bookingsTabIndex),
-      InboxScreen(key: ValueKey('inbox_$currentUserId')),
+      SearchScreen(
+        key: _searchScreenKey,
+        onBookingCompleted: _switchToBookings,
+      ),
+      MyBookingsScreen(
+        key: _myBookingsKey,
+        initialTabIndex: _bookingsTabIndex,
+      ),
+      InboxScreen(
+        key: ValueKey('inbox_$currentUserId'),
+      ),
       AccountScreen(),
     ];
 

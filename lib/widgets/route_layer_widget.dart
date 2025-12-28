@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../models/routes.dart';
 import '../widgets/route_selection_widget.dart';
@@ -146,17 +145,41 @@ class _RouteLayerWidgetState extends State<RouteLayerWidget> {
                   ),
                   textAlign: TextAlign.center,
                 ),
-                // Hint below title
+                // Hint below title - three lines
                 Padding(
                   padding: EdgeInsets.only(top: 12),
-                  child: Text(
-                    l10n.hintRoleSelection,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Color(0xFF8E8E8E),
-                      fontStyle: FontStyle.italic,
-                    ),
-                    textAlign: TextAlign.center,
+                  child: Column(
+                    children: [
+                      Text(
+                        l10n.hintRoleSelectionLine1,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Color(0xFF8E8E8E),
+                          fontStyle: FontStyle.italic,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        l10n.hintRoleSelectionOr,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Color(0xFF8E8E8E),
+                          fontStyle: FontStyle.italic,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        l10n.hintRoleSelectionLine2,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Color(0xFF8E8E8E),
+                          fontStyle: FontStyle.italic,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
                   ),
                 ),
                 SizedBox(height: 48),
@@ -195,16 +218,11 @@ class _RouteLayerWidgetState extends State<RouteLayerWidget> {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            // Driver icon - steering wheel representation
-                            SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CustomPaint(
-                                size: Size(20, 20),
-                                painter: _SteeringWheelPainter(
-                                  color: _selectedRole == 'driver' ? Colors.white : Color(0xFF2E2E2E),
-                                ),
-                              ),
+                            // Driver icon
+                            Icon(
+                              Icons.directions_car,
+                              color: _selectedRole == 'driver' ? Colors.white : Color(0xFF2E2E2E),
+                              size: 20,
                             ),
                             SizedBox(width: 8),
                             Text(
@@ -325,22 +343,13 @@ class _RouteLayerWidgetState extends State<RouteLayerWidget> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          widget.userRole.toLowerCase() == 'driver'
-                              ? SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: CustomPaint(
-                                    size: Size(16, 16),
-                                    painter: _SteeringWheelPainter(
-                                      color: Color(0xFFDD2C00),
-                                    ),
-                                  ),
-                                )
-                              : Icon(
-                                  Icons.person,
-                                  color: Color(0xFFDD2C00),
-                                  size: 16,
-                                ),
+                          Icon(
+                            widget.userRole.toLowerCase() == 'driver'
+                                ? Icons.directions_car
+                                : Icons.person,
+                            color: Color(0xFFDD2C00),
+                            size: 16,
+                          ),
                           SizedBox(width: 6),
                           Text(
                             widget.userRole.toLowerCase() == 'driver'
@@ -416,45 +425,5 @@ class _RouteLayerWidgetState extends State<RouteLayerWidget> {
         ),
       ),
     );
-  }
-}
-
-// Custom painter for steering wheel icon
-class _SteeringWheelPainter extends CustomPainter {
-  final Color color;
-
-  _SteeringWheelPainter({required this.color});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.0;
-
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2 - 1;
-
-    // Draw outer circle (steering wheel rim)
-    canvas.drawCircle(center, radius, paint);
-
-    // Draw inner circle (hub)
-    final hubRadius = radius * 0.25;
-    canvas.drawCircle(center, hubRadius, paint);
-
-    // Draw three spokes at 120 degrees apart
-    for (int i = 0; i < 3; i++) {
-      final angle = (i * 120 - 90) * math.pi / 180; // Start from top
-      final startX = center.dx + hubRadius * math.cos(angle);
-      final startY = center.dy + hubRadius * math.sin(angle);
-      final endX = center.dx + radius * math.cos(angle);
-      final endY = center.dy + radius * math.sin(angle);
-      canvas.drawLine(Offset(startX, startY), Offset(endX, endY), paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _SteeringWheelPainter oldDelegate) {
-    return oldDelegate.color != color;
   }
 }
