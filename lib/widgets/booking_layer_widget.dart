@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import '../models/routes.dart';
 import '../widgets/time_selection_widget.dart';
 import '../widgets/seat_planning_section_widget.dart';
@@ -74,38 +75,83 @@ class _BookingLayerWidgetState extends State<BookingLayerWidget> {
         // Content area between ride details bar and button
         Expanded(
           child: widget.hasSelectedDateTime && widget.userRole.toLowerCase() == 'driver'
-              // Driver seat selection - evenly distributed
-              ? Column(
-                  children: [
-                    // Title for driver
-                    Container(
-                      padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
-                      child: Text(
-                        l10n.chooseYourSeats,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF5D4037),
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      child: Center(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 16),
-                          child: SeatPlanningSectionWidget(
-                            userRole: widget.userRole,
+              // Driver seat selection - scrollable on web, centered on mobile
+              ? kIsWeb
+                  // Web: scrollable content with button inside
+                  ? SingleChildScrollView(
+                      child: Column(
+                        children: [
+                          // Title for driver
+                          Container(
+                            padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
+                            child: Text(
+                              l10n.chooseYourSeats,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 28,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF5D4037),
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: 16),
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 16),
+                            child: SeatPlanningSectionWidget(
+                              userRole: widget.userRole,
+                              selectedSeats: widget.selectedSeats,
+                              isDisabled: widget.isActionCompleted,
+                              onSeatsSelected: widget.onSeatsSelected,
+                            ),
+                          ),
+                          SizedBox(height: 24),
+                          // Inline button for web
+                          BookingButtonWidget(
+                            selectedRoute: widget.selectedRoute,
+                            originIndex: widget.originIndex,
+                            destinationIndex: widget.destinationIndex,
                             selectedSeats: widget.selectedSeats,
-                            isDisabled: widget.isActionCompleted,
-                            onSeatsSelected: widget.onSeatsSelected,
+                            departureTime: widget.departureTime,
+                            arrivalTime: widget.arrivalTime,
+                            userRole: widget.userRole,
+                            onBookingCompleted: widget.onBookingCompleted,
+                          ),
+                        ],
+                      ),
+                    )
+                  // Mobile apps: centered layout with fixed button at bottom
+                  : Column(
+                      children: [
+                        // Title for driver
+                        Container(
+                          padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
+                          child: Text(
+                            l10n.chooseYourSeats,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF5D4037),
+                              letterSpacing: 0.5,
+                            ),
                           ),
                         ),
-                      ),
-                    ),
-                  ],
-                )
+                        Expanded(
+                          child: Center(
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 16),
+                              child: SeatPlanningSectionWidget(
+                                userRole: widget.userRole,
+                                selectedSeats: widget.selectedSeats,
+                                isDisabled: widget.isActionCompleted,
+                                onSeatsSelected: widget.onSeatsSelected,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
               // Other cases (rider or time not selected) - scrollable content
               : Column(
                   children: [
@@ -197,8 +243,8 @@ class _BookingLayerWidgetState extends State<BookingLayerWidget> {
                 ),
         ),
 
-        // Fixed booking button at bottom
-        if (widget.hasSelectedDateTime)
+        // Fixed booking button at bottom (not for web driver - already inline)
+        if (widget.hasSelectedDateTime && !(kIsWeb && widget.userRole.toLowerCase() == 'driver'))
           BookingButtonWidget(
             selectedRoute: widget.selectedRoute,
             originIndex: widget.originIndex,
