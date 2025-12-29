@@ -16,6 +16,7 @@ class BookingButtonWidget extends StatefulWidget {
   final DateTime? arrivalTime;
   final String userRole;
   final VoidCallback? onBookingCompleted;
+  final bool isInline; // When true, don't wrap in container with shadow
 
   const BookingButtonWidget({
     super.key,
@@ -27,6 +28,7 @@ class BookingButtonWidget extends StatefulWidget {
     required this.arrivalTime,
     required this.userRole,
     this.onBookingCompleted,
+    this.isInline = false,
   });
 
   @override
@@ -94,7 +96,7 @@ class _BookingButtonWidgetState extends State<BookingButtonWidget> {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: Offset(0, -2),
           ),
@@ -131,13 +133,37 @@ class _BookingButtonWidgetState extends State<BookingButtonWidget> {
     final isMobileWeb = _isMobileWeb(context);
     final fontSize = isMobileWeb ? 15.0 : 16.0;
 
+    final fab = FloatingActionButton.extended(
+      onPressed: isEnabled ? _performAction : null,
+      backgroundColor: isEnabled ? buttonColor : Colors.grey[400],
+      disabledElevation: 0,
+      elevation: 4,
+      label: Text(
+        buttonText,
+        style: TextStyle(
+          color: textColor,
+          fontSize: fontSize,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+
+    // When inline, just return the FAB centered without container
+    if (widget.isInline) {
+      return Padding(
+        padding: EdgeInsets.symmetric(vertical: 16),
+        child: Center(child: fab),
+      );
+    }
+
+    // Fixed at bottom with container and shadow
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: Offset(0, -2),
           ),
@@ -145,22 +171,7 @@ class _BookingButtonWidgetState extends State<BookingButtonWidget> {
       ),
       child: SafeArea(
           top: false,
-          child: Center(
-            child: FloatingActionButton.extended(
-              onPressed: isEnabled ? _performAction : null,
-              backgroundColor: isEnabled ? buttonColor : Colors.grey[400],
-              disabledElevation: 0,
-              elevation: 4,
-              label: Text(
-                buttonText,
-                style: TextStyle(
-                  color: textColor,
-                  fontSize: fontSize,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
+          child: Center(child: fab),
         ),
       );
   }

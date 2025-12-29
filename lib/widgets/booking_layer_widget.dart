@@ -116,6 +116,7 @@ class _BookingLayerWidgetState extends State<BookingLayerWidget> {
                             arrivalTime: widget.arrivalTime,
                             userRole: widget.userRole,
                             onBookingCompleted: widget.onBookingCompleted,
+                            isInline: true,
                           ),
                         ],
                       ),
