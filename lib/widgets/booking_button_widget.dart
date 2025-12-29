@@ -16,7 +16,6 @@ class BookingButtonWidget extends StatefulWidget {
   final DateTime? arrivalTime;
   final String userRole;
   final VoidCallback? onBookingCompleted;
-  final bool isFloating;
 
   const BookingButtonWidget({
     super.key,
@@ -28,7 +27,6 @@ class BookingButtonWidget extends StatefulWidget {
     required this.arrivalTime,
     required this.userRole,
     this.onBookingCompleted,
-    this.isFloating = false,
   });
 
   @override
@@ -85,11 +83,7 @@ class _BookingButtonWidgetState extends State<BookingButtonWidget> {
       textColor = Colors.grey[600]!;
     }
 
-    // Use floating FAB style when isFloating is true or on web
-    if (widget.isFloating) {
-      return _buildFloatingButton(buttonText, buttonColor, textColor, isEnabled);
-    }
-
+    // Use FAB style on web, regular button on mobile app
     if (kIsWeb) {
       return _buildWebFAB(buttonText, buttonColor, textColor, isEnabled);
     }
@@ -169,23 +163,6 @@ class _BookingButtonWidgetState extends State<BookingButtonWidget> {
           ),
         ),
       );
-  }
-
-  Widget _buildFloatingButton(String buttonText, Color buttonColor, Color textColor, bool isEnabled) {
-    return FloatingActionButton.extended(
-      onPressed: isEnabled ? _performAction : null,
-      backgroundColor: isEnabled ? buttonColor : Colors.grey[400],
-      disabledElevation: 0,
-      elevation: 8,
-      label: Text(
-        buttonText,
-        style: TextStyle(
-          color: textColor,
-          fontSize: 15,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
   }
 
   void _performAction() {

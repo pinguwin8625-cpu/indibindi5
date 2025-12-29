@@ -56,76 +56,6 @@ class _BookingLayerWidgetState extends State<BookingLayerWidget> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final isDriver = widget.userRole.toLowerCase() == 'driver';
-
-    // For driver with date/time selected, use Stack with floating button
-    if (widget.hasSelectedDateTime && isDriver) {
-      return Stack(
-        children: [
-          // Main content
-          Column(
-            children: [
-              // Summary bar showing route, stops, and time with back button
-              RideDetailsBar(
-                selectedRoute: widget.selectedRoute,
-                originIndex: widget.originIndex,
-                destinationIndex: widget.destinationIndex,
-                departureTime: widget.departureTime,
-                arrivalTime: widget.arrivalTime,
-                userRole: widget.userRole,
-                riderTimeChoice: null,
-                onBack: widget.isActionCompleted ? null : widget.onBack,
-              ),
-              // Title for driver
-              Container(
-                padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
-                child: Text(
-                  l10n.chooseYourSeats,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF5D4037),
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ),
-              Expanded(
-                child: Center(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16),
-                    child: SeatPlanningSectionWidget(
-                      userRole: widget.userRole,
-                      selectedSeats: widget.selectedSeats,
-                      isDisabled: widget.isActionCompleted,
-                      onSeatsSelected: widget.onSeatsSelected,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          // Floating button at bottom right
-          Positioned(
-            right: 16,
-            bottom: 16,
-            child: SafeArea(
-              child: BookingButtonWidget(
-                selectedRoute: widget.selectedRoute,
-                originIndex: widget.originIndex,
-                destinationIndex: widget.destinationIndex,
-                selectedSeats: widget.selectedSeats,
-                departureTime: widget.departureTime,
-                arrivalTime: widget.arrivalTime,
-                userRole: widget.userRole,
-                onBookingCompleted: widget.onBookingCompleted,
-                isFloating: true,
-              ),
-            ),
-          ),
-        ],
-      );
-    }
 
     return Column(
       children: [
@@ -143,7 +73,41 @@ class _BookingLayerWidgetState extends State<BookingLayerWidget> {
 
         // Content area between ride details bar and button
         Expanded(
-          child: Column(
+          child: widget.hasSelectedDateTime && widget.userRole.toLowerCase() == 'driver'
+              // Driver seat selection - evenly distributed
+              ? Column(
+                  children: [
+                    // Title for driver
+                    Container(
+                      padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
+                      child: Text(
+                        l10n.chooseYourSeats,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF5D4037),
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: Center(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 16),
+                          child: SeatPlanningSectionWidget(
+                            userRole: widget.userRole,
+                            selectedSeats: widget.selectedSeats,
+                            isDisabled: widget.isActionCompleted,
+                            onSeatsSelected: widget.onSeatsSelected,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                )
+              // Other cases (rider or time not selected) - scrollable content
+              : Column(
                   children: [
                     // Header with title (for rider)
                     if (widget.hasSelectedDateTime)
@@ -229,21 +193,22 @@ class _BookingLayerWidgetState extends State<BookingLayerWidget> {
                         ),
                       ),
                     ),
-                    // Fixed button for rider
-                    if (widget.hasSelectedDateTime)
-                      BookingButtonWidget(
-                        selectedRoute: widget.selectedRoute,
-                        originIndex: widget.originIndex,
-                        destinationIndex: widget.destinationIndex,
-                        selectedSeats: widget.selectedSeats,
-                        departureTime: widget.departureTime,
-                        arrivalTime: widget.arrivalTime,
-                        userRole: widget.userRole,
-                        onBookingCompleted: widget.onBookingCompleted,
-                      ),
                   ],
                 ),
         ),
+
+        // Fixed booking button at bottom
+        if (widget.hasSelectedDateTime)
+          BookingButtonWidget(
+            selectedRoute: widget.selectedRoute,
+            originIndex: widget.originIndex,
+            destinationIndex: widget.destinationIndex,
+            selectedSeats: widget.selectedSeats,
+            departureTime: widget.departureTime,
+            arrivalTime: widget.arrivalTime,
+            userRole: widget.userRole,
+            onBookingCompleted: widget.onBookingCompleted,
+          ),
       ],
     );
   }
