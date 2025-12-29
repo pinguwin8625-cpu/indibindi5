@@ -79,6 +79,7 @@ class _BookingLayerWidgetState extends State<BookingLayerWidget> {
               ? kIsWeb
                   // Web: scrollable content with button inside
                   ? SingleChildScrollView(
+                      physics: AlwaysScrollableScrollPhysics(),
                       child: Column(
                         children: [
                           // Title for driver
