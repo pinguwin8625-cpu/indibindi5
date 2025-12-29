@@ -56,6 +56,7 @@ class _BookingLayerWidgetState extends State<BookingLayerWidget> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final isDriver = widget.userRole.toLowerCase() == 'driver';
 
     return Column(
       children: [
@@ -73,40 +74,60 @@ class _BookingLayerWidgetState extends State<BookingLayerWidget> {
 
         // Content area between ride details bar and button
         Expanded(
-          child: widget.hasSelectedDateTime && widget.userRole.toLowerCase() == 'driver'
-              // Driver seat selection - evenly distributed
-              ? Column(
+          child: widget.hasSelectedDateTime && isDriver
+              // Driver seat selection - use Stack for floating button
+              ? Stack(
                   children: [
-                    // Title for driver
-                    Container(
-                      padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
-                      child: Text(
-                        l10n.chooseYourSeats,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF5D4037),
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      child: Center(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 16),
-                          child: SeatPlanningSectionWidget(
-                            userRole: widget.userRole,
-                            selectedSeats: widget.selectedSeats,
-                            isDisabled: widget.isActionCompleted,
-                            onSeatsSelected: widget.onSeatsSelected,
+                    Column(
+                      children: [
+                        // Title for driver
+                        Container(
+                          padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
+                          child: Text(
+                            l10n.chooseYourSeats,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF5D4037),
+                              letterSpacing: 0.5,
+                            ),
                           ),
                         ),
+                        Expanded(
+                          child: Center(
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 16),
+                              child: SeatPlanningSectionWidget(
+                                userRole: widget.userRole,
+                                selectedSeats: widget.selectedSeats,
+                                isDisabled: widget.isActionCompleted,
+                                onSeatsSelected: widget.onSeatsSelected,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    // Floating button for driver
+                    Positioned(
+                      right: 16,
+                      bottom: 16,
+                      child: BookingButtonWidget(
+                        selectedRoute: widget.selectedRoute,
+                        originIndex: widget.originIndex,
+                        destinationIndex: widget.destinationIndex,
+                        selectedSeats: widget.selectedSeats,
+                        departureTime: widget.departureTime,
+                        arrivalTime: widget.arrivalTime,
+                        userRole: widget.userRole,
+                        onBookingCompleted: widget.onBookingCompleted,
+                        isFloating: true,
                       ),
                     ),
                   ],
                 )
-              // Other cases (rider or time not selected) - scrollable content
+              // Other cases (rider or time not selected) - scrollable content with fixed button
               : Column(
                   children: [
                     // Header with title (for rider)
@@ -193,22 +214,21 @@ class _BookingLayerWidgetState extends State<BookingLayerWidget> {
                         ),
                       ),
                     ),
+                    // Fixed button for rider
+                    if (widget.hasSelectedDateTime)
+                      BookingButtonWidget(
+                        selectedRoute: widget.selectedRoute,
+                        originIndex: widget.originIndex,
+                        destinationIndex: widget.destinationIndex,
+                        selectedSeats: widget.selectedSeats,
+                        departureTime: widget.departureTime,
+                        arrivalTime: widget.arrivalTime,
+                        userRole: widget.userRole,
+                        onBookingCompleted: widget.onBookingCompleted,
+                      ),
                   ],
                 ),
         ),
-
-        // Fixed booking button at bottom
-        if (widget.hasSelectedDateTime)
-          BookingButtonWidget(
-            selectedRoute: widget.selectedRoute,
-            originIndex: widget.originIndex,
-            destinationIndex: widget.destinationIndex,
-            selectedSeats: widget.selectedSeats,
-            departureTime: widget.departureTime,
-            arrivalTime: widget.arrivalTime,
-            userRole: widget.userRole,
-            onBookingCompleted: widget.onBookingCompleted,
-          ),
       ],
     );
   }
