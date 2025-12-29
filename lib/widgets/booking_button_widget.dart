@@ -176,7 +176,7 @@ class _BookingButtonWidgetState extends State<BookingButtonWidget> {
       onPressed: isEnabled ? _performAction : null,
       backgroundColor: isEnabled ? buttonColor : Colors.grey[400],
       disabledElevation: 0,
-      elevation: 6,
+      elevation: 8,
       label: Text(
         buttonText,
         style: TextStyle(
