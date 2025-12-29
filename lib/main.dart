@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'screens/auth_screen.dart';
@@ -85,7 +86,9 @@ class IndibindiApp extends StatelessWidget {
           behavior: SnackBarBehavior.floating,
         ),
       ),
-      themeMode: ThemeMode.system, // Follow system theme
+      // Force light mode on web (dark mode has contrast issues with hardcoded colors)
+      // Mobile apps follow system theme
+      themeMode: kIsWeb ? ThemeMode.light : ThemeMode.system,
       locale: localeProvider.locale,
       localizationsDelegates: const [
         AppLocalizations.delegate,
