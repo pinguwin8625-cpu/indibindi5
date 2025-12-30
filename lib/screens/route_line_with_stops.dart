@@ -11,6 +11,7 @@ class RouteLineWithStopsPainter extends CustomPainter {
   final int? originIndex;
   final int? destinationIndex;
   final List<int>? greyedStops;
+  final double lineOffset; // X position for the vertical line
 
   RouteLineWithStopsPainter({
     required this.stopCount,
@@ -20,11 +21,12 @@ class RouteLineWithStopsPainter extends CustomPainter {
     this.originIndex,
     this.destinationIndex,
     this.greyedStops,
+    this.lineOffset = 14.0, // Default for 28px container
   });
 
   @override
   void paint(Canvas canvas, Size size) {
-    final x = 14.0;
+    final x = lineOffset;
     const dashHeight = 6.0;
     const dashSpace = 4.0;
 

@@ -84,6 +84,8 @@ class _StopsSectionWidgetState extends State<StopsSectionWidget> {
                       // In compact view, don't pass greyedStops - indices don't match
                       // and we're only showing the active range anyway
                       greyedStops: showCompactView ? [] : widget.greyedStops,
+                      // Compact view uses 22px container (center at 11), normal uses 28px (center at 14)
+                      lineOffset: showCompactView ? 11.0 : 14.0,
                     ),
                   ),
                 ),
