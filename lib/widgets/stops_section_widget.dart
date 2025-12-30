@@ -49,8 +49,8 @@ class _StopsSectionWidgetState extends State<StopsSectionWidget> {
       }
     }
 
-    // Row heights - compact needs to fit 26x26 markers
-    final double compactRowHeight = 30.0;
+    // Row heights - compact needs to fit 26x26 markers for origin/destination
+    final double compactRowHeight = 24.0; // Reduced for better fit on small screens
     final double normalRowHeight = 42.0;
 
     // Calculate height based on view mode
@@ -186,27 +186,27 @@ class _StopsSectionWidgetState extends State<StopsSectionWidget> {
               }
             },
       child: Container(
-        height: 30.0, // Fits 26x26 markers for origin/destination
-        padding: EdgeInsets.symmetric(vertical: 2),
+        height: 24.0, // Compact height for better fit
+        padding: EdgeInsets.symmetric(vertical: 0),
         clipBehavior: Clip.none, // Allow shadows to extend beyond container
         child: Row(
           mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Container(
-              width: 28,
+              width: 22,
               clipBehavior: Clip.none, // Allow shadows to extend beyond container
               alignment: Alignment.center,
-              child: _buildStopCircleOrMarker(i, widget.originIndex, widget.destinationIndex, isGreyed),
+              child: _buildCompactStopMarker(i, widget.originIndex, widget.destinationIndex, isGreyed),
             ),
-            SizedBox(width: 8),
+            SizedBox(width: 6),
             // Add left padding to intermediate stops to indent them
-            if (isIntermediate) SizedBox(width: 12),
+            if (isIntermediate) SizedBox(width: 8),
             Expanded(
               child: Text(
                 widget.selectedRoute.stops[i].name,
                 style: TextStyle(
-                  fontSize: (isOrigin || isDestination) ? 16 : 13,
+                  fontSize: (isOrigin || isDestination) ? 14 : 11,
                   color: isIntermediate ? Colors.grey[600] : Colors.black,
                   fontWeight: (isOrigin || isDestination) ? FontWeight.w800 : FontWeight.normal,
                 ),
@@ -370,6 +370,82 @@ class _StopsSectionWidgetState extends State<StopsSectionWidget> {
         decoration: BoxDecoration(
           color: Colors.white,
           border: Border.all(color: isGreyed ? Color(0xFF2E2E2E).withValues(alpha: 0.5) : Color(0xFF2E2E2E), width: 2),
+          shape: BoxShape.circle,
+        ),
+      );
+    }
+  }
+
+  // Compact version of markers for compact stop list view
+  Widget _buildCompactStopMarker(int i, int? originIndex, int? destinationIndex, bool isGreyed) {
+    if (i == originIndex) {
+      // Smaller origin marker for compact view
+      return Container(
+        width: 20,
+        height: 20,
+        decoration: BoxDecoration(
+          color: Colors.grey[400],
+          shape: BoxShape.circle,
+        ),
+        child: Center(
+          child: Container(
+            width: 18,
+            height: 18,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Container(
+                width: 12,
+                height: 12,
+                decoration: BoxDecoration(
+                  color: Colors.green,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    } else if (i == destinationIndex) {
+      // Smaller destination marker for compact view
+      return Container(
+        width: 20,
+        height: 20,
+        decoration: BoxDecoration(
+          color: Colors.grey[400],
+          shape: BoxShape.circle,
+        ),
+        child: Center(
+          child: Container(
+            width: 18,
+            height: 18,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Container(
+                width: 12,
+                height: 12,
+                decoration: BoxDecoration(
+                  color: Colors.red,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    } else {
+      // Smaller intermediate stop marker
+      return Container(
+        width: 10,
+        height: 10,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border.all(color: isGreyed ? Color(0xFF2E2E2E).withValues(alpha: 0.5) : Color(0xFF2E2E2E), width: 1.5),
           shape: BoxShape.circle,
         ),
       );
