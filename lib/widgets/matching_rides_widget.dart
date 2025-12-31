@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import '../models/routes.dart';
 import '../models/booking.dart';
 import '../services/booking_storage.dart';
@@ -408,42 +409,61 @@ class _MatchingRidesWidgetState extends State<MatchingRidesWidget> {
                 return SizedBox.shrink();
               }),
 
-              // Fixed confirm button at bottom (like Post Ride button)
+              // Fixed confirm button at bottom (FAB style on web, full-width on mobile)
               if (_hasPendingSeats && _confirmAction != null)
-                Container(
-                  padding: EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 8,
-                        offset: Offset(0, -2),
-                      ),
-                    ],
-                  ),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: _confirmAction,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(0xFF2E2E2E),
+                kIsWeb
+                    ? Padding(
                         padding: EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                        child: Center(
+                          child: FloatingActionButton.extended(
+                            onPressed: _confirmAction,
+                            backgroundColor: Color(0xFF2E2E2E),
+                            elevation: 4,
+                            label: Text(
+                              l10n.completeBooking,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
-                      child: Text(
-                        'Confirm Booking',
-                        style: TextStyle(
+                      )
+                    : Container(
+                        padding: EdgeInsets.all(16),
+                        decoration: BoxDecoration(
                           color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 8,
+                              offset: Offset(0, -2),
+                            ),
+                          ],
+                        ),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: _confirmAction,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Color(0xFF2E2E2E),
+                              padding: EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            child: Text(
+                              l10n.completeBooking,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                  ),
-                ),
             ],
           ),
         );
