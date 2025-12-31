@@ -35,6 +35,8 @@ class StopsSectionWidget extends StatefulWidget {
 }
 
 class _StopsSectionWidgetState extends State<StopsSectionWidget> {
+  bool _showIntermediateStops = false;
+
   @override
   Widget build(BuildContext context) {
     // When both origin and destination are selected, show compact view with all stops
@@ -43,10 +45,12 @@ class _StopsSectionWidgetState extends State<StopsSectionWidget> {
 
     // Get stops between origin and destination (inclusive)
     List<int> relevantStopIndices = [];
+    int intermediateCount = 0;
     if (showCompactView) {
       for (int i = widget.originIndex!; i <= widget.destinationIndex!; i++) {
         relevantStopIndices.add(i);
       }
+      intermediateCount = relevantStopIndices.length - 2; // Exclude origin and destination
     }
 
     // Row heights - compact needs to fit 26x26 markers for origin/destination
@@ -54,9 +58,18 @@ class _StopsSectionWidgetState extends State<StopsSectionWidget> {
     final double normalRowHeight = 42.0;
 
     // Calculate height based on view mode
-    final double totalHeight = showCompactView
-        ? relevantStopIndices.length * compactRowHeight
-        : widget.selectedRoute.stops.length * normalRowHeight;
+    double totalHeight;
+    if (showCompactView) {
+      if (_showIntermediateStops || intermediateCount == 0) {
+        // Show all stops
+        totalHeight = relevantStopIndices.length * compactRowHeight;
+      } else {
+        // Show only origin, expander, and destination (3 rows)
+        totalHeight = 3 * compactRowHeight;
+      }
+    } else {
+      totalHeight = widget.selectedRoute.stops.length * normalRowHeight;
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -73,13 +86,23 @@ class _StopsSectionWidgetState extends State<StopsSectionWidget> {
                 Positioned.fill(
                   child: CustomPaint(
                     painter: RouteLineWithStopsPainter(
-                      stopCount: showCompactView ? relevantStopIndices.length : widget.selectedRoute.stops.length,
-                      rowHeight: showCompactView ? compactRowHeight : normalRowHeight,
+                      stopCount: showCompactView
+                          ? (_showIntermediateStops || intermediateCount == 0
+                              ? relevantStopIndices.length
+                              : 3) // origin, expander, destination
+                          : widget.selectedRoute.stops.length,
+                      rowHeight: showCompactView
+                          ? (_showIntermediateStops || intermediateCount == 0
+                              ? compactRowHeight
+                              : compactRowHeight) // Use same height for calculation
+                          : normalRowHeight,
                       lineWidth: 2,
                       lineColor: Color(0xFF2E2E2E),
                       originIndex: 0,
                       destinationIndex: showCompactView
-                          ? relevantStopIndices.length - 1
+                          ? (_showIntermediateStops || intermediateCount == 0
+                              ? relevantStopIndices.length - 1
+                              : 2) // Last position when collapsed
                           : (widget.selectedRoute.stops.length > 1 ? widget.selectedRoute.stops.length - 1 : 0),
                       // In compact view, don't pass greyedStops - indices don't match
                       // and we're only showing the active range anyway
@@ -89,10 +112,7 @@ class _StopsSectionWidgetState extends State<StopsSectionWidget> {
                 ),
                 Column(
                   children: showCompactView
-                      ? [
-                          // Build all stops between origin and destination with compact height
-                          ...relevantStopIndices.map((i) => _buildCompactStopRow(i)),
-                        ]
+                      ? _buildCompactStopsList(relevantStopIndices, intermediateCount, compactRowHeight)
                       : [
                           // Build all stops with normal height
                           ...List.generate(widget.selectedRoute.stops.length, (i) => _buildStopRow(i)),
@@ -155,6 +175,80 @@ class _StopsSectionWidgetState extends State<StopsSectionWidget> {
         builder: (context) => ChatScreen(
           conversation: supportConversation,
           createConversationOnFirstMessage: true,
+        ),
+      ),
+    );
+  }
+
+  // Build the list of stops for compact view (with expandable intermediate stops)
+  List<Widget> _buildCompactStopsList(List<int> relevantStopIndices, int intermediateCount, double compactRowHeight) {
+    // If no intermediate stops or expanded, show all
+    if (intermediateCount == 0 || _showIntermediateStops) {
+      return relevantStopIndices.map((i) => _buildCompactStopRow(i)).toList();
+    }
+
+    // Collapsed view: origin, expander, destination
+    return [
+      _buildCompactStopRow(relevantStopIndices.first), // Origin
+      _buildIntermediateExpander(intermediateCount, compactRowHeight),
+      _buildCompactStopRow(relevantStopIndices.last), // Destination
+    ];
+  }
+
+  // Build the expandable "X stops" row
+  Widget _buildIntermediateExpander(int count, double height) {
+    return InkWell(
+      onTap: () {
+        setState(() {
+          _showIntermediateStops = true;
+        });
+      },
+      child: Container(
+        height: height,
+        child: Row(
+          children: [
+            Container(
+              width: 28,
+              alignment: Alignment.center,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 2,
+                    height: 4,
+                    color: Color(0xFF2E2E2E),
+                  ),
+                  SizedBox(height: 2),
+                  Container(
+                    width: 2,
+                    height: 4,
+                    color: Color(0xFF2E2E2E),
+                  ),
+                  SizedBox(height: 2),
+                  Container(
+                    width: 2,
+                    height: 4,
+                    color: Color(0xFF2E2E2E),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(width: 8),
+            Text(
+              '$count stops',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[600],
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+            SizedBox(width: 4),
+            Icon(
+              Icons.expand_more,
+              size: 16,
+              color: Colors.grey[600],
+            ),
+          ],
         ),
       ),
     );
