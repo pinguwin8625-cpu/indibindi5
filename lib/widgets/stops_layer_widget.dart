@@ -247,65 +247,71 @@ class _StopsLayerWidgetState extends State<StopsLayerWidget> {
 
         // Content
         Expanded(
-          child: ScrollIndicator(
-            scrollController: _scrollController,
-            child: SingleChildScrollView(
-              controller: _scrollController,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Side-by-side layout for stops and time selection
-                    Row(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              // Available height for the content area
+              final availableHeight = constraints.maxHeight;
+
+              return ScrollIndicator(
+                scrollController: _scrollController,
+                child: SingleChildScrollView(
+                  controller: _scrollController,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Stops Selection (Left Side)
-                        Expanded(
-                          flex: 3,
-                          child: StopsSectionWidget(
-                            selectedRoute: widget.selectedRoute,
-                            originIndex: localOriginIndex,
-                            destinationIndex: localDestinationIndex,
-                            greyedStops: greyedStops,
-                            hideUnusedStops: localOriginIndex != null && localDestinationIndex != null,
-                            isDisabled: widget.isActionCompleted,
-                            onOriginChanged: (index) {
-                              print(
-                                '🔥 StopsLayer: onOriginChanged called with $index',
-                              );
-                              setState(() {
-                                localOriginIndex = index;
-                              });
-                              // Always call the callback to update parent state
-                              widget.onOriginSelected?.call(index);
-                              _checkAndNavigate();
-                            },
-                            onDestinationChanged: (index) {
-                              print(
-                                '🔥 StopsLayer: onDestinationChanged called with $index',
-                              );
-                              setState(() {
-                                localDestinationIndex = index;
-                              });
-                              // Always call the callback to update parent state
-                              widget.onDestinationSelected?.call(index);
-                              _checkAndNavigate();
-                            },
-                            onResetDateTime: () {
-                              setState(() {
-                                localHasSelectedDateTime = false;
-                                localDepartureTime = null;
-                                localArrivalTime = null;
-                              });
-                            },
-                            onIntermediateExpandedChanged: (expanded) {
-                              setState(() {
-                                isIntermediateExpanded = expanded;
-                              });
-                            },
-                          ),
-                        ),
+                        // Side-by-side layout for stops and time selection
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Stops Selection (Left Side)
+                            Expanded(
+                              flex: 3,
+                              child: StopsSectionWidget(
+                                selectedRoute: widget.selectedRoute,
+                                originIndex: localOriginIndex,
+                                destinationIndex: localDestinationIndex,
+                                greyedStops: greyedStops,
+                                hideUnusedStops: localOriginIndex != null && localDestinationIndex != null,
+                                isDisabled: widget.isActionCompleted,
+                                availableHeight: availableHeight,
+                                onOriginChanged: (index) {
+                                  print(
+                                    '🔥 StopsLayer: onOriginChanged called with $index',
+                                  );
+                                  setState(() {
+                                    localOriginIndex = index;
+                                  });
+                                  // Always call the callback to update parent state
+                                  widget.onOriginSelected?.call(index);
+                                  _checkAndNavigate();
+                                },
+                                onDestinationChanged: (index) {
+                                  print(
+                                    '🔥 StopsLayer: onDestinationChanged called with $index',
+                                  );
+                                  setState(() {
+                                    localDestinationIndex = index;
+                                  });
+                                  // Always call the callback to update parent state
+                                  widget.onDestinationSelected?.call(index);
+                                  _checkAndNavigate();
+                                },
+                                onResetDateTime: () {
+                                  setState(() {
+                                    localHasSelectedDateTime = false;
+                                    localDepartureTime = null;
+                                    localArrivalTime = null;
+                                  });
+                                },
+                                onIntermediateExpandedChanged: (expanded) {
+                                  setState(() {
+                                    isIntermediateExpanded = expanded;
+                                  });
+                                },
+                              ),
+                            ),
 
                         SizedBox(width: 24),
 
@@ -382,6 +388,8 @@ class _StopsLayerWidgetState extends State<StopsLayerWidget> {
                 ),
               ),
             ),
+          );
+            },
           ),
         ),
 
