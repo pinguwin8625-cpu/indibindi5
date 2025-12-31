@@ -77,49 +77,53 @@ class _BookingLayerWidgetState extends State<BookingLayerWidget> {
           child: widget.hasSelectedDateTime && widget.userRole.toLowerCase() == 'driver'
               // Driver seat selection - scrollable on web, centered on mobile
               ? kIsWeb
-                  // Web: scrollable content with button inside
-                  ? SingleChildScrollView(
-                      physics: AlwaysScrollableScrollPhysics(),
-                      child: Column(
-                        children: [
-                          // Title for driver
-                          Container(
-                            padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
-                            child: Text(
-                              l10n.chooseYourSeats,
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 28,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF5D4037),
-                                letterSpacing: 0.5,
+                  // Web: scrollable content with button inside and scroll indicator
+                  ? ScrollIndicator(
+                      scrollController: _scrollController,
+                      child: SingleChildScrollView(
+                        controller: _scrollController,
+                        physics: AlwaysScrollableScrollPhysics(),
+                        child: Column(
+                          children: [
+                            // Title for driver
+                            Container(
+                              padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
+                              child: Text(
+                                l10n.chooseYourSeats,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF5D4037),
+                                  letterSpacing: 0.5,
+                                ),
                               ),
                             ),
-                          ),
-                          SizedBox(height: 16),
-                          Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 16),
-                            child: SeatPlanningSectionWidget(
-                              userRole: widget.userRole,
-                              selectedSeats: widget.selectedSeats,
-                              isDisabled: widget.isActionCompleted,
-                              onSeatsSelected: widget.onSeatsSelected,
+                            SizedBox(height: 16),
+                            Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 16),
+                              child: SeatPlanningSectionWidget(
+                                userRole: widget.userRole,
+                                selectedSeats: widget.selectedSeats,
+                                isDisabled: widget.isActionCompleted,
+                                onSeatsSelected: widget.onSeatsSelected,
+                              ),
                             ),
-                          ),
-                          SizedBox(height: 24),
-                          // Inline button for web
-                          BookingButtonWidget(
-                            selectedRoute: widget.selectedRoute,
-                            originIndex: widget.originIndex,
-                            destinationIndex: widget.destinationIndex,
-                            selectedSeats: widget.selectedSeats,
-                            departureTime: widget.departureTime,
-                            arrivalTime: widget.arrivalTime,
-                            userRole: widget.userRole,
-                            onBookingCompleted: widget.onBookingCompleted,
-                            isInline: true,
-                          ),
-                        ],
+                            SizedBox(height: 24),
+                            // Inline button for web
+                            BookingButtonWidget(
+                              selectedRoute: widget.selectedRoute,
+                              originIndex: widget.originIndex,
+                              destinationIndex: widget.destinationIndex,
+                              selectedSeats: widget.selectedSeats,
+                              departureTime: widget.departureTime,
+                              arrivalTime: widget.arrivalTime,
+                              userRole: widget.userRole,
+                              onBookingCompleted: widget.onBookingCompleted,
+                              isInline: true,
+                            ),
+                          ],
+                        ),
                       ),
                     )
                   // Mobile apps: centered layout with fixed button at bottom
@@ -156,51 +160,55 @@ class _BookingLayerWidgetState extends State<BookingLayerWidget> {
                     )
               // Other cases (rider or time not selected)
               : widget.hasSelectedDateTime && kIsWeb
-                  // Web rider: scrollable content with inline button (same layout as driver)
-                  ? SingleChildScrollView(
-                      physics: AlwaysScrollableScrollPhysics(),
-                      child: Column(
-                        children: [
-                          // Title for rider (same style as driver)
-                          Container(
-                            padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
-                            child: Text(
-                              widget.selectedSeats.isEmpty
-                                  ? l10n.selectYourSeat
-                                  : l10n.seatsSelected(widget.selectedSeats.length),
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 28,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF5D4037), // Same brown as driver
-                                letterSpacing: 0.5,
+                  // Web rider: scrollable content with inline button and scroll indicator
+                  ? ScrollIndicator(
+                      scrollController: _scrollController,
+                      child: SingleChildScrollView(
+                        controller: _scrollController,
+                        physics: AlwaysScrollableScrollPhysics(),
+                        child: Column(
+                          children: [
+                            // Title for rider (same style as driver)
+                            Container(
+                              padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
+                              child: Text(
+                                widget.selectedSeats.isEmpty
+                                    ? l10n.selectYourSeat
+                                    : l10n.seatsSelected(widget.selectedSeats.length),
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF5D4037), // Same brown as driver
+                                  letterSpacing: 0.5,
+                                ),
                               ),
                             ),
-                          ),
-                          SizedBox(height: 16),
-                          Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 16),
-                            child: SeatPlanningSectionWidget(
-                              userRole: widget.userRole,
-                              selectedSeats: widget.selectedSeats,
-                              isDisabled: widget.isActionCompleted,
-                              onSeatsSelected: widget.onSeatsSelected,
+                            SizedBox(height: 16),
+                            Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 16),
+                              child: SeatPlanningSectionWidget(
+                                userRole: widget.userRole,
+                                selectedSeats: widget.selectedSeats,
+                                isDisabled: widget.isActionCompleted,
+                                onSeatsSelected: widget.onSeatsSelected,
+                              ),
                             ),
-                          ),
-                          SizedBox(height: 24),
-                          // Inline button for web rider
-                          BookingButtonWidget(
-                            selectedRoute: widget.selectedRoute,
-                            originIndex: widget.originIndex,
-                            destinationIndex: widget.destinationIndex,
-                            selectedSeats: widget.selectedSeats,
-                            departureTime: widget.departureTime,
-                            arrivalTime: widget.arrivalTime,
-                            userRole: widget.userRole,
-                            onBookingCompleted: widget.onBookingCompleted,
-                            isInline: true,
-                          ),
-                        ],
+                            SizedBox(height: 24),
+                            // Inline button for web rider
+                            BookingButtonWidget(
+                              selectedRoute: widget.selectedRoute,
+                              originIndex: widget.originIndex,
+                              destinationIndex: widget.destinationIndex,
+                              selectedSeats: widget.selectedSeats,
+                              departureTime: widget.departureTime,
+                              arrivalTime: widget.arrivalTime,
+                              userRole: widget.userRole,
+                              onBookingCompleted: widget.onBookingCompleted,
+                              isInline: true,
+                            ),
+                          ],
+                        ),
                       ),
                     )
                   // Mobile rider or time not selected - scrollable content with fixed button
