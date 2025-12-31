@@ -154,99 +154,161 @@ class _BookingLayerWidgetState extends State<BookingLayerWidget> {
                         ),
                       ],
                     )
-              // Other cases (rider or time not selected) - scrollable content
-              : Column(
-                  children: [
-                    // Header with title (for rider)
-                    if (widget.hasSelectedDateTime)
-                      Container(
-                        padding: EdgeInsets.fromLTRB(16, 8, 16, 16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Text(
-                              widget.selectedSeats.isEmpty
-                                  ? l10n.selectYourSeat
-                                  : l10n.seatsSelected(widget.selectedSeats.length),
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 28,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF2E2E2E),
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                            SizedBox(height: 4),
-                            Text(
-                              l10n.chooseYourSeat,
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Color(0xFF8E8E8E),
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    Expanded(
-                      child: ScrollIndicator(
-                        scrollController: _scrollController,
-                        child: SingleChildScrollView(
-                          controller: _scrollController,
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              // Other cases (rider or time not selected)
+              : widget.hasSelectedDateTime && kIsWeb
+                  // Web rider: scrollable content with inline button (like driver)
+                  ? SingleChildScrollView(
+                      physics: AlwaysScrollableScrollPhysics(),
+                      child: Column(
+                        children: [
+                          // Header with title for rider
+                          Container(
+                            padding: EdgeInsets.fromLTRB(16, 8, 16, 16),
                             child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                // Show time picker if time not selected
-                                if (!widget.hasSelectedDateTime) ...[
-                                  Text(
-                                    l10n.whenDoYouWantToTravel,
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.black,
-                                      height: 1.3,
-                                    ),
+                                Text(
+                                  widget.selectedSeats.isEmpty
+                                      ? l10n.selectYourSeat
+                                      : l10n.seatsSelected(widget.selectedSeats.length),
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 28,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF2E2E2E),
+                                    letterSpacing: 0.5,
                                   ),
-                                  SizedBox(height: 16),
-
-                                  TimeSelectionWidget(
-                                    userRole: widget.userRole,
-                                    selectedRoute: widget.selectedRoute,
-                                    originIndex: widget.originIndex,
-                                    destinationIndex: widget.destinationIndex,
-                                    onDateTimeSelected: (hasSelected) {
-                                      // This will be handled by onTimesChanged
-                                    },
-                                    onTimesChanged: (departure, arrival) {
-                                      widget.onTimeSelected(departure, arrival);
-                                    },
+                                ),
+                                SizedBox(height: 4),
+                                Text(
+                                  l10n.chooseYourSeat,
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Color(0xFF8E8E8E),
+                                    fontWeight: FontWeight.w500,
                                   ),
-                                ],
-
-                                // Show seat selection for rider
-                                if (widget.hasSelectedDateTime) ...[
-                                  SeatPlanningSectionWidget(
-                                    userRole: widget.userRole,
-                                    selectedSeats: widget.selectedSeats,
-                                    isDisabled: widget.isActionCompleted,
-                                    onSeatsSelected: widget.onSeatsSelected,
-                                  ),
-                                  SizedBox(height: 24),
-                                ],
+                                ),
                               ],
                             ),
                           ),
-                        ),
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 16),
+                            child: SeatPlanningSectionWidget(
+                              userRole: widget.userRole,
+                              selectedSeats: widget.selectedSeats,
+                              isDisabled: widget.isActionCompleted,
+                              onSeatsSelected: widget.onSeatsSelected,
+                            ),
+                          ),
+                          SizedBox(height: 24),
+                          // Inline button for web rider
+                          BookingButtonWidget(
+                            selectedRoute: widget.selectedRoute,
+                            originIndex: widget.originIndex,
+                            destinationIndex: widget.destinationIndex,
+                            selectedSeats: widget.selectedSeats,
+                            departureTime: widget.departureTime,
+                            arrivalTime: widget.arrivalTime,
+                            userRole: widget.userRole,
+                            onBookingCompleted: widget.onBookingCompleted,
+                            isInline: true,
+                          ),
+                        ],
                       ),
+                    )
+                  // Mobile rider or time not selected - scrollable content with fixed button
+                  : Column(
+                      children: [
+                        // Header with title (for rider)
+                        if (widget.hasSelectedDateTime)
+                          Container(
+                            padding: EdgeInsets.fromLTRB(16, 8, 16, 16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Text(
+                                  widget.selectedSeats.isEmpty
+                                      ? l10n.selectYourSeat
+                                      : l10n.seatsSelected(widget.selectedSeats.length),
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 28,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF2E2E2E),
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                                SizedBox(height: 4),
+                                Text(
+                                  l10n.chooseYourSeat,
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Color(0xFF8E8E8E),
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        Expanded(
+                          child: ScrollIndicator(
+                            scrollController: _scrollController,
+                            child: SingleChildScrollView(
+                              controller: _scrollController,
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // Show time picker if time not selected
+                                    if (!widget.hasSelectedDateTime) ...[
+                                      Text(
+                                        l10n.whenDoYouWantToTravel,
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.black,
+                                          height: 1.3,
+                                        ),
+                                      ),
+                                      SizedBox(height: 16),
+
+                                      TimeSelectionWidget(
+                                        userRole: widget.userRole,
+                                        selectedRoute: widget.selectedRoute,
+                                        originIndex: widget.originIndex,
+                                        destinationIndex: widget.destinationIndex,
+                                        onDateTimeSelected: (hasSelected) {
+                                          // This will be handled by onTimesChanged
+                                        },
+                                        onTimesChanged: (departure, arrival) {
+                                          widget.onTimeSelected(departure, arrival);
+                                        },
+                                      ),
+                                    ],
+
+                                    // Show seat selection for rider
+                                    if (widget.hasSelectedDateTime) ...[
+                                      SeatPlanningSectionWidget(
+                                        userRole: widget.userRole,
+                                        selectedSeats: widget.selectedSeats,
+                                        isDisabled: widget.isActionCompleted,
+                                        onSeatsSelected: widget.onSeatsSelected,
+                                      ),
+                                      SizedBox(height: 24),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
         ),
 
-        // Fixed booking button at bottom (not for web driver - already inline)
-        if (widget.hasSelectedDateTime && !(kIsWeb && widget.userRole.toLowerCase() == 'driver'))
+        // Fixed booking button at bottom (not for web - already inline for both driver and rider)
+        if (widget.hasSelectedDateTime && !kIsWeb)
           BookingButtonWidget(
             selectedRoute: widget.selectedRoute,
             originIndex: widget.originIndex,
