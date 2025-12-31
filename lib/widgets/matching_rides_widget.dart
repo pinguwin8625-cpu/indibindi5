@@ -49,6 +49,7 @@ class _MatchingRidesWidgetState extends State<MatchingRidesWidget> {
   }
 
   List<RideInfo> _getMatchingRides(BuildContext context) {
+    print('🔍 _getMatchingRides called, _activeRideId=$_activeRideId, _hasPendingSeats=$_hasPendingSeats');
     try {
       final bookingStorage = BookingStorage();
       final allBookings = bookingStorage.getAllBookings();
@@ -259,7 +260,9 @@ class _MatchingRidesWidgetState extends State<MatchingRidesWidget> {
           riders: booking.riders, // Pass riders from booking
         );
       }).toList();
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print('❌ ERROR in _getMatchingRides: $e');
+      print('   Stack trace: $stackTrace');
       return [];
     }
   }
@@ -315,7 +318,8 @@ class _MatchingRidesWidgetState extends State<MatchingRidesWidget> {
       valueListenable: bookingStorage.bookings,
       builder: (context, bookings, child) {
         final matchingRides = _getMatchingRides(context);
-        
+        print('🔄 BUILD: matchingRides.length=${matchingRides.length}, _hasPendingSeats=$_hasPendingSeats, _activeRideId=$_activeRideId');
+
         return SafeArea(
           child: Column(
             children: [
