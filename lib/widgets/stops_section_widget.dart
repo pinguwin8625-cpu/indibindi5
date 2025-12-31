@@ -46,7 +46,10 @@ class _StopsSectionWidgetState extends State<StopsSectionWidget> {
     if (oldWidget.originIndex != widget.originIndex ||
         oldWidget.destinationIndex != widget.destinationIndex) {
       _showIntermediateStops = false;
-      widget.onIntermediateExpandedChanged?.call(false);
+      // Defer callback to after build phase
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        widget.onIntermediateExpandedChanged?.call(false);
+      });
     }
   }
 
