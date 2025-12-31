@@ -38,6 +38,16 @@ class _StopsSectionWidgetState extends State<StopsSectionWidget> {
   bool _showIntermediateStops = false;
 
   @override
+  void didUpdateWidget(StopsSectionWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Reset expanded state when origin or destination changes
+    if (oldWidget.originIndex != widget.originIndex ||
+        oldWidget.destinationIndex != widget.destinationIndex) {
+      _showIntermediateStops = false;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     // When both origin and destination are selected, show compact view with all stops
     final bool showCompactView =
