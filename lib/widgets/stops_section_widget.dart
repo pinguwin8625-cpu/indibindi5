@@ -333,7 +333,7 @@ class _StopsSectionWidgetState extends State<StopsSectionWidget> {
               style: TextStyle(
                 fontSize: 12,
                 color: Colors.grey[600],
-                fontStyle: FontStyle.italic,
+                fontWeight: FontWeight.bold,
               ),
             ),
             SizedBox(width: 4),
