@@ -387,83 +387,95 @@ class _MatchingRidesWidgetState extends State<MatchingRidesWidget> {
                           ],
                         ),
                       )
-                    : ListView.builder(
-                        padding: EdgeInsets.symmetric(horizontal: 16),
-                        itemCount: matchingRides.length,
-                        itemBuilder: (context, index) {
-                          final ride = matchingRides[index];
-                          return MatchingRideCard(
-                            key: ValueKey('ride-${ride.id}'),
-                            ride: ride,
-                            onBookingCompleted: widget.onBookingCompleted,
-                            onPendingChanged: _onPendingChanged,
-                            activeRideId: _activeRideId,
-                          );
-                        },
-                      ),
+                    : kIsWeb
+                        // Web: SingleChildScrollView with inline FAB button
+                        ? SingleChildScrollView(
+                            padding: EdgeInsets.symmetric(horizontal: 16),
+                            child: Column(
+                              children: [
+                                ...matchingRides.map((ride) => MatchingRideCard(
+                                  key: ValueKey('ride-${ride.id}'),
+                                  ride: ride,
+                                  onBookingCompleted: widget.onBookingCompleted,
+                                  onPendingChanged: _onPendingChanged,
+                                  activeRideId: _activeRideId,
+                                )),
+                                // Inline FAB button for web (inside scrollable content)
+                                if (_hasPendingSeats && _confirmAction != null)
+                                  Padding(
+                                    padding: EdgeInsets.symmetric(vertical: 24),
+                                    child: Center(
+                                      child: FloatingActionButton.extended(
+                                        onPressed: _confirmAction,
+                                        backgroundColor: Color(0xFF2E2E2E),
+                                        elevation: 4,
+                                        label: Text(
+                                          l10n.completeBooking,
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          )
+                        // Mobile: ListView with fixed button at bottom
+                        : ListView.builder(
+                            padding: EdgeInsets.symmetric(horizontal: 16),
+                            itemCount: matchingRides.length,
+                            itemBuilder: (context, index) {
+                              final ride = matchingRides[index];
+                              return MatchingRideCard(
+                                key: ValueKey('ride-${ride.id}'),
+                                ride: ride,
+                                onBookingCompleted: widget.onBookingCompleted,
+                                onPendingChanged: _onPendingChanged,
+                                activeRideId: _activeRideId,
+                              );
+                            },
+                          ),
               ),
 
-              // Debug: Show button state
-              Builder(builder: (context) {
-                print('🎯 Build: _hasPendingSeats=$_hasPendingSeats, _activeRideId=$_activeRideId');
-                return SizedBox.shrink();
-              }),
-
-              // Fixed confirm button at bottom (FAB style on web, full-width on mobile)
-              if (_hasPendingSeats && _confirmAction != null)
-                kIsWeb
-                    ? Padding(
+              // Fixed confirm button at bottom (mobile only)
+              if (!kIsWeb && _hasPendingSeats && _confirmAction != null)
+                Container(
+                  padding: EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.1),
+                        blurRadius: 8,
+                        offset: Offset(0, -2),
+                      ),
+                    ],
+                  ),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _confirmAction,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Color(0xFF2E2E2E),
                         padding: EdgeInsets.symmetric(vertical: 16),
-                        child: Center(
-                          child: FloatingActionButton.extended(
-                            onPressed: _confirmAction,
-                            backgroundColor: Color(0xFF2E2E2E),
-                            elevation: 4,
-                            label: Text(
-                              l10n.completeBooking,
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                      )
-                    : Container(
-                        padding: EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              blurRadius: 8,
-                              offset: Offset(0, -2),
-                            ),
-                          ],
-                        ),
-                        child: SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: _confirmAction,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Color(0xFF2E2E2E),
-                              padding: EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                            child: Text(
-                              l10n.completeBooking,
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
-                            ),
-                          ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
                         ),
                       ),
+                      child: Text(
+                        l10n.completeBooking,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
             ],
           ),
         );
