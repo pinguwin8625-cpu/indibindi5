@@ -7,6 +7,7 @@ import '../services/auth_service.dart';
 import '../services/mock_users.dart';
 import '../widgets/ride_details_bar.dart';
 import '../widgets/matching_rides_card.dart';
+import '../widgets/scroll_indicator.dart';
 import '../l10n/app_localizations.dart';
 
 class MatchingRidesWidget extends StatefulWidget {
@@ -39,6 +40,13 @@ class _MatchingRidesWidgetState extends State<MatchingRidesWidget> {
   bool _hasPendingSeats = false;
   VoidCallback? _confirmAction;
   String? _activeRideId; // Track which ride has pending seats
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   List<RideInfo> _getMatchingRides(BuildContext context) {
     try {
@@ -344,7 +352,7 @@ class _MatchingRidesWidgetState extends State<MatchingRidesWidget> {
                           l10n.hintMatchingRides,
                           style: TextStyle(
                             fontSize: 14,
-                            color: Color(0xFF5D4037).withOpacity(0.6),
+                            color: Color(0xFF5D4037).withValues(alpha: 0.6),
                             fontStyle: FontStyle.italic,
                           ),
                           textAlign: TextAlign.center,
@@ -388,39 +396,43 @@ class _MatchingRidesWidgetState extends State<MatchingRidesWidget> {
                         ),
                       )
                     : kIsWeb
-                        // Web: SingleChildScrollView with inline FAB button
-                        ? SingleChildScrollView(
-                            padding: EdgeInsets.symmetric(horizontal: 16),
-                            child: Column(
-                              children: [
-                                ...matchingRides.map((ride) => MatchingRideCard(
-                                  key: ValueKey('ride-${ride.id}'),
-                                  ride: ride,
-                                  onBookingCompleted: widget.onBookingCompleted,
-                                  onPendingChanged: _onPendingChanged,
-                                  activeRideId: _activeRideId,
-                                )),
-                                // Inline FAB button for web (inside scrollable content)
-                                if (_hasPendingSeats && _confirmAction != null)
-                                  Padding(
-                                    padding: EdgeInsets.symmetric(vertical: 24),
-                                    child: Center(
-                                      child: FloatingActionButton.extended(
-                                        onPressed: _confirmAction,
-                                        backgroundColor: Color(0xFF2E2E2E),
-                                        elevation: 4,
-                                        label: Text(
-                                          l10n.completeBooking,
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
+                        // Web: SingleChildScrollView with inline FAB button and scroll indicator
+                        ? ScrollIndicator(
+                            scrollController: _scrollController,
+                            child: SingleChildScrollView(
+                              controller: _scrollController,
+                              padding: EdgeInsets.symmetric(horizontal: 16),
+                              child: Column(
+                                children: [
+                                  ...matchingRides.map((ride) => MatchingRideCard(
+                                    key: ValueKey('ride-${ride.id}'),
+                                    ride: ride,
+                                    onBookingCompleted: widget.onBookingCompleted,
+                                    onPendingChanged: _onPendingChanged,
+                                    activeRideId: _activeRideId,
+                                  )),
+                                  // Inline FAB button for web (inside scrollable content)
+                                  if (_hasPendingSeats && _confirmAction != null)
+                                    Padding(
+                                      padding: EdgeInsets.symmetric(vertical: 24),
+                                      child: Center(
+                                        child: FloatingActionButton.extended(
+                                          onPressed: _confirmAction,
+                                          backgroundColor: Color(0xFF2E2E2E),
+                                          elevation: 4,
+                                          label: Text(
+                                            l10n.completeBooking,
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                            ),
                                           ),
                                         ),
                                       ),
                                     ),
-                                  ),
-                              ],
+                                ],
+                              ),
                             ),
                           )
                         // Mobile: ListView with fixed button at bottom
