@@ -351,7 +351,7 @@ class _MatchingRidesWidgetState extends State<MatchingRidesWidget> {
                         child: Text(
                           l10n.hintMatchingRides,
                           style: TextStyle(
-                            fontSize: 14,
+                            fontSize: 21,
                             color: Color(0xFF5D4037).withValues(alpha: 0.6),
                             fontStyle: FontStyle.italic,
                           ),

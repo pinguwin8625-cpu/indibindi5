@@ -232,7 +232,7 @@ class _StopsLayerWidgetState extends State<StopsLayerWidget> {
                     child: Text(
                       hintText,
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 21,
                         color: hintColor,
                         fontStyle: FontStyle.italic,
                       ),
