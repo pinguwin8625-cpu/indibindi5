@@ -59,6 +59,7 @@ class _StopsLayerWidgetState extends State<StopsLayerWidget> {
   DateTime? localArrivalTime;
   bool localHasSelectedDateTime = false;
   String? riderTimeChoice; // 'departure' or 'arrival' for riders
+  bool isIntermediateExpanded = false; // Track if intermediate stops are expanded
   final ScrollController _scrollController = ScrollController();
 
   @override
@@ -298,6 +299,11 @@ class _StopsLayerWidgetState extends State<StopsLayerWidget> {
                                 localArrivalTime = null;
                               });
                             },
+                            onIntermediateExpandedChanged: (expanded) {
+                              setState(() {
+                                isIntermediateExpanded = expanded;
+                              });
+                            },
                           ),
                         ),
 
@@ -313,6 +319,7 @@ class _StopsLayerWidgetState extends State<StopsLayerWidget> {
                                       originIndex: localOriginIndex!,
                                       destinationIndex: localDestinationIndex,
                                       hideUnusedStops: localOriginIndex != null && localDestinationIndex != null,
+                                      isIntermediateExpanded: isIntermediateExpanded,
                                       onDateTimeSelected: (hasSelected) {
                                         // Only set localHasSelectedDateTime if user actually picked time
                                         // Don't set it on automatic time calculations

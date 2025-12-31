@@ -16,6 +16,7 @@ class StopsSectionWidget extends StatefulWidget {
   final Function(int?) onDestinationChanged;
   final VoidCallback onResetDateTime;
   final bool isDisabled;
+  final Function(bool)? onIntermediateExpandedChanged; // Callback when expanded state changes
 
   const StopsSectionWidget({
     super.key,
@@ -28,6 +29,7 @@ class StopsSectionWidget extends StatefulWidget {
     required this.onResetDateTime,
     this.hideUnusedStops = false,
     this.isDisabled = false,
+    this.onIntermediateExpandedChanged,
   });
 
   @override
@@ -44,6 +46,7 @@ class _StopsSectionWidgetState extends State<StopsSectionWidget> {
     if (oldWidget.originIndex != widget.originIndex ||
         oldWidget.destinationIndex != widget.destinationIndex) {
       _showIntermediateStops = false;
+      widget.onIntermediateExpandedChanged?.call(false);
     }
   }
 
@@ -212,6 +215,7 @@ class _StopsSectionWidgetState extends State<StopsSectionWidget> {
         setState(() {
           _showIntermediateStops = true;
         });
+        widget.onIntermediateExpandedChanged?.call(true);
       },
       child: Container(
         height: height,

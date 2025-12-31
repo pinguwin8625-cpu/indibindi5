@@ -14,6 +14,7 @@ class TimeSelectionWidget extends StatefulWidget {
   final Function(String?)? onRiderTimeChoiceChanged; // 'departure' or 'arrival' for riders
   final String userRole; // 'driver' or 'rider'
   final bool hideUnusedStops; // When true, only origin and destination are visible
+  final bool isIntermediateExpanded; // When true, intermediate stops are shown
 
   const TimeSelectionWidget({
     super.key,
@@ -25,6 +26,7 @@ class TimeSelectionWidget extends StatefulWidget {
     this.onRiderTimeChoiceChanged,
     required this.userRole,
     this.hideUnusedStops = false,
+    this.isIntermediateExpanded = false,
   });
 
   @override
@@ -101,8 +103,9 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
         if (widget.destinationIndex != null)
           SizedBox(
             height: widget.hideUnusedStops
-                ? intermediateStopsCount *
-                      30.0 // Each intermediate stop is 30px in compact view
+                ? (widget.isIntermediateExpanded || intermediateStopsCount == 0
+                    ? intermediateStopsCount * 30.0 // All stops shown
+                    : 30.0) // Only expander row shown (collapsed)
                 : (widget.destinationIndex! - widget.originIndex - 1) * 42.0,
           ),
 
