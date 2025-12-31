@@ -437,6 +437,7 @@ class _MatchingRidesWidgetState extends State<MatchingRidesWidget> {
                           )
                         // Mobile: ListView with fixed button at bottom
                         : ListView.builder(
+                            controller: _scrollController,
                             padding: EdgeInsets.symmetric(horizontal: 16),
                             itemCount: matchingRides.length,
                             itemBuilder: (context, index) {
