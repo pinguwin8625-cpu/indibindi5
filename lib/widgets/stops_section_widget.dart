@@ -16,7 +16,7 @@ class StopsSectionWidget extends StatefulWidget {
   final Function(int?) onDestinationChanged;
   final VoidCallback onResetDateTime;
   final bool isDisabled;
-  final Function(bool)? onIntermediateExpandedChanged; // Callback when expanded state changes
+  final Function(int visibleCount, int hiddenCount)? onIntermediateVisibilityChanged; // Callback with visible/hidden counts
   final double? availableHeight; // Available height for adaptive expansion
 
   const StopsSectionWidget({
@@ -30,7 +30,7 @@ class StopsSectionWidget extends StatefulWidget {
     required this.onResetDateTime,
     this.hideUnusedStops = false,
     this.isDisabled = false,
-    this.onIntermediateExpandedChanged,
+    this.onIntermediateVisibilityChanged,
     this.availableHeight,
   });
 
@@ -39,30 +39,45 @@ class StopsSectionWidget extends StatefulWidget {
 }
 
 class _StopsSectionWidgetState extends State<StopsSectionWidget> {
-  bool _showIntermediateStops = false;
+  bool _showAllIntermediateStops = false;
   bool _hasUserToggledExpansion = false; // Track if user manually toggled
-  bool? _lastNotifiedExpandedState; // Track last state notified to parent
+  int? _lastNotifiedVisibleCount; // Track last visible count notified to parent
 
-  // Calculate if there's enough space to show all stops expanded
-  bool _shouldAutoExpand(int relevantStopCount) {
-    if (widget.availableHeight == null) return false;
+  // Calculate how many intermediate stops can fit in available height
+  // Returns the number of intermediate stops that can be shown (0 to intermediateCount)
+  int _calculateVisibleIntermediateStops(int totalStops, int intermediateCount) {
+    if (widget.availableHeight == null) return 0;
 
-    // Height needed for all stops in compact view
     const double compactRowHeight = 30.0;
-    final double expandedHeight = relevantStopCount * compactRowHeight;
+    // Buffer for padding and "suggest stop" link
+    const double buffer = 60.0;
 
-    // Add some buffer for padding and the "suggest stop" link (~60px)
-    final double requiredHeight = expandedHeight + 60;
+    // Available height for stops
+    final double availableForStops = widget.availableHeight! - buffer;
 
-    return widget.availableHeight! >= requiredHeight;
+    // Calculate max stops that can fit
+    final int maxStopsThatFit = (availableForStops / compactRowHeight).floor();
+
+    if (maxStopsThatFit >= totalStops) {
+      // All stops can fit
+      return intermediateCount;
+    }
+
+    // Calculate how many intermediate stops we can show
+    // We need: origin(1) + visible intermediates + expander(1) + destination(1)
+    // So visible intermediates = maxStopsThatFit - 3
+    final int visibleIntermediate = (maxStopsThatFit - 3).clamp(0, intermediateCount - 1);
+
+    return visibleIntermediate;
   }
 
-  // Notify parent if expanded state changed
-  void _notifyExpandedStateIfChanged(bool currentState) {
-    if (_lastNotifiedExpandedState != currentState) {
-      _lastNotifiedExpandedState = currentState;
+  // Notify parent of visible intermediate count change (for time box alignment)
+  void _notifyVisibleCountIfChanged(int visibleCount, int hiddenCount) {
+    if (_lastNotifiedVisibleCount != visibleCount) {
+      _lastNotifiedVisibleCount = visibleCount;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        widget.onIntermediateExpandedChanged?.call(currentState);
+        // Tell parent the visible and hidden counts for time box spacing
+        widget.onIntermediateVisibilityChanged?.call(visibleCount, hiddenCount);
       });
     }
   }
@@ -73,9 +88,9 @@ class _StopsSectionWidgetState extends State<StopsSectionWidget> {
     // Reset expanded state when origin or destination changes
     if (oldWidget.originIndex != widget.originIndex ||
         oldWidget.destinationIndex != widget.destinationIndex) {
-      _showIntermediateStops = false;
+      _showAllIntermediateStops = false;
       _hasUserToggledExpansion = false; // Reset user toggle on stop change
-      _lastNotifiedExpandedState = null; // Reset so next state gets notified
+      _lastNotifiedVisibleCount = null; // Reset so next state gets notified
     }
   }
 
@@ -95,34 +110,48 @@ class _StopsSectionWidgetState extends State<StopsSectionWidget> {
       intermediateCount = relevantStopIndices.length - 2; // Exclude origin and destination
     }
 
-    // Determine if we should show intermediate stops:
-    // - If user has manually toggled, respect their choice
-    // - Otherwise, auto-expand if there's enough space
-    final bool shouldShowIntermediate = _hasUserToggledExpansion
-        ? _showIntermediateStops
-        : (intermediateCount > 0 && _shouldAutoExpand(relevantStopIndices.length));
-
-    // Notify parent of expanded state change (for time box alignment)
-    if (showCompactView && intermediateCount > 0) {
-      _notifyExpandedStateIfChanged(shouldShowIntermediate);
-    }
-
     // Row heights - compact needs to fit 26x26 markers for origin/destination
     final double compactRowHeight = 30.0;
     final double normalRowHeight = 42.0;
 
+    // Calculate how many intermediate stops to show
+    int visibleIntermediateCount;
+    if (_hasUserToggledExpansion && _showAllIntermediateStops) {
+      // User manually expanded - show all
+      visibleIntermediateCount = intermediateCount;
+    } else if (intermediateCount > 0) {
+      // Auto-calculate based on available space
+      visibleIntermediateCount = _calculateVisibleIntermediateStops(
+        relevantStopIndices.length,
+        intermediateCount,
+      );
+    } else {
+      visibleIntermediateCount = 0;
+    }
+
+    // Calculate how many stops are hidden
+    final int hiddenCount = intermediateCount - visibleIntermediateCount;
+
+    // Notify parent of visible count change (for time box alignment)
+    if (showCompactView && intermediateCount > 0) {
+      _notifyVisibleCountIfChanged(visibleIntermediateCount, hiddenCount);
+    }
+
     // Calculate height based on view mode
     double totalHeight;
+    int displayedRowCount;
     if (showCompactView) {
-      if (shouldShowIntermediate || intermediateCount == 0) {
-        // Show all stops
-        totalHeight = relevantStopIndices.length * compactRowHeight;
+      if (hiddenCount == 0) {
+        // Show all stops (origin + all intermediate + destination)
+        displayedRowCount = relevantStopIndices.length;
       } else {
-        // Show only origin, expander, and destination (3 rows)
-        totalHeight = 3 * compactRowHeight;
+        // Show: origin + visible intermediate + expander + destination
+        displayedRowCount = 1 + visibleIntermediateCount + 1 + 1;
       }
+      totalHeight = displayedRowCount * compactRowHeight;
     } else {
-      totalHeight = widget.selectedRoute.stops.length * normalRowHeight;
+      displayedRowCount = widget.selectedRoute.stops.length;
+      totalHeight = displayedRowCount * normalRowHeight;
     }
 
     return Column(
@@ -140,23 +169,13 @@ class _StopsSectionWidgetState extends State<StopsSectionWidget> {
                 Positioned.fill(
                   child: CustomPaint(
                     painter: RouteLineWithStopsPainter(
-                      stopCount: showCompactView
-                          ? (shouldShowIntermediate || intermediateCount == 0
-                              ? relevantStopIndices.length
-                              : 3) // origin, expander, destination
-                          : widget.selectedRoute.stops.length,
-                      rowHeight: showCompactView
-                          ? (shouldShowIntermediate || intermediateCount == 0
-                              ? compactRowHeight
-                              : compactRowHeight) // Use same height for calculation
-                          : normalRowHeight,
+                      stopCount: showCompactView ? displayedRowCount : widget.selectedRoute.stops.length,
+                      rowHeight: showCompactView ? compactRowHeight : normalRowHeight,
                       lineWidth: 2,
                       lineColor: Color(0xFF2E2E2E),
                       originIndex: 0,
                       destinationIndex: showCompactView
-                          ? (shouldShowIntermediate || intermediateCount == 0
-                              ? relevantStopIndices.length - 1
-                              : 2) // Last position when collapsed
+                          ? displayedRowCount - 1
                           : (widget.selectedRoute.stops.length > 1 ? widget.selectedRoute.stops.length - 1 : 0),
                       // In compact view, don't pass greyedStops - indices don't match
                       // and we're only showing the active range anyway
@@ -166,7 +185,7 @@ class _StopsSectionWidgetState extends State<StopsSectionWidget> {
                 ),
                 Column(
                   children: showCompactView
-                      ? _buildCompactStopsList(relevantStopIndices, intermediateCount, compactRowHeight, shouldShowIntermediate)
+                      ? _buildCompactStopsList(relevantStopIndices, visibleIntermediateCount, hiddenCount, compactRowHeight)
                       : [
                           // Build all stops with normal height
                           ...List.generate(widget.selectedRoute.stops.length, (i) => _buildStopRow(i)),
@@ -235,29 +254,48 @@ class _StopsSectionWidgetState extends State<StopsSectionWidget> {
   }
 
   // Build the list of stops for compact view (with expandable intermediate stops)
-  List<Widget> _buildCompactStopsList(List<int> relevantStopIndices, int intermediateCount, double compactRowHeight, bool shouldShowIntermediate) {
-    // If no intermediate stops or expanded, show all
-    if (intermediateCount == 0 || shouldShowIntermediate) {
+  List<Widget> _buildCompactStopsList(
+    List<int> relevantStopIndices,
+    int visibleIntermediateCount,
+    int hiddenCount,
+    double compactRowHeight,
+  ) {
+    // If no hidden stops, show all
+    if (hiddenCount == 0) {
       return relevantStopIndices.map((i) => _buildCompactStopRow(i)).toList();
     }
 
-    // Collapsed view: origin, expander, destination
-    return [
-      _buildCompactStopRow(relevantStopIndices.first), // Origin
-      _buildIntermediateExpander(intermediateCount, compactRowHeight),
-      _buildCompactStopRow(relevantStopIndices.last), // Destination
-    ];
+    // Partial collapse: origin + visible intermediates + expander + destination
+    final List<Widget> rows = [];
+
+    // Origin
+    rows.add(_buildCompactStopRow(relevantStopIndices.first));
+
+    // Visible intermediate stops (after origin, before the hidden ones)
+    for (int i = 0; i < visibleIntermediateCount; i++) {
+      rows.add(_buildCompactStopRow(relevantStopIndices[1 + i]));
+    }
+
+    // Expander showing hidden count
+    final totalIntermediate = visibleIntermediateCount + hiddenCount;
+    rows.add(_buildIntermediateExpander(hiddenCount, totalIntermediate, compactRowHeight));
+
+    // Destination
+    rows.add(_buildCompactStopRow(relevantStopIndices.last));
+
+    return rows;
   }
 
-  // Build the expandable "X stops" row
-  Widget _buildIntermediateExpander(int count, double height) {
+  // Build the expandable "+X more stops" row
+  Widget _buildIntermediateExpander(int hiddenCount, int totalIntermediate, double height) {
     return InkWell(
       onTap: () {
         setState(() {
-          _showIntermediateStops = true;
+          _showAllIntermediateStops = true;
           _hasUserToggledExpansion = true; // User manually expanded
         });
-        widget.onIntermediateExpandedChanged?.call(true);
+        // Notify parent: all intermediate stops now visible, none hidden
+        widget.onIntermediateVisibilityChanged?.call(totalIntermediate, 0);
       },
       child: Container(
         height: height,
@@ -291,7 +329,7 @@ class _StopsSectionWidgetState extends State<StopsSectionWidget> {
             ),
             SizedBox(width: 8),
             Text(
-              '$count stops',
+              '+$hiddenCount more stops',
               style: TextStyle(
                 fontSize: 12,
                 color: Colors.grey[600],

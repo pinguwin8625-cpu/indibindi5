@@ -59,7 +59,8 @@ class _StopsLayerWidgetState extends State<StopsLayerWidget> {
   DateTime? localArrivalTime;
   bool localHasSelectedDateTime = false;
   String? riderTimeChoice; // 'departure' or 'arrival' for riders
-  bool isIntermediateExpanded = false; // Track if intermediate stops are expanded
+  int visibleIntermediateCount = 0; // Track visible intermediate stops
+  int hiddenIntermediateCount = 0; // Track hidden intermediate stops
   final ScrollController _scrollController = ScrollController();
 
   @override
@@ -305,9 +306,10 @@ class _StopsLayerWidgetState extends State<StopsLayerWidget> {
                                     localArrivalTime = null;
                                   });
                                 },
-                                onIntermediateExpandedChanged: (expanded) {
+                                onIntermediateVisibilityChanged: (visible, hidden) {
                                   setState(() {
-                                    isIntermediateExpanded = expanded;
+                                    visibleIntermediateCount = visible;
+                                    hiddenIntermediateCount = hidden;
                                   });
                                 },
                               ),
@@ -325,7 +327,8 @@ class _StopsLayerWidgetState extends State<StopsLayerWidget> {
                                       originIndex: localOriginIndex!,
                                       destinationIndex: localDestinationIndex,
                                       hideUnusedStops: localOriginIndex != null && localDestinationIndex != null,
-                                      isIntermediateExpanded: isIntermediateExpanded,
+                                      visibleIntermediateCount: visibleIntermediateCount,
+                                      hiddenIntermediateCount: hiddenIntermediateCount,
                                       onDateTimeSelected: (hasSelected) {
                                         // Only set localHasSelectedDateTime if user actually picked time
                                         // Don't set it on automatic time calculations

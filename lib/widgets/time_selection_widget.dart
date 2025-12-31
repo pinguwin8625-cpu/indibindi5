@@ -14,7 +14,8 @@ class TimeSelectionWidget extends StatefulWidget {
   final Function(String?)? onRiderTimeChoiceChanged; // 'departure' or 'arrival' for riders
   final String userRole; // 'driver' or 'rider'
   final bool hideUnusedStops; // When true, only origin and destination are visible
-  final bool isIntermediateExpanded; // When true, intermediate stops are shown
+  final int visibleIntermediateCount; // Number of visible intermediate stops
+  final int hiddenIntermediateCount; // Number of hidden intermediate stops (shows expander if > 0)
 
   const TimeSelectionWidget({
     super.key,
@@ -26,7 +27,8 @@ class TimeSelectionWidget extends StatefulWidget {
     this.onRiderTimeChoiceChanged,
     required this.userRole,
     this.hideUnusedStops = false,
-    this.isIntermediateExpanded = false,
+    this.visibleIntermediateCount = 0,
+    this.hiddenIntermediateCount = 0,
   });
 
   @override
@@ -73,11 +75,6 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
 
-    // Calculate if there are intermediate stops (for compact view spacing)
-    final int intermediateStopsCount = widget.hideUnusedStops && widget.destinationIndex != null
-        ? widget.destinationIndex! - widget.originIndex - 1
-        : 0;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -100,12 +97,11 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
         ),
 
         // Add space between origin and destination time boxes (only if destination is selected)
+        // Space = (visible intermediate stops + expander row if any hidden) * row height
         if (widget.destinationIndex != null)
           SizedBox(
             height: widget.hideUnusedStops
-                ? (widget.isIntermediateExpanded || intermediateStopsCount == 0
-                    ? intermediateStopsCount * 30.0 // All stops shown
-                    : 30.0) // Only expander row shown (collapsed)
+                ? (widget.visibleIntermediateCount + (widget.hiddenIntermediateCount > 0 ? 1 : 0)) * 30.0
                 : (widget.destinationIndex! - widget.originIndex - 1) * 42.0,
           ),
 
