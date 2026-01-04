@@ -135,19 +135,12 @@ class ConversationCard extends StatelessWidget {
                             // Don't show rating for support conversations (except for admins)
                             if ((!isSupport || isAdmin) && otherUser?.rating != null) ...[
                               SizedBox(height: 3),
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.star, size: 12, color: Colors.amber),
-                                  SizedBox(width: 2),
-                                  Text(
-                                    (otherUser?.rating ?? 0.0).toStringAsFixed(1),
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
+                              RatingDisplay(
+                                rating: otherUser?.rating ?? 0.0,
+                                starSize: 12,
+                                fontSize: 11,
+                                starColor: Colors.amber,
+                                fontWeight: FontWeight.w600,
                               ),
                             ],
                           ],
@@ -273,16 +266,11 @@ class ConversationCard extends StatelessWidget {
                             ),
                             if (rider != null && !isSupport) ...[
                               SizedBox(height: 2),
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.star, size: 11, color: Colors.amber),
-                                  SizedBox(width: 2),
-                                  Text(
-                                    riderRating.toStringAsFixed(1),
-                                    style: TextStyle(fontSize: 11),
-                                  ),
-                                ],
+                              RatingDisplay(
+                                rating: riderRating,
+                                starSize: 11,
+                                fontSize: 11,
+                                starColor: Colors.amber,
                               ),
                             ],
                           ],
@@ -328,16 +316,11 @@ class ConversationCard extends StatelessWidget {
                             ),
                             if (driver != null && !isSupport) ...[
                               SizedBox(height: 2),
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.star, size: 11, color: Colors.amber),
-                                  SizedBox(width: 2),
-                                  Text(
-                                    driverRating.toStringAsFixed(1),
-                                    style: TextStyle(fontSize: 11),
-                                  ),
-                                ],
+                              RatingDisplay(
+                                rating: driverRating,
+                                starSize: 11,
+                                fontSize: 11,
+                                starColor: Colors.amber,
                               ),
                             ],
                           ],

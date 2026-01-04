@@ -13,6 +13,7 @@ import '../models/trip_rating.dart';
 import '../widgets/booking_card_widget.dart';
 import '../widgets/conversation_card_widget.dart';
 import '../widgets/seat_layout_widget.dart';
+import '../widgets/rating_widgets.dart';
 import '../utils/dialog_helper.dart';
 import 'chat_screen.dart';
 
@@ -1726,11 +1727,11 @@ class _RatingsTabState extends State<_RatingsTab> {
                   spacing: 8,
                   runSpacing: 6,
                   children: [
-                    if (rating.polite == 1) _buildRatingChip('Polite'),
-                    if (rating.clean == 1) _buildRatingChip('Clean'),
-                    if (rating.communicative == 1) _buildRatingChip('Communicative'),
-                    if (rating.safe == 1) _buildRatingChip('Safe'),
-                    if (rating.punctual == 1) _buildRatingChip('Punctual'),
+                    if (rating.polite == 1) RatingCategoryChip(label: 'Polite'),
+                    if (rating.clean == 1) RatingCategoryChip(label: 'Clean'),
+                    if (rating.communicative == 1) RatingCategoryChip(label: 'Communicative'),
+                    if (rating.safe == 1) RatingCategoryChip(label: 'Safe'),
+                    if (rating.punctual == 1) RatingCategoryChip(label: 'Punctual'),
                   ],
                 ),
 
@@ -1873,31 +1874,6 @@ class _RatingsTabState extends State<_RatingsTab> {
     }
   }
 
-  Widget _buildRatingChip(String label) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: Colors.amber.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.amber[300]!, width: 1),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.star, size: 12, color: Colors.amber[700]),
-          SizedBox(width: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.amber[900],
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   String _formatTimestamp(DateTime timestamp) {
     final now = DateTime.now();
@@ -2401,15 +2377,15 @@ class _UserDetailsContentState extends State<_UserDetailsContent> {
                                 runSpacing: 4,
                                 children: [
                                   if (rating.polite == 1)
-                                    _buildRatingChip('Polite'),
+                                    RatingCategoryChip(label: 'Polite'),
                                   if (rating.clean == 1)
-                                    _buildRatingChip('Clean'),
+                                    RatingCategoryChip(label: 'Clean'),
                                   if (rating.communicative == 1)
-                                    _buildRatingChip('Communicative'),
+                                    RatingCategoryChip(label: 'Communicative'),
                                   if (rating.safe == 1)
-                                    _buildRatingChip('Safe'),
+                                    RatingCategoryChip(label: 'Safe'),
                                   if (rating.punctual == 1)
-                                    _buildRatingChip('Punctual'),
+                                    RatingCategoryChip(label: 'Punctual'),
                                 ],
                               ),
                             ],
@@ -3088,29 +3064,4 @@ class _UserDetailsContentState extends State<_UserDetailsContent> {
     );
   }
 
-  Widget _buildRatingChip(String label) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: Colors.amber.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.amber, width: 1),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.star, size: 12, color: Colors.amber[800]),
-          SizedBox(width: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.amber[900],
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }

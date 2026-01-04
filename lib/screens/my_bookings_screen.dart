@@ -15,6 +15,7 @@ import '../widgets/scroll_indicator.dart';
 import '../widgets/language_selector.dart';
 import '../widgets/seat_layout_widget.dart';
 import '../widgets/booking_card_widget.dart';
+import '../widgets/rating_widgets.dart';
 import 'chat_screen.dart';
 
 class MyBookingsScreen extends StatefulWidget {
@@ -1054,39 +1055,39 @@ class MyBookingsScreenState extends State<MyBookingsScreen>
                       SizedBox(height: 20),
 
                       // Rating categories - reordered: Safe, Punctual, Clean, Polite, Communicative
-                      _buildInlineRatingCategory(
-                        l10n.safe,
-                        Icons.security,
-                        safe,
-                        (rating) => setState(() => safe = rating),
+                      RatingCategoryToggle(
+                        title: l10n.safe,
+                        icon: Icons.security,
+                        isSelected: safe == 1,
+                        onTap: () => setState(() => safe = safe == 1 ? 0 : 1),
                       ),
                       SizedBox(height: 8),
-                      _buildInlineRatingCategory(
-                        l10n.punctual,
-                        Icons.schedule,
-                        punctual,
-                        (rating) => setState(() => punctual = rating),
+                      RatingCategoryToggle(
+                        title: l10n.punctual,
+                        icon: Icons.schedule,
+                        isSelected: punctual == 1,
+                        onTap: () => setState(() => punctual = punctual == 1 ? 0 : 1),
                       ),
                       SizedBox(height: 8),
-                      _buildInlineRatingCategory(
-                        l10n.clean,
-                        Icons.cleaning_services,
-                        clean,
-                        (rating) => setState(() => clean = rating),
+                      RatingCategoryToggle(
+                        title: l10n.clean,
+                        icon: Icons.cleaning_services,
+                        isSelected: clean == 1,
+                        onTap: () => setState(() => clean = clean == 1 ? 0 : 1),
                       ),
                       SizedBox(height: 8),
-                      _buildInlineRatingCategory(
-                        l10n.polite,
-                        Icons.sentiment_satisfied_alt,
-                        polite,
-                        (rating) => setState(() => polite = rating),
+                      RatingCategoryToggle(
+                        title: l10n.polite,
+                        icon: Icons.sentiment_satisfied_alt,
+                        isSelected: polite == 1,
+                        onTap: () => setState(() => polite = polite == 1 ? 0 : 1),
                       ),
                       SizedBox(height: 8),
-                      _buildInlineRatingCategory(
-                        l10n.communicative,
-                        Icons.chat_bubble_outline,
-                        communicative,
-                        (rating) => setState(() => communicative = rating),
+                      RatingCategoryToggle(
+                        title: l10n.communicative,
+                        icon: Icons.chat_bubble_outline,
+                        isSelected: communicative == 1,
+                        onTap: () => setState(() => communicative = communicative == 1 ? 0 : 1),
                       ),
                       SizedBox(height: 20),
 
@@ -1144,55 +1145,6 @@ class MyBookingsScreenState extends State<MyBookingsScreen>
           },
         );
       },
-    );
-  }
-
-  Widget _buildInlineRatingCategory(
-    String title,
-    IconData icon,
-    int currentRating,
-    Function(int) onRatingChanged,
-  ) {
-    final isSelected = currentRating == 1;
-
-    return GestureDetector(
-      onTap: () => onRatingChanged(isSelected ? 0 : 1),
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.amber[50] : Colors.grey[50],
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isSelected ? Colors.amber : Colors.grey[300]!,
-            width: 2,
-          ),
-        ),
-        child: Row(
-          children: [
-            Icon(
-              icon,
-              size: 20,
-              color: isSelected ? Colors.amber[700] : Colors.grey[600],
-            ),
-            SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                title,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: isSelected ? Color(0xFF2E2E2E) : Colors.grey[700],
-                ),
-              ),
-            ),
-            Icon(
-              isSelected ? Icons.star : Icons.star_border,
-              color: Colors.amber,
-              size: 28,
-            ),
-          ],
-        ),
-      ),
     );
   }
 

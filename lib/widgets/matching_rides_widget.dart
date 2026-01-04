@@ -339,30 +339,14 @@ class _MatchingRidesWidgetState extends State<MatchingRidesWidget> {
               Container(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
                 child: Center(
-                  child: Column(
-                    children: [
-                      Text(
-                        l10n.matchingRides,
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF5D4037),
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                      Padding(
-                        padding: EdgeInsets.only(top: 4),
-                        child: Text(
-                          l10n.hintMatchingRides,
-                          style: TextStyle(
-                            fontSize: 21,
-                            color: Color(0xFF5D4037).withValues(alpha: 0.6),
-                            fontStyle: FontStyle.italic,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ],
+                  child: Text(
+                    l10n.matchingRides,
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF5D4037),
+                      letterSpacing: 0.5,
+                    ),
                   ),
                 ),
               ),

@@ -13,6 +13,7 @@ import '../services/mock_users.dart';
 import '../utils/dialog_helper.dart';
 import '../models/user.dart';
 import '../widgets/scroll_indicator.dart';
+import '../widgets/rating_widgets.dart';
 
 class AccountScreen extends StatefulWidget {
   const AccountScreen({super.key});
@@ -136,26 +137,34 @@ class _AccountScreenState extends State<AccountScreen> {
                     Builder(
                       builder: (context) {
                         final currentUser = AuthService.currentUser;
-                        final liveRating = currentUser != null 
+                        final liveRating = currentUser != null
                             ? RatingService().getUserAverageRating(currentUser.id)
                             : 0.0;
                         final ratingCount = currentUser != null
                             ? RatingService().getRatingsForUser(currentUser.id).length
                             : 0;
-                        
+
                         return Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.star, color: Colors.amber, size: 20),
-                            SizedBox(width: 4),
-                            Text(
-                              liveRating > 0 ? liveRating.toStringAsFixed(1) : '-',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF2E2E2E),
-                              ),
+                            RatingDisplay(
+                              rating: liveRating,
+                              starSize: 20,
+                              fontSize: 18,
+                              starColor: Colors.amber,
+                              textColor: Color(0xFF2E2E2E),
+                              fontWeight: FontWeight.w600,
+                              showNumber: liveRating > 0,
                             ),
+                            if (liveRating == 0)
+                              Text(
+                                '-',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF2E2E2E),
+                                ),
+                              ),
                             SizedBox(width: 4),
                             Text(
                               ratingCount > 0 ? '($ratingCount ${ratingCount == 1 ? 'rating' : 'ratings'})' : '(No ratings yet)',

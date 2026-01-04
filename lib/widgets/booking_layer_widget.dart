@@ -218,31 +218,17 @@ class _BookingLayerWidgetState extends State<BookingLayerWidget> {
                         if (widget.hasSelectedDateTime)
                           Container(
                             padding: EdgeInsets.fromLTRB(16, 8, 16, 16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Text(
-                                  widget.selectedSeats.isEmpty
-                                      ? l10n.selectYourSeat
-                                      : l10n.seatsSelected(widget.selectedSeats.length),
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontSize: 28,
-                                    fontWeight: FontWeight.w600,
-                                    color: Color(0xFF2E2E2E),
-                                    letterSpacing: 0.5,
-                                  ),
-                                ),
-                                SizedBox(height: 4),
-                                Text(
-                                  l10n.chooseYourSeat,
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: Color(0xFF8E8E8E),
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
+                            child: Text(
+                              widget.selectedSeats.isEmpty
+                                  ? l10n.selectYourSeat
+                                  : l10n.seatsSelected(widget.selectedSeats.length),
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 28,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF2E2E2E),
+                                letterSpacing: 0.5,
+                              ),
                             ),
                           ),
                         Expanded(
