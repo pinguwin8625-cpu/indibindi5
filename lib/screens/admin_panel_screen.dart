@@ -2209,6 +2209,7 @@ class _UserDetailsContentState extends State<_UserDetailsContent> {
                   .map((rating) => RatingCard(
                         rating: rating,
                         mode: RatingCardMode.full,
+                        formatTimestamp: _formatTimestamp,
                       ))
                   .toList(),
         ),
@@ -2760,6 +2761,16 @@ class _UserDetailsContentState extends State<_UserDetailsContent> {
 
     final List<Widget> children = [];
 
+    if (support.isNotEmpty) {
+      children.add(_buildMessageCategory(
+        'Support',
+        support,
+        Colors.amber[700]!,
+        _supportMessagesExpanded,
+        () => setState(() => _supportMessagesExpanded = !_supportMessagesExpanded),
+      ));
+    }
+
     if (upcoming.isNotEmpty) {
       children.add(_buildMessageCategory(
         'Upcoming',
@@ -2787,16 +2798,6 @@ class _UserDetailsContentState extends State<_UserDetailsContent> {
         Colors.green[700]!,
         _completedMessagesExpanded,
         () => setState(() => _completedMessagesExpanded = !_completedMessagesExpanded),
-      ));
-    }
-
-    if (support.isNotEmpty) {
-      children.add(_buildMessageCategory(
-        'Support',
-        support,
-        Colors.amber[700]!,
-        _supportMessagesExpanded,
-        () => setState(() => _supportMessagesExpanded = !_supportMessagesExpanded),
       ));
     }
 
