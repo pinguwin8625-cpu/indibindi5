@@ -268,8 +268,9 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> with SingleTickerPr
     if (currentUser == null || !currentUser.isAdmin) {
       return Scaffold(
         appBar: AppBar(
-          title: Text('Access Denied'),
+          title: Text('Access Denied', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           backgroundColor: Color(0xFFDD2C00),
+          iconTheme: IconThemeData(color: Colors.white),
         ),
         body: Center(
           child: Text('You do not have permission to access this page.'),
@@ -279,8 +280,9 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> with SingleTickerPr
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Admin Panel'),
+        title: Text('Admin Panel', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         backgroundColor: Color(0xFFDD2C00),
+        iconTheme: IconThemeData(color: Colors.white),
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: Colors.white,
