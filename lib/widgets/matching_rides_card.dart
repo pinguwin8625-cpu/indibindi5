@@ -8,6 +8,7 @@ import '../services/auth_service.dart';
 import '../services/booking_storage.dart';
 import '../services/messaging_service.dart';
 import '../services/mock_users.dart';
+import 'rating_widgets.dart';
 
 /// A card that displays a matching ride with the same style as booking cards
 class MatchingRideCard extends StatefulWidget {
@@ -1103,16 +1104,10 @@ class _MatchingRideCardState extends State<MatchingRideCard>
             maxLines: 1,
           ),
           if (rating != null)
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.star, size: 10, color: Colors.amber[700]),
-                SizedBox(width: 2),
-                Text(
-                  rating,
-                  style: TextStyle(fontSize: 10, color: Colors.grey[600]),
-                ),
-              ],
+            RatingDisplay(
+              rating: double.tryParse(rating) ?? 0.0,
+              starSize: 10,
+              fontSize: 10,
             ),
         ],
       ),

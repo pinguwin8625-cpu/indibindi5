@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/booking.dart';
 import '../services/auth_service.dart';
 import '../services/mock_users.dart';
+import 'rating_widgets.dart';
 
 /// Centralized seat layout widget for consistent display across the app
 /// Used in: Driver bookings, Rider search, My Bookings
@@ -202,16 +203,10 @@ class SeatLayoutWidget extends StatelessWidget {
             maxLines: 1,
           ),
           if (rating != null)
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.star, size: 10, color: Colors.amber[700]),
-                SizedBox(width: 2),
-                Text(
-                  rating,
-                  style: TextStyle(fontSize: 10, color: Colors.grey[600]),
-                ),
-              ],
+            RatingDisplay(
+              rating: double.tryParse(rating) ?? 0.0,
+              starSize: 10,
+              fontSize: 10,
             ),
         ],
       ),

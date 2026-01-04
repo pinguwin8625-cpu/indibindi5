@@ -140,10 +140,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get chooseYourStops => 'Выберите Ваши Остановки';
 
   @override
-  String get pickUpTime => 'Посадка';
+  String get pickUpTime => 'Начало';
 
   @override
-  String get dropOffTime => 'Высадка';
+  String get dropOffTime => 'Конец';
 
   @override
   String get today => 'Сегодня';
@@ -549,13 +549,22 @@ class AppLocalizationsRu extends AppLocalizations {
   String get pickUpAndDropOff => 'откуда?';
 
   @override
+  String get hintFromStop => 'выберите начальную остановку';
+
+  @override
   String get chooseDropOffPoint => 'куда?';
+
+  @override
+  String get hintToStop => 'выберите конечную остановку';
 
   @override
   String get tapSeatsToChangeAvailability => 'нажмите для изменения';
 
   @override
   String get setYourTime => 'время?';
+
+  @override
+  String get hintTime => 'выберите время начала или окончания';
 
   @override
   String get incompleteProfile => 'Незавершенный Профиль';
@@ -627,6 +636,12 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get archived => 'Архив';
+
+  @override
+  String get autoArchived => 'Автоархив';
+
+  @override
+  String get userArchived => 'Архив';
 
   @override
   String get message => 'Сообщение';
@@ -709,13 +724,13 @@ class AppLocalizationsRu extends AppLocalizations {
   String get hintRouteSelection => 'выберите маршрут, по которому вы поедете';
 
   @override
-  String get hintOriginSelection => 'откуда начнется ваша поездка?';
+  String get hintOriginSelection => 'выберите начальную остановку';
 
   @override
-  String get hintDestinationSelection => 'где закончится ваша поездка?';
+  String get hintDestinationSelection => 'выберите конечную остановку';
 
   @override
-  String get hintTimeSelection => 'когда вы планируете ехать?';
+  String get hintTimeSelection => 'выберите время начала или окончания';
 
   @override
   String get hintSeatSelectionDriver =>

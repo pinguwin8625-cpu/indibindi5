@@ -297,7 +297,7 @@ class _StopsSectionWidgetState extends State<StopsSectionWidget> {
         // Notify parent: all intermediate stops now visible, none hidden
         widget.onIntermediateVisibilityChanged?.call(totalIntermediate, 0);
       },
-      child: Container(
+      child: SizedBox(
         height: height,
         child: Row(
           children: [

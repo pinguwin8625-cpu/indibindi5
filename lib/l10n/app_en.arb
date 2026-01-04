@@ -221,14 +221,14 @@
     "description": "Title for stops selection"
   },
 
-  "pickUpTime": "Pick-up",
+  "pickUpTime": "Start",
   "@pickUpTime": {
-    "description": "Pick-up time label"
+    "description": "Start time label"
   },
 
-  "dropOffTime": "Drop-off",
+  "dropOffTime": "End",
   "@dropOffTime": {
-    "description": "Arrival/drop-off time label"
+    "description": "End time label"
   },
 
   "today": "Today",
@@ -748,10 +748,18 @@
   "@pickUpAndDropOff": {
     "description": "Title for pick up stop selection screen"
   },
+  "hintFromStop": "choose your starting stop",
+  "@hintFromStop": {
+    "description": "Hint text for from stop selection"
+  },
 
   "chooseDropOffPoint": "to?",
   "@chooseDropOffPoint": {
     "description": "Title for drop off stop selection screen"
+  },
+  "hintToStop": "choose your ending stop",
+  "@hintToStop": {
+    "description": "Hint text for to stop selection"
   },
 
   "tapSeatsToChangeAvailability": "tap seats to toggle",
@@ -762,6 +770,10 @@
   "setYourTime": "time?",
   "@setYourTime": {
     "description": "Title for time selection"
+  },
+  "hintTime": "choose a starting or ending time",
+  "@hintTime": {
+    "description": "Hint text for time selection"
   },
 
   "incompleteProfile": "Incomplete Profile",
@@ -867,6 +879,16 @@
   "archived": "Archived",
   "@archived": {
     "description": "Label for archived messages section"
+  },
+
+  "autoArchived": "Auto-archived",
+  "@autoArchived": {
+    "description": "Label for automatically archived bookings (after 3 days)"
+  },
+
+  "userArchived": "Archived",
+  "@userArchived": {
+    "description": "Label for manually archived bookings by user"
   },
 
   "message": "Message",
@@ -999,17 +1021,17 @@
     "description": "Hint for route selection"
   },
 
-  "hintOriginSelection": "where will you start your journey?",
+  "hintOriginSelection": "choose your starting stop",
   "@hintOriginSelection": {
     "description": "Hint for origin stop selection"
   },
 
-  "hintDestinationSelection": "where will you end your journey?",
+  "hintDestinationSelection": "choose your ending stop",
   "@hintDestinationSelection": {
     "description": "Hint for destination stop selection"
   },
 
-  "hintTimeSelection": "when do you plan to travel?",
+  "hintTimeSelection": "choose a starting or ending time",
   "@hintTimeSelection": {
     "description": "Hint for time selection"
   },

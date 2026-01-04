@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../l10n/app_localizations.dart';
 import '../services/auth_service.dart';
 import '../services/mock_users.dart';
+import 'rating_widgets.dart';
 
 class SeatPlanningSectionWidget extends StatelessWidget {
   final String userRole;
@@ -109,17 +110,6 @@ class SeatPlanningSectionWidget extends StatelessWidget {
                 ),
               ],
             ),
-          ),
-          SizedBox(height: 24),
-          // Helper text
-          Text(
-            l10n.hintSeatSelectionDriver,
-            style: TextStyle(
-              fontSize: 14,
-              color: Color(0xFF5D4037).withValues(alpha: 0.6),
-              fontStyle: FontStyle.italic,
-            ),
-            textAlign: TextAlign.center,
           ),
           SizedBox(height: 28),
           // Seat layout
@@ -346,16 +336,10 @@ class SeatPlanningSectionWidget extends StatelessWidget {
             maxLines: 1,
           ),
           if (rating != null)
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.star, size: 10, color: Colors.amber[700]),
-                SizedBox(width: 2),
-                Text(
-                  rating,
-                  style: TextStyle(fontSize: 10, color: Colors.grey[600]),
-                ),
-              ],
+            RatingDisplay(
+              rating: double.tryParse(rating) ?? 0.0,
+              starSize: 10,
+              fontSize: 10,
             ),
         ],
       ),

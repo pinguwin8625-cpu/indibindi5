@@ -140,10 +140,10 @@ class AppLocalizationsTr extends AppLocalizations {
   String get chooseYourStops => 'Duraklarınızı Seçin';
 
   @override
-  String get pickUpTime => 'Biniş';
+  String get pickUpTime => 'Başlangıç';
 
   @override
-  String get dropOffTime => 'İniş';
+  String get dropOffTime => 'Bitiş';
 
   @override
   String get today => 'Bugün';
@@ -548,13 +548,22 @@ class AppLocalizationsTr extends AppLocalizations {
   String get pickUpAndDropOff => 'nereden?';
 
   @override
+  String get hintFromStop => 'başlangıç durağınızı seçin';
+
+  @override
   String get chooseDropOffPoint => 'nereye?';
+
+  @override
+  String get hintToStop => 'bitiş durağınızı seçin';
 
   @override
   String get tapSeatsToChangeAvailability => 'koltukları düzenlemek için dokun';
 
   @override
   String get setYourTime => 'saat?';
+
+  @override
+  String get hintTime => 'başlangıç veya bitiş saati seçin';
 
   @override
   String get incompleteProfile => 'Eksik Profil';
@@ -626,6 +635,12 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get archived => 'Arşivlenmiş';
+
+  @override
+  String get autoArchived => 'Otomatik arşivlendi';
+
+  @override
+  String get userArchived => 'Arşivlendi';
 
   @override
   String get message => 'Mesaj';
@@ -708,13 +723,13 @@ class AppLocalizationsTr extends AppLocalizations {
   String get hintRouteSelection => 'seyahat edeceğiniz güzergahı seçin';
 
   @override
-  String get hintOriginSelection => 'yolculuğunuz nereden başlayacak?';
+  String get hintOriginSelection => 'başlangıç durağınızı seçin';
 
   @override
-  String get hintDestinationSelection => 'yolculuğunuz nerede bitecek?';
+  String get hintDestinationSelection => 'bitiş durağınızı seçin';
 
   @override
-  String get hintTimeSelection => 'ne zaman seyahat etmeyi planlıyorsunuz?';
+  String get hintTimeSelection => 'başlangıç veya bitiş saati seçin';
 
   @override
   String get hintSeatSelectionDriver =>

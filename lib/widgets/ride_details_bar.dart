@@ -107,7 +107,7 @@ class RideDetailsBar extends StatelessWidget {
                         userRole!.toLowerCase() == 'driver'
                             ? Icons.directions_car
                             : Icons.person,
-                        color: Color(0xFFDD2C00),
+                        color: Colors.black,
                         size: 14,
                       ),
                       SizedBox(width: 6),

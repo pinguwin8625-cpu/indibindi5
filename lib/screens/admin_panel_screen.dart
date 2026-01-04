@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../l10n/app_localizations.dart';
@@ -12,9 +11,9 @@ import '../models/booking.dart';
 import '../models/message.dart';
 import '../models/trip_rating.dart';
 import '../widgets/booking_card_widget.dart';
+import '../widgets/conversation_card_widget.dart';
 import '../widgets/seat_layout_widget.dart';
 import '../utils/dialog_helper.dart';
-import '../utils/date_time_helpers.dart';
 import 'chat_screen.dart';
 
 /// Navigation context for preserving exact state when navigating to user cards
@@ -136,6 +135,13 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> with SingleTickerPr
     if (navContext.ratingId != null && navContext.sourceTabIndex == 3) {
       Future.delayed(Duration(milliseconds: 300), () {
         _ratingsTabKey.currentState?.scrollToRating(navContext.ratingId!);
+      });
+    }
+
+    // If we need to scroll to a specific conversation (from message list, not from inside chat)
+    if (navContext.conversation != null && navContext.sourceTabIndex == 2 && !navContext.fromChatScreen) {
+      Future.delayed(Duration(milliseconds: 300), () {
+        _messagesTabKey.currentState?.scrollToConversation(navContext.conversation!);
       });
     }
   }
@@ -1027,6 +1033,71 @@ class _MessagesTab extends StatefulWidget {
 }
 
 class _MessagesTabState extends State<_MessagesTab> {
+  final ScrollController _scrollController = ScrollController();
+  String? _highlightedConversationId;
+  final GlobalKey _highlightedConversationKey = GlobalKey();
+  bool _isScrollingToConversation = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Clear highlight when user manually scrolls
+    _scrollController.addListener(_onUserScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onUserScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onUserScroll() {
+    // Only clear highlight if user is manually scrolling (not auto-scroll)
+    if (_highlightedConversationId != null && !_isScrollingToConversation) {
+      setState(() {
+        _highlightedConversationId = null;
+      });
+    }
+  }
+
+  /// Scrolls to and highlights a specific conversation
+  void scrollToConversation(Conversation conversation) {
+    setState(() {
+      _highlightedConversationId = conversation.id;
+      _isScrollingToConversation = true;
+    });
+
+    // After the widget rebuilds and section expands, scroll to the conversation
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Small additional delay to ensure section expansion animation completes
+      Future.delayed(Duration(milliseconds: 100), () {
+        if (mounted && _highlightedConversationKey.currentContext != null) {
+          Scrollable.ensureVisible(
+            _highlightedConversationKey.currentContext!,
+            duration: Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            alignment: 0.3, // Position conversation 30% from top
+          ).then((_) {
+            // Allow user scroll to clear highlight after auto-scroll completes
+            if (mounted) {
+              setState(() {
+                _isScrollingToConversation = false;
+              });
+            }
+          });
+        } else {
+          // If we couldn't scroll, still allow clearing
+          if (mounted) {
+            setState(() {
+              _isScrollingToConversation = false;
+            });
+          }
+        }
+      });
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Stack(
@@ -1120,44 +1191,9 @@ class _MessagesTabState extends State<_MessagesTab> {
         .toList()
       ..sort((a, b) => b.departureTime.compareTo(a.departureTime));
 
-    // Support subcategories - Question, Suggestion, Complaint
-    // Support messages are never archived or hidden
-    final supportQuestion = conversations
-        .where((c) => c.id.startsWith('support_') && c.routeName.startsWith('Question'))
-        .toList()
-      ..sort((a, b) {
-        final aLast = a.lastMessage?.timestamp ?? a.arrivalTime;
-        final bLast = b.lastMessage?.timestamp ?? b.arrivalTime;
-        return bLast.compareTo(aLast);
-      });
-
-    final supportSuggestion = conversations
-        .where((c) => c.id.startsWith('support_') &&
-            (c.routeName.startsWith('Suggestion') || c.routeName.startsWith('New Route') || c.routeName.startsWith('New Stop')))
-        .toList()
-      ..sort((a, b) {
-        final aLast = a.lastMessage?.timestamp ?? a.arrivalTime;
-        final bLast = b.lastMessage?.timestamp ?? b.arrivalTime;
-        return bLast.compareTo(aLast);
-      });
-
-    final supportComplaint = conversations
-        .where((c) => c.id.startsWith('support_') && c.routeName.startsWith('Complaint'))
-        .toList()
-      ..sort((a, b) {
-        final aLast = a.lastMessage?.timestamp ?? a.arrivalTime;
-        final bLast = b.lastMessage?.timestamp ?? b.arrivalTime;
-        return bLast.compareTo(aLast);
-      });
-
-    // Other support (fallback)
-    final supportOther = conversations
-        .where((c) => c.id.startsWith('support_') &&
-            !c.routeName.startsWith('Question') &&
-            !c.routeName.startsWith('Complaint') &&
-            !c.routeName.startsWith('Suggestion') &&
-            !c.routeName.startsWith('New Route') &&
-            !c.routeName.startsWith('New Stop'))
+    // All support conversations in one list, sorted by last message (newest first)
+    final support = conversations
+        .where((c) => c.id.startsWith('support_'))
         .toList()
       ..sort((a, b) {
         final aLast = a.lastMessage?.timestamp ?? a.arrivalTime;
@@ -1178,24 +1214,20 @@ class _MessagesTabState extends State<_MessagesTab> {
         .toList()
       ..sort((a, b) => b.departureTime.compareTo(a.departureTime));
 
-    // Check if any support conversations exist
-    final hasSupport = supportQuestion.isNotEmpty || supportComplaint.isNotEmpty ||
-        supportSuggestion.isNotEmpty || supportOther.isNotEmpty;
-    final totalSupport = supportQuestion.length + supportComplaint.length +
-        supportSuggestion.length + supportOther.length;
-
     return ListView(
+      controller: _scrollController,
       padding: EdgeInsets.all(16),
       children: [
-        // Support section at top with subcategories
-        if (hasSupport)
-          _CollapsibleSupportSection(
-            totalCount: totalSupport,
-            questionConversations: supportQuestion,
-            suggestionConversations: supportSuggestion,
-            complaintConversations: supportComplaint,
-            otherConversations: supportOther,
+        // Support section - all support messages in one list
+        if (support.isNotEmpty)
+          _CollapsibleMessageSection(
+            title: 'Support',
+            count: support.length,
+            conversations: support,
             buildConversationCard: (c) => _buildConversationCard(context, c),
+            startCollapsed: true,
+            color: Colors.amber[700],
+            highlightedConversationId: _highlightedConversationId,
           ),
         if (upcoming.isNotEmpty)
           _CollapsibleMessageSection(
@@ -1205,6 +1237,7 @@ class _MessagesTabState extends State<_MessagesTab> {
             buildConversationCard: (c) => _buildConversationCard(context, c),
             startCollapsed: true,
             color: Colors.blue[700],
+            highlightedConversationId: _highlightedConversationId,
           ),
         if (ongoing.isNotEmpty)
           _CollapsibleMessageSection(
@@ -1214,6 +1247,7 @@ class _MessagesTabState extends State<_MessagesTab> {
             buildConversationCard: (c) => _buildConversationCard(context, c),
             startCollapsed: false,
             color: Colors.orange[700],
+            highlightedConversationId: _highlightedConversationId,
           ),
         if (completed.isNotEmpty)
           _CollapsibleMessageSection(
@@ -1223,6 +1257,7 @@ class _MessagesTabState extends State<_MessagesTab> {
             buildConversationCard: (c) => _buildConversationCard(context, c),
             startCollapsed: true,
             color: Colors.green[700],
+            highlightedConversationId: _highlightedConversationId,
           ),
         if (archived.isNotEmpty)
           _CollapsibleMessageSection(
@@ -1232,6 +1267,7 @@ class _MessagesTabState extends State<_MessagesTab> {
             buildConversationCard: (c) => _buildConversationCard(context, c),
             startCollapsed: true,
             color: Colors.grey[700],
+            highlightedConversationId: _highlightedConversationId,
           ),
         if (hidden.isNotEmpty)
           _CollapsibleMessageSection(
@@ -1241,480 +1277,84 @@ class _MessagesTabState extends State<_MessagesTab> {
             buildConversationCard: (c) => _buildConversationCard(context, c),
             startCollapsed: true,
             color: Colors.purple[700],
+            highlightedConversationId: _highlightedConversationId,
           ),
       ],
     );
   }
 
   Widget _buildConversationCard(BuildContext context, Conversation conversation) {
-    final unreadCount = conversation.getUnreadCount('admin');
-    final isSupport = conversation.id.startsWith('support_');
+    final isHighlighted = _highlightedConversationId == conversation.id;
 
-    // Get driver and rider info
-    final driver = MockUsers.getUserById(conversation.driverId);
-    final rider = MockUsers.getUserById(conversation.riderId);
-    final driverRating = driver != null ? RatingService().getUserAverageRating(driver.id) : 0.0;
-    final riderRating = rider != null ? RatingService().getUserAverageRating(rider.id) : 0.0;
-
-    // Card color based on unread status
-    final cardColor = unreadCount > 0 ? Colors.blue[100] : Colors.blue[50];
-
-    // For support: driver is admin, rider is user
-    // Determine which one is admin based on isAdmin property
-    final isDriverAdmin = driver?.isAdmin == true;
-    final leftLabel = isSupport ? (isDriverAdmin ? 'Admin' : 'User') : 'Driver';
-    final rightLabel = isSupport ? (isDriverAdmin ? 'User' : 'Admin') : 'Rider';
-    final leftIcon = isSupport ? (isDriverAdmin ? Icons.admin_panel_settings : Icons.person) : Icons.directions_car;
-    final rightIcon = isSupport ? (isDriverAdmin ? Icons.person : Icons.admin_panel_settings) : Icons.person;
-
-    return InkWell(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ChatScreen(
-              conversation: conversation,
-              isAdminView: true,
-              onNavigateToUser: widget.onNavigateToUser != null
-                  ? (user, conv) {
-                      // Pop back to messages tab first
-                      Navigator.pop(context);
-                      // Navigate to user with conversation context for back navigation
-                      widget.onNavigateToUser!(
-                        user,
-                        navContext: AdminNavigationContext(
-                          sourceTabIndex: 2, // Messages tab
-                          conversation: conv,
-                          fromChatScreen: true, // Mark that we came from inside the chat
-                        ),
-                      );
-                    }
-                  : null,
+    Widget card = Padding(
+      padding: EdgeInsets.only(bottom: 10),
+      child: ConversationCard(
+        conversation: conversation,
+        showUnreadBadge: true,
+        unreadUserId: 'admin',
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ChatScreen(
+                conversation: conversation,
+                isAdminView: true,
+                onNavigateToUser: widget.onNavigateToUser != null
+                    ? (user, conv) {
+                        // Pop back to messages tab first
+                        Navigator.pop(context);
+                        // Navigate to user with conversation context for back navigation
+                        widget.onNavigateToUser!(
+                          user,
+                          navContext: AdminNavigationContext(
+                            sourceTabIndex: 2, // Messages tab
+                            conversation: conv,
+                            fromChatScreen: true, // Mark that we came from inside the chat
+                          ),
+                        );
+                      }
+                    : null,
+              ),
             ),
-          ),
-        );
-      },
-      child: Container(
-        margin: EdgeInsets.only(bottom: 10),
-        padding: EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: cardColor,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey[300]!, width: 0.5),
-        ),
-        child: Column(
-          children: [
-            // Top row: Date and route info (or support type)
-            _buildConversationTopRow(conversation, isSupport),
-            SizedBox(height: 10),
-            // Middle row: Left person - status badges - Right person
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                // Left section with label and nested avatar
-                Expanded(
-                  child: Row(
-                    children: [
-                      // Left label with semi-circle cutout
-                      Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          // Label background
-                          Container(
-                            padding: EdgeInsets.only(left: 8, right: 28, top: 8, bottom: 8),
-                            decoration: BoxDecoration(
-                              color: Colors.grey.withValues(alpha: 0.08),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(leftIcon, size: 16, color: Colors.grey[600]),
-                                SizedBox(height: 2),
-                                Text(
-                                  leftLabel,
-                                  style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.grey[600]),
-                                ),
-                              ],
-                            ),
-                          ),
-                          // Avatar positioned to overlap (create cutout effect)
-                          Positioned(
-                            right: -18,
-                            top: 0,
-                            bottom: 0,
-                            child: Center(
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border: Border.all(color: Colors.grey.withValues(alpha: 0.15), width: 2),
-                                ),
-                                child: _buildAvatar(driver?.profilePhotoUrl, isDriver: !isSupport, user: driver),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(width: 24),
-                      // Name and rating
-                      Expanded(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              driver != null
-                                  ? '${driver.name} ${driver.surname.isNotEmpty ? '${driver.surname[0]}.' : ''}'
-                                  : conversation.driverName,
-                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            if (driver != null && !isSupport) ...[
-                              SizedBox(height: 2),
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.star, size: 11, color: Colors.amber),
-                                  SizedBox(width: 2),
-                                  Text(
-                                    driverRating.toStringAsFixed(1),
-                                    style: TextStyle(fontSize: 11),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                    ],
+          );
+        },
+        onAvatarTap: widget.onNavigateToUser != null
+            ? (user) {
+                widget.onNavigateToUser!(
+                  user,
+                  navContext: AdminNavigationContext(
+                    sourceTabIndex: 2, // Messages tab
+                    conversation: conversation,
                   ),
-                ),
-                // Center: Status badges
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 4),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      if (unreadCount > 0)
-                        Container(
-                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: Color(0xFFDD2C00),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Text(
-                            '$unreadCount new',
-                            style: TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                      if (conversation.isHidden)
-                        Container(
-                          margin: EdgeInsets.only(top: 4),
-                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: Colors.purple[100],
-                            borderRadius: BorderRadius.circular(4),
-                            border: Border.all(color: Colors.purple[300]!, width: 1),
-                          ),
-                          child: Text(
-                            'Hidden',
-                            style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.purple[700]),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-                // Right section with label and nested avatar (mirrored)
-                Expanded(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      // Name and rating
-                      Expanded(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              rider != null
-                                  ? '${rider.name} ${rider.surname.isNotEmpty ? '${rider.surname[0]}.' : ''}'
-                                  : conversation.riderName,
-                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            if (rider != null && !isSupport) ...[
-                              SizedBox(height: 2),
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.star, size: 11, color: Colors.amber),
-                                  SizedBox(width: 2),
-                                  Text(
-                                    riderRating.toStringAsFixed(1),
-                                    style: TextStyle(fontSize: 11),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                      SizedBox(width: 24),
-                      // Right label with semi-circle cutout
-                      Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          // Label background
-                          Container(
-                            padding: EdgeInsets.only(left: 28, right: 8, top: 8, bottom: 8),
-                            decoration: BoxDecoration(
-                              color: Colors.grey.withValues(alpha: 0.08),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(rightIcon, size: 16, color: Colors.grey[600]),
-                                SizedBox(height: 2),
-                                Text(
-                                  rightLabel,
-                                  style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.grey[600]),
-                                ),
-                              ],
-                            ),
-                          ),
-                          // Avatar positioned to overlap (create cutout effect)
-                          Positioned(
-                            left: -18,
-                            top: 0,
-                            bottom: 0,
-                            child: Center(
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border: Border.all(color: Colors.grey.withValues(alpha: 0.15), width: 2),
-                                ),
-                                child: _buildAvatar(rider?.profilePhotoUrl, isDriver: false, user: rider),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
+                );
+              }
+            : null,
       ),
     );
-  }
 
-  // Format date for conversation card
-  String _formatDate(DateTime date) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final target = DateTime(date.year, date.month, date.day);
-    final diffDays = target.difference(today).inDays;
-
-    if (diffDays == 0) return 'Today';
-    if (diffDays == 1) return 'Tomorrow';
-    if (diffDays == -1) return 'Yesterday';
-
-    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return '${date.day} ${months[date.month - 1]}';
-  }
-
-  // Build conversation top row (date and route info or support type)
-  Widget _buildConversationTopRow(Conversation conversation, bool isSupport) {
-    if (isSupport) {
-      // For support conversations, show the support type
-      final routeName = conversation.routeName;
-      String supportType;
-      Color typeColor;
-      IconData typeIcon;
-
-      if (routeName.startsWith('Question')) {
-        supportType = 'Question';
-        typeColor = Colors.blue;
-        typeIcon = Icons.help_outline;
-      } else if (routeName.startsWith('Suggestion')) {
-        supportType = 'Suggestion';
-        typeColor = Colors.green;
-        typeIcon = Icons.lightbulb_outline;
-      } else if (routeName.startsWith('Complaint')) {
-        supportType = 'Complaint';
-        typeColor = Colors.red;
-        typeIcon = Icons.report_problem_outlined;
-      } else if (routeName.startsWith('New Route Suggestion')) {
-        supportType = 'New Route';
-        typeColor = Colors.blue;
-        typeIcon = Icons.add_road;
-      } else if (routeName.startsWith('New Stop Suggestion')) {
-        supportType = 'New Stop';
-        typeColor = Colors.teal;
-        typeIcon = Icons.add_location;
-      } else {
-        supportType = 'Support';
-        typeColor = Colors.amber;
-        typeIcon = Icons.support_agent;
-      }
-
+    // Add highlight effect when this conversation is the one we navigated back to
+    if (isHighlighted) {
       return Container(
-        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: typeColor.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: typeColor.withValues(alpha: 0.3), width: 0.5),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(typeIcon, color: typeColor, size: 14),
-            SizedBox(width: 6),
-            Text(
-              supportType,
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: typeColor),
-            ),
-          ],
-        ),
-      );
-    }
-
-    // For regular conversations, show date and times
-    return Row(
-      children: [
-        // Date
-        Container(
-          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        key: _highlightedConversationKey, // GlobalKey for scrolling
+        child: AnimatedContainer(
+          duration: Duration(milliseconds: 300),
           decoration: BoxDecoration(
-            color: Colors.grey.withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(4),
-          ),
-          child: Text(
-            _formatDate(conversation.departureTime),
-            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.black87),
-          ),
-        ),
-        SizedBox(width: 8),
-        // Departure
-        Expanded(
-          child: Row(
-            children: [
-              Icon(Icons.location_on, color: Colors.green, size: 14),
-              SizedBox(width: 2),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.green.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  formatTimeHHmm(conversation.departureTime),
-                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.green[700]),
-                ),
-              ),
-              SizedBox(width: 4),
-              Expanded(
-                child: Text(
-                  conversation.originName,
-                  style: TextStyle(fontSize: 11, color: Colors.black87),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Color(0xFFDD2C00), width: 3),
+            boxShadow: [
+              BoxShadow(
+                color: Color(0xFFDD2C00).withValues(alpha: 0.3),
+                blurRadius: 8,
+                spreadRadius: 2,
               ),
             ],
           ),
+          child: card,
         ),
-        SizedBox(width: 8),
-        // Arrival
-        Expanded(
-          child: Row(
-            children: [
-              Icon(Icons.flag, color: Colors.red, size: 14),
-              SizedBox(width: 2),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.red.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  formatTimeHHmm(conversation.arrivalTime),
-                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.red[700]),
-                ),
-              ),
-              SizedBox(width: 4),
-              Expanded(
-                child: Text(
-                  conversation.destinationName,
-                  style: TextStyle(fontSize: 11, color: Colors.black87),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  // Build avatar widget
-  Widget _buildAvatar(String? profilePhotoUrl, {required bool isDriver, User? user}) {
-    final defaultIcon = isDriver ? Icons.directions_car : Icons.person;
-    final defaultColor = isDriver ? Colors.blue : Colors.green;
-
-    Widget avatar;
-    if (profilePhotoUrl != null && profilePhotoUrl.isNotEmpty) {
-      if (profilePhotoUrl.startsWith('assets/')) {
-        avatar = CircleAvatar(
-          radius: 20,
-          backgroundImage: AssetImage(profilePhotoUrl),
-        );
-      } else {
-        final photoFile = File(profilePhotoUrl);
-        if (photoFile.existsSync()) {
-          avatar = CircleAvatar(
-            radius: 20,
-            backgroundImage: FileImage(photoFile),
-          );
-        } else {
-          avatar = CircleAvatar(
-            radius: 20,
-            backgroundColor: defaultColor.withValues(alpha: 0.1),
-            child: Icon(defaultIcon, color: defaultColor),
-          );
-        }
-      }
-    } else {
-      // Fallback to default icon
-      avatar = CircleAvatar(
-        radius: 20,
-        backgroundColor: defaultColor.withValues(alpha: 0.1),
-        child: Icon(defaultIcon, color: defaultColor),
       );
     }
 
-    // Wrap with GestureDetector if user is provided and callback exists
-    if (user != null && widget.onNavigateToUser != null) {
-      return GestureDetector(
-        behavior: HitTestBehavior.opaque, // Prevent tap from bubbling to parent InkWell
-        onTap: () => widget.onNavigateToUser!(
-          user,
-          navContext: AdminNavigationContext(
-            sourceTabIndex: 2, // Messages tab
-            // Don't pass conversation - tapping from message list should just go back to list, not re-open chat
-          ),
-        ),
-        child: avatar,
-      );
-    }
-
-    return avatar;
+    return card;
   }
 
   void _showClearDialog(BuildContext context) {
@@ -2410,6 +2050,7 @@ class _CollapsibleMessageSection extends StatefulWidget {
   final Widget Function(Conversation) buildConversationCard;
   final bool startCollapsed;
   final Color? color;
+  final String? highlightedConversationId; // Conversation ID to auto-expand for
 
   const _CollapsibleMessageSection({
     required this.title,
@@ -2418,6 +2059,7 @@ class _CollapsibleMessageSection extends StatefulWidget {
     required this.buildConversationCard,
     this.startCollapsed = false,
     this.color,
+    this.highlightedConversationId,
   });
 
   @override
@@ -2429,10 +2071,28 @@ class _CollapsibleMessageSectionState
     extends State<_CollapsibleMessageSection> {
   late bool _isExpanded;
 
+  bool _containsHighlightedConversation() {
+    if (widget.highlightedConversationId == null) return false;
+    return widget.conversations.any((c) => c.id == widget.highlightedConversationId);
+  }
+
   @override
   void initState() {
     super.initState();
-    _isExpanded = !widget.startCollapsed;
+    // Auto-expand if this section contains the highlighted conversation
+    _isExpanded = !widget.startCollapsed || _containsHighlightedConversation();
+  }
+
+  @override
+  void didUpdateWidget(_CollapsibleMessageSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // If a new highlighted conversation is in this section, expand it
+    if (widget.highlightedConversationId != oldWidget.highlightedConversationId &&
+        _containsHighlightedConversation()) {
+      setState(() {
+        _isExpanded = true;
+      });
+    }
   }
 
   @override
@@ -2503,205 +2163,6 @@ class _CollapsibleMessageSectionState
         ],
         SizedBox(height: 8),
       ],
-    );
-  }
-}
-
-// Collapsible section widget for support messages with subcategories
-class _CollapsibleSupportSection extends StatefulWidget {
-  final int totalCount;
-  final List<Conversation> questionConversations;
-  final List<Conversation> complaintConversations;
-  final List<Conversation> suggestionConversations;
-  final List<Conversation> otherConversations;
-  final Widget Function(Conversation) buildConversationCard;
-
-  const _CollapsibleSupportSection({
-    required this.totalCount,
-    required this.questionConversations,
-    required this.complaintConversations,
-    required this.suggestionConversations,
-    required this.otherConversations,
-    required this.buildConversationCard,
-  });
-
-  @override
-  State<_CollapsibleSupportSection> createState() =>
-      _CollapsibleSupportSectionState();
-}
-
-class _CollapsibleSupportSectionState
-    extends State<_CollapsibleSupportSection> {
-  bool _isExpanded = false;
-  bool _questionExpanded = false;
-  bool _complaintExpanded = false;
-  bool _suggestionExpanded = false;
-  bool _otherExpanded = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final sectionColor = Colors.amber[700]!;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Main Support header
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                offset: Offset(0, 1),
-                blurRadius: 2,
-              ),
-            ],
-          ),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: () {
-                setState(() {
-                  _isExpanded = !_isExpanded;
-                });
-              },
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
-                child: SizedBox(
-                  height: 50,
-                  child: Row(
-                    children: [
-                      Icon(
-                        _isExpanded ? Icons.expand_less : Icons.expand_more,
-                        size: 20,
-                        color: sectionColor,
-                      ),
-                      SizedBox(width: 4),
-                      Text(
-                        'Support',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: sectionColor,
-                        ),
-                      ),
-                      SizedBox(width: 8),
-                      Text(
-                        '(${widget.totalCount})',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: sectionColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-        if (_isExpanded) ...[
-          SizedBox(height: 8),
-          // Question subcategory (blue)
-          if (widget.questionConversations.isNotEmpty)
-            _buildSubcategory(
-              'Question',
-              widget.questionConversations,
-              Colors.blue,
-              Icons.help_outline,
-              _questionExpanded,
-              () => setState(() => _questionExpanded = !_questionExpanded),
-            ),
-          // Suggestion subcategory (green)
-          if (widget.suggestionConversations.isNotEmpty)
-            _buildSubcategory(
-              'Suggestion',
-              widget.suggestionConversations,
-              Colors.green,
-              Icons.lightbulb_outline,
-              _suggestionExpanded,
-              () => setState(() => _suggestionExpanded = !_suggestionExpanded),
-            ),
-          // Complaint subcategory (red) - last
-          if (widget.complaintConversations.isNotEmpty)
-            _buildSubcategory(
-              'Complaint',
-              widget.complaintConversations,
-              Colors.red,
-              Icons.report_problem_outlined,
-              _complaintExpanded,
-              () => setState(() => _complaintExpanded = !_complaintExpanded),
-            ),
-          // Other support (fallback)
-          if (widget.otherConversations.isNotEmpty)
-            _buildSubcategory(
-              'Other',
-              widget.otherConversations,
-              Colors.grey,
-              Icons.support_agent,
-              _otherExpanded,
-              () => setState(() => _otherExpanded = !_otherExpanded),
-            ),
-        ],
-        SizedBox(height: 8),
-      ],
-    );
-  }
-
-  Widget _buildSubcategory(
-    String title,
-    List<Conversation> conversations,
-    Color color,
-    IconData icon,
-    bool isExpanded,
-    VoidCallback onTap,
-  ) {
-    return Padding(
-      padding: EdgeInsets.only(left: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          InkWell(
-            onTap: onTap,
-            child: Padding(
-              padding: EdgeInsets.symmetric(vertical: 8),
-              child: Row(
-                children: [
-                  Icon(
-                    isExpanded ? Icons.expand_less : Icons.expand_more,
-                    color: color,
-                    size: 18,
-                  ),
-                  SizedBox(width: 4),
-                  Icon(icon, color: color, size: 16),
-                  SizedBox(width: 6),
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: color,
-                    ),
-                  ),
-                  SizedBox(width: 6),
-                  Text(
-                    '(${conversations.length})',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: color,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          if (isExpanded) ...[
-            ...conversations.map((c) => widget.buildConversationCard(c)),
-          ],
-        ],
-      ),
     );
   }
 }
@@ -3077,179 +2538,6 @@ class _UserDetailsContentState extends State<_UserDetailsContent> {
           ],
         );
       },
-    );
-  }
-
-  // Format date for miniature conversation card
-  String _formatMiniDate(DateTime date) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final target = DateTime(date.year, date.month, date.day);
-    final diffDays = target.difference(today).inDays;
-
-    if (diffDays == 0) return 'Today';
-    if (diffDays == 1) return 'Tmrw';
-    if (diffDays == -1) return 'Yday';
-
-    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return '${date.day} ${months[date.month - 1]}';
-  }
-
-  Widget _buildUserConversationTopRow(Conversation conversation, bool isSupport) {
-    if (isSupport) {
-      final routeName = conversation.routeName;
-      String supportType;
-      Color typeColor;
-      IconData typeIcon;
-
-      if (routeName.startsWith('Question')) {
-        supportType = 'Question';
-        typeColor = Colors.blue;
-        typeIcon = Icons.help_outline;
-      } else if (routeName.startsWith('Suggestion')) {
-        supportType = 'Suggestion';
-        typeColor = Colors.green;
-        typeIcon = Icons.lightbulb_outline;
-      } else if (routeName.startsWith('Complaint')) {
-        supportType = 'Complaint';
-        typeColor = Colors.red;
-        typeIcon = Icons.report_problem_outlined;
-      } else if (routeName.startsWith('New Route Suggestion')) {
-        supportType = 'New Route';
-        typeColor = Colors.blue;
-        typeIcon = Icons.add_road;
-      } else if (routeName.startsWith('New Stop Suggestion')) {
-        supportType = 'New Stop';
-        typeColor = Colors.teal;
-        typeIcon = Icons.add_location;
-      } else {
-        supportType = 'Support';
-        typeColor = Colors.amber;
-        typeIcon = Icons.support_agent;
-      }
-
-      return Container(
-        padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-        decoration: BoxDecoration(
-          color: typeColor.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: typeColor.withValues(alpha: 0.3), width: 0.5),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(typeIcon, color: typeColor, size: 14),
-            SizedBox(width: 5),
-            Text(supportType, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: typeColor)),
-          ],
-        ),
-      );
-    }
-
-    // For regular conversations - readable version
-    return Row(
-      children: [
-        // Date badge
-        Container(
-          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-          decoration: BoxDecoration(
-            color: Colors.grey.withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(4),
-          ),
-          child: Text(
-            _formatMiniDate(conversation.departureTime),
-            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.black87),
-          ),
-        ),
-        SizedBox(width: 8),
-        // Departure
-        Expanded(
-          child: Row(
-            children: [
-              Icon(Icons.location_on, color: Colors.green, size: 12),
-              SizedBox(width: 3),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.green.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  formatTimeHHmm(conversation.departureTime),
-                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.green[700]),
-                ),
-              ),
-              SizedBox(width: 3),
-              Expanded(
-                child: Text(
-                  conversation.originName,
-                  style: TextStyle(fontSize: 10, color: Colors.black87),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-        ),
-        SizedBox(width: 6),
-        // Arrival
-        Expanded(
-          child: Row(
-            children: [
-              Icon(Icons.flag, color: Colors.red, size: 12),
-              SizedBox(width: 3),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.red.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  formatTimeHHmm(conversation.arrivalTime),
-                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.red[700]),
-                ),
-              ),
-              SizedBox(width: 3),
-              Expanded(
-                child: Text(
-                  conversation.destinationName,
-                  style: TextStyle(fontSize: 10, color: Colors.black87),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildUserAvatar(String? profilePhotoUrl, {required bool isDriver}) {
-    final defaultIcon = isDriver ? Icons.directions_car : Icons.person;
-    final defaultColor = isDriver ? Colors.blue : Colors.green;
-
-    if (profilePhotoUrl != null && profilePhotoUrl.isNotEmpty) {
-      if (profilePhotoUrl.startsWith('assets/')) {
-        return CircleAvatar(
-          radius: 20,
-          backgroundImage: AssetImage(profilePhotoUrl),
-        );
-      } else {
-        final photoFile = File(profilePhotoUrl);
-        if (photoFile.existsSync()) {
-          return CircleAvatar(
-            radius: 20,
-            backgroundImage: FileImage(photoFile),
-          );
-        }
-      }
-    }
-
-    return CircleAvatar(
-      radius: 20,
-      backgroundColor: defaultColor.withValues(alpha: 0.1),
-      child: Icon(defaultIcon, color: defaultColor, size: 20),
     );
   }
 
@@ -3779,28 +3067,12 @@ class _UserDetailsContentState extends State<_UserDetailsContent> {
   }
 
   Widget _buildMiniConversationCard(Conversation conversation) {
-    final isSupport = conversation.id.startsWith('support_');
-    final unreadCount = conversation.getUnreadCount(widget.user.id);
-
-    // Get driver and rider info
-    final driver = MockUsers.getUserById(conversation.driverId);
-    final rider = MockUsers.getUserById(conversation.riderId);
-    final driverRating = driver != null ? RatingService().getUserAverageRating(driver.id) : 0.0;
-    final riderRating = rider != null ? RatingService().getUserAverageRating(rider.id) : 0.0;
-
-    // Card color based on unread status
-    final cardColor = unreadCount > 0 ? Colors.blue[100] : Colors.blue[50];
-
-    // For support: determine admin vs user labels
-    final isDriverAdmin = driver?.isAdmin == true;
-    final leftLabel = isSupport ? (isDriverAdmin ? 'Admin' : 'User') : 'Driver';
-    final rightLabel = isSupport ? (isDriverAdmin ? 'User' : 'Admin') : 'Rider';
-    final leftIcon = isSupport ? (isDriverAdmin ? Icons.admin_panel_settings : Icons.person) : Icons.directions_car;
-    final rightIcon = isSupport ? (isDriverAdmin ? Icons.person : Icons.admin_panel_settings) : Icons.person;
-
     return Padding(
       padding: EdgeInsets.only(bottom: 8),
-      child: InkWell(
+      child: ConversationCard(
+        conversation: conversation,
+        showUnreadBadge: true,
+        unreadUserId: widget.user.id,
         onTap: () {
           Navigator.push(
             context,
@@ -3812,221 +3084,6 @@ class _UserDetailsContentState extends State<_UserDetailsContent> {
             ),
           );
         },
-        child: Container(
-          padding: EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: cardColor,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey[300]!, width: 0.5),
-          ),
-          child: Column(
-            children: [
-              // Top row: Date and route info (or support type)
-              _buildUserConversationTopRow(conversation, isSupport),
-              SizedBox(height: 10),
-              // Middle row: Left person - status badges - Right person
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // Left section with label and nested avatar
-                  Expanded(
-                    child: Row(
-                      children: [
-                        // Left label with semi-circle cutout
-                        Stack(
-                          clipBehavior: Clip.none,
-                          children: [
-                            // Label background
-                            Container(
-                              padding: EdgeInsets.only(left: 8, right: 28, top: 8, bottom: 8),
-                              decoration: BoxDecoration(
-                                color: Colors.grey.withValues(alpha: 0.08),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(leftIcon, size: 16, color: Colors.grey[600]),
-                                  SizedBox(height: 2),
-                                  Text(
-                                    leftLabel,
-                                    style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.grey[600]),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            // Avatar positioned to overlap (create cutout effect)
-                            Positioned(
-                              right: -18,
-                              top: 0,
-                              bottom: 0,
-                              child: Center(
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: Border.all(color: Colors.grey.withValues(alpha: 0.15), width: 2),
-                                  ),
-                                  child: _buildUserAvatar(driver?.profilePhotoUrl, isDriver: !isSupport),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(width: 24),
-                        // Name and rating
-                        Expanded(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                driver != null
-                                    ? '${driver.name} ${driver.surname.isNotEmpty ? '${driver.surname[0]}.' : ''}'
-                                    : conversation.driverName,
-                                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              if (driver != null && !isSupport) ...[
-                                SizedBox(height: 2),
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.star, size: 11, color: Colors.amber),
-                                    SizedBox(width: 2),
-                                    Text(
-                                      driverRating.toStringAsFixed(1),
-                                      style: TextStyle(fontSize: 11),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  // Center: Status badges
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 4),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        if (unreadCount > 0)
-                          Container(
-                            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: Color(0xFFDD2C00),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Text(
-                              '$unreadCount new',
-                              style: TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                        if (conversation.isHidden)
-                          Container(
-                            margin: EdgeInsets.only(top: 4),
-                            padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: Colors.purple[100],
-                              borderRadius: BorderRadius.circular(4),
-                              border: Border.all(color: Colors.purple[300]!, width: 1),
-                            ),
-                            child: Text(
-                              'Hidden',
-                              style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.purple[700]),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                  // Right section with label and nested avatar (mirrored)
-                  Expanded(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        // Name and rating
-                        Expanded(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(
-                                rider != null
-                                    ? '${rider.name} ${rider.surname.isNotEmpty ? '${rider.surname[0]}.' : ''}'
-                                    : conversation.riderName,
-                                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              if (rider != null && !isSupport) ...[
-                                SizedBox(height: 2),
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.star, size: 11, color: Colors.amber),
-                                    SizedBox(width: 2),
-                                    Text(
-                                      riderRating.toStringAsFixed(1),
-                                      style: TextStyle(fontSize: 11),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                        SizedBox(width: 24),
-                        // Right label with semi-circle cutout
-                        Stack(
-                          clipBehavior: Clip.none,
-                          children: [
-                            // Label background
-                            Container(
-                              padding: EdgeInsets.only(left: 28, right: 8, top: 8, bottom: 8),
-                              decoration: BoxDecoration(
-                                color: Colors.grey.withValues(alpha: 0.08),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(rightIcon, size: 16, color: Colors.grey[600]),
-                                  SizedBox(height: 2),
-                                  Text(
-                                    rightLabel,
-                                    style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.grey[600]),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            // Avatar positioned to overlap (create cutout effect)
-                            Positioned(
-                              left: -18,
-                              top: 0,
-                              bottom: 0,
-                              child: Center(
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: Border.all(color: Colors.grey.withValues(alpha: 0.15), width: 2),
-                                  ),
-                                  child: _buildUserAvatar(rider?.profilePhotoUrl, isDriver: false),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

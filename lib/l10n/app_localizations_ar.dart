@@ -140,10 +140,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get chooseYourStops => 'اختر محطاتك';
 
   @override
-  String get pickUpTime => 'الاستلام';
+  String get pickUpTime => 'البداية';
 
   @override
-  String get dropOffTime => 'التسليم';
+  String get dropOffTime => 'النهاية';
 
   @override
   String get today => 'اليوم';
@@ -546,13 +546,22 @@ class AppLocalizationsAr extends AppLocalizations {
   String get pickUpAndDropOff => 'من أين؟';
 
   @override
+  String get hintFromStop => 'اختر محطة البداية';
+
+  @override
   String get chooseDropOffPoint => 'إلى أين؟';
+
+  @override
+  String get hintToStop => 'اختر محطة النهاية';
 
   @override
   String get tapSeatsToChangeAvailability => 'اضغط للتغيير';
 
   @override
   String get setYourTime => 'الوقت؟';
+
+  @override
+  String get hintTime => 'اختر وقت البداية أو النهاية';
 
   @override
   String get incompleteProfile => 'ملف شخصي غير مكتمل';
@@ -619,6 +628,12 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get archived => 'مؤرشف';
+
+  @override
+  String get autoArchived => 'أرشفة تلقائية';
+
+  @override
+  String get userArchived => 'مؤرشف';
 
   @override
   String get message => 'رسالة';
@@ -701,13 +716,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get hintRouteSelection => 'اختر المسار الذي ستسافر عليه';
 
   @override
-  String get hintOriginSelection => 'من أين ستبدأ رحلتك؟';
+  String get hintOriginSelection => 'اختر محطة البداية';
 
   @override
-  String get hintDestinationSelection => 'أين ستنتهي رحلتك؟';
+  String get hintDestinationSelection => 'اختر محطة النهاية';
 
   @override
-  String get hintTimeSelection => 'متى تخطط للسفر؟';
+  String get hintTimeSelection => 'اختر وقت البداية أو النهاية';
 
   @override
   String get hintSeatSelectionDriver =>

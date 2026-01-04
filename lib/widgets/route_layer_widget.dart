@@ -145,43 +145,6 @@ class _RouteLayerWidgetState extends State<RouteLayerWidget> {
                   ),
                   textAlign: TextAlign.center,
                 ),
-                // Hint below title - three lines
-                Padding(
-                  padding: EdgeInsets.only(top: 12),
-                  child: Column(
-                    children: [
-                      Text(
-                        l10n.hintRoleSelectionLine1,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Color(0xFF8E8E8E),
-                          fontStyle: FontStyle.italic,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        l10n.hintRoleSelectionOr,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Color(0xFF8E8E8E),
-                          fontStyle: FontStyle.italic,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        l10n.hintRoleSelectionLine2,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Color(0xFF8E8E8E),
-                          fontStyle: FontStyle.italic,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                ),
                 SizedBox(height: 48),
                 // Buttons
                 Row(
@@ -194,13 +157,11 @@ class _RouteLayerWidgetState extends State<RouteLayerWidget> {
                         setState(() {
                           _selectedRole = 'driver';
                         });
-                        widget.tabController?.animateTo(0); // Switch to driver tab
+                        widget.tabController?.animateTo(0);
                         widget.onRoleSelected?.call('driver');
 
-                        // Check vehicle info after selecting driver role
                         final currentUser = AuthService.currentUser;
                         if (currentUser != null && !currentUser.hasVehicle) {
-                          // Small delay to let the UI update first
                           await Future.delayed(Duration(milliseconds: 100));
                           _showIncompleteVehicleInfoDialog();
                         }
@@ -218,7 +179,6 @@ class _RouteLayerWidgetState extends State<RouteLayerWidget> {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            // Driver icon
                             Icon(
                               Icons.directions_car,
                               color: _selectedRole == 'driver' ? Colors.white : Color(0xFF2E2E2E),
@@ -244,13 +204,11 @@ class _RouteLayerWidgetState extends State<RouteLayerWidget> {
                         setState(() {
                           _selectedRole = 'rider';
                         });
-                        widget.tabController?.animateTo(1); // Switch to rider tab
+                        widget.tabController?.animateTo(1);
                         widget.onRoleSelected?.call('rider');
 
-                        // Check personal info after selecting rider role
                         final currentUser = AuthService.currentUser;
                         if (currentUser != null && !currentUser.hasCompletePersonalInfo) {
-                          // Small delay to let the UI update first
                           await Future.delayed(Duration(milliseconds: 100));
                           _showIncompletePersonalInfoDialog(isDriver: false);
                         }
@@ -347,7 +305,7 @@ class _RouteLayerWidgetState extends State<RouteLayerWidget> {
                             widget.userRole.toLowerCase() == 'driver'
                                 ? Icons.directions_car
                                 : Icons.person,
-                            color: Color(0xFFDD2C00),
+                            color: Colors.black,
                             size: 16,
                           ),
                           SizedBox(width: 6),
@@ -382,18 +340,6 @@ class _RouteLayerWidgetState extends State<RouteLayerWidget> {
                           fontWeight: FontWeight.w600,
                           color: Color(0xFF42A5F5),
                           letterSpacing: 0.5,
-                        ),
-                      ),
-                      Padding(
-                        padding: EdgeInsets.only(top: 4),
-                        child: Text(
-                          l10n.hintRouteSelection,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Color(0xFF42A5F5).withOpacity(0.6),
-                            fontStyle: FontStyle.italic,
-                          ),
-                          textAlign: TextAlign.center,
                         ),
                       ),
                     ],

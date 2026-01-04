@@ -56,6 +56,7 @@ class Booking {
   final bool? isCanceled; // Whether the booking has been canceled
   final bool? isArchived; // Whether the booking has been archived (3 days after arrival)
   final DateTime? archivedAt; // When the booking was archived
+  final bool? isAutoArchived; // True if auto-archived by system, false if manually archived by user
   final bool? isHidden; // Whether the booking is hidden from UI (7 days after arrival)
   final DateTime? hiddenAt; // When the booking was hidden
   final List<RiderInfo>?
@@ -78,6 +79,7 @@ class Booking {
     this.isCanceled = false,
     this.isArchived = false,
     this.archivedAt,
+    this.isAutoArchived,
     this.isHidden = false,
     this.hiddenAt,
     this.riders,
@@ -117,6 +119,7 @@ class Booking {
     bool? isCanceled,
     bool? isArchived,
     DateTime? archivedAt,
+    bool? isAutoArchived,
     bool? isHidden,
     DateTime? hiddenAt,
     List<RiderInfo>? riders,
@@ -138,6 +141,7 @@ class Booking {
       isCanceled: isCanceled ?? this.isCanceled,
       isArchived: isArchived ?? this.isArchived,
       archivedAt: archivedAt ?? this.archivedAt,
+      isAutoArchived: isAutoArchived ?? this.isAutoArchived,
       isHidden: isHidden ?? this.isHidden,
       hiddenAt: hiddenAt ?? this.hiddenAt,
       riders: riders ?? this.riders,
@@ -163,6 +167,7 @@ class Booking {
       'isCanceled': isCanceled,
       'isArchived': isArchived,
       'archivedAt': archivedAt?.toIso8601String(),
+      'isAutoArchived': isAutoArchived,
       'isHidden': isHidden,
       'hiddenAt': hiddenAt?.toIso8601String(),
       'riders': riders?.map((r) => r.toJson()).toList(),
@@ -199,6 +204,7 @@ class Booking {
       archivedAt: json['archivedAt'] != null
           ? DateTime.parse(json['archivedAt'] as String)
           : null,
+      isAutoArchived: json['isAutoArchived'] as bool?,
       isHidden: json['isHidden'] as bool?,
       hiddenAt: json['hiddenAt'] != null
           ? DateTime.parse(json['hiddenAt'] as String)

@@ -370,16 +370,16 @@ abstract class AppLocalizations {
   /// **'Choose Your Stops'**
   String get chooseYourStops;
 
-  /// Pick-up time label
+  /// Start time label
   ///
   /// In en, this message translates to:
-  /// **'Pick-up'**
+  /// **'Start'**
   String get pickUpTime;
 
-  /// Arrival/drop-off time label
+  /// End time label
   ///
   /// In en, this message translates to:
-  /// **'Drop-off'**
+  /// **'End'**
   String get dropOffTime;
 
   /// Today label
@@ -1168,11 +1168,23 @@ abstract class AppLocalizations {
   /// **'from?'**
   String get pickUpAndDropOff;
 
+  /// Hint text for from stop selection
+  ///
+  /// In en, this message translates to:
+  /// **'choose your starting stop'**
+  String get hintFromStop;
+
   /// Title for drop off stop selection screen
   ///
   /// In en, this message translates to:
   /// **'to?'**
   String get chooseDropOffPoint;
+
+  /// Hint text for to stop selection
+  ///
+  /// In en, this message translates to:
+  /// **'choose your ending stop'**
+  String get hintToStop;
 
   /// Hint text for driver seat selection
   ///
@@ -1185,6 +1197,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'time?'**
   String get setYourTime;
+
+  /// Hint text for time selection
+  ///
+  /// In en, this message translates to:
+  /// **'choose a starting or ending time'**
+  String get hintTime;
 
   /// Dialog title for incomplete profile
   ///
@@ -1311,6 +1329,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Archived'**
   String get archived;
+
+  /// Label for automatically archived bookings (after 3 days)
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-archived'**
+  String get autoArchived;
+
+  /// Label for manually archived bookings by user
+  ///
+  /// In en, this message translates to:
+  /// **'Archived'**
+  String get userArchived;
 
   /// Message button text
   ///
@@ -1465,19 +1495,19 @@ abstract class AppLocalizations {
   /// Hint for origin stop selection
   ///
   /// In en, this message translates to:
-  /// **'where will you start your journey?'**
+  /// **'choose your starting stop'**
   String get hintOriginSelection;
 
   /// Hint for destination stop selection
   ///
   /// In en, this message translates to:
-  /// **'where will you end your journey?'**
+  /// **'choose your ending stop'**
   String get hintDestinationSelection;
 
   /// Hint for time selection
   ///
   /// In en, this message translates to:
-  /// **'when do you plan to travel?'**
+  /// **'choose a starting or ending time'**
   String get hintTimeSelection;
 
   /// Hint for driver seat selection

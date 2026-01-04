@@ -140,10 +140,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get chooseYourStops => 'Wählen Sie Ihre Haltestellen';
 
   @override
-  String get pickUpTime => 'Abholung';
+  String get pickUpTime => 'Start';
 
   @override
-  String get dropOffTime => 'Absetzung';
+  String get dropOffTime => 'Ende';
 
   @override
   String get today => 'Heute';
@@ -548,13 +548,22 @@ class AppLocalizationsDe extends AppLocalizations {
   String get pickUpAndDropOff => 'von?';
 
   @override
+  String get hintFromStop => 'wählen Sie Ihre Starthaltestelle';
+
+  @override
   String get chooseDropOffPoint => 'nach?';
+
+  @override
+  String get hintToStop => 'wählen Sie Ihre Endhaltestelle';
 
   @override
   String get tapSeatsToChangeAvailability => 'sitze tippen zum ändern';
 
   @override
   String get setYourTime => 'zeit?';
+
+  @override
+  String get hintTime => 'wählen Sie eine Start- oder Endzeit';
 
   @override
   String get incompleteProfile => 'Unvollständiges Profil';
@@ -627,6 +636,12 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get archived => 'Archiviert';
+
+  @override
+  String get autoArchived => 'Automatisch archiviert';
+
+  @override
+  String get userArchived => 'Archiviert';
 
   @override
   String get message => 'Nachricht';
@@ -711,13 +726,13 @@ class AppLocalizationsDe extends AppLocalizations {
       'wählen Sie die Route, auf der Sie reisen werden';
 
   @override
-  String get hintOriginSelection => 'wo beginnt Ihre Reise?';
+  String get hintOriginSelection => 'wählen Sie Ihre Starthaltestelle';
 
   @override
-  String get hintDestinationSelection => 'wo endet Ihre Reise?';
+  String get hintDestinationSelection => 'wählen Sie Ihre Endhaltestelle';
 
   @override
-  String get hintTimeSelection => 'wann planen Sie zu reisen?';
+  String get hintTimeSelection => 'wählen Sie eine Start- oder Endzeit';
 
   @override
   String get hintSeatSelectionDriver =>

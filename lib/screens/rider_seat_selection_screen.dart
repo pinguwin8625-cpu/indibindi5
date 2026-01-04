@@ -88,17 +88,6 @@ class _RiderSeatSelectionScreenState extends State<RiderSeatSelectionScreen> {
                                 letterSpacing: 0.5,
                               ),
                             ),
-                            Padding(
-                              padding: EdgeInsets.only(top: 4),
-                              child: Text(
-                                l10n.hintSeatSelectionRider,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Color(0xFF2E2E2E).withOpacity(0.5),
-                                  fontStyle: FontStyle.italic,
-                                ),
-                              ),
-                            ),
                             SizedBox(height: 8),
                             // Seat count subtitle
                             Text(

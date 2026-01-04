@@ -140,10 +140,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get chooseYourStops => '정류장을 선택하세요';
 
   @override
-  String get pickUpTime => '탑승';
+  String get pickUpTime => '시작';
 
   @override
-  String get dropOffTime => '하차';
+  String get dropOffTime => '종료';
 
   @override
   String get today => '오늘';
@@ -545,13 +545,22 @@ class AppLocalizationsKo extends AppLocalizations {
   String get pickUpAndDropOff => '어디서?';
 
   @override
+  String get hintFromStop => '출발 정류장을 선택하세요';
+
+  @override
   String get chooseDropOffPoint => '어디로?';
+
+  @override
+  String get hintToStop => '도착 정류장을 선택하세요';
 
   @override
   String get tapSeatsToChangeAvailability => '탭하여 변경';
 
   @override
   String get setYourTime => '시간?';
+
+  @override
+  String get hintTime => '출발 또는 도착 시간을 선택하세요';
 
   @override
   String get incompleteProfile => '프로필 미완성';
@@ -618,6 +627,12 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get archived => '보관됨';
+
+  @override
+  String get autoArchived => '자동 보관됨';
+
+  @override
+  String get userArchived => '보관됨';
 
   @override
   String get message => '메시지';
@@ -699,13 +714,13 @@ class AppLocalizationsKo extends AppLocalizations {
   String get hintRouteSelection => '이동할 노선을 선택하세요';
 
   @override
-  String get hintOriginSelection => '어디서 출발하시나요?';
+  String get hintOriginSelection => '출발 정류장을 선택하세요';
 
   @override
-  String get hintDestinationSelection => '어디서 내리시나요?';
+  String get hintDestinationSelection => '도착 정류장을 선택하세요';
 
   @override
-  String get hintTimeSelection => '언제 이동할 예정인가요?';
+  String get hintTimeSelection => '출발 또는 도착 시간을 선택하세요';
 
   @override
   String get hintSeatSelectionDriver => '좌석을 탭하여 라이더에게 제공';

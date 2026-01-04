@@ -140,10 +140,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get chooseYourStops => '停留所を選択';
 
   @override
-  String get pickUpTime => '乗車';
+  String get pickUpTime => '開始';
 
   @override
-  String get dropOffTime => '降車';
+  String get dropOffTime => '終了';
 
   @override
   String get today => '今日';
@@ -545,13 +545,22 @@ class AppLocalizationsJa extends AppLocalizations {
   String get pickUpAndDropOff => 'どこから？';
 
   @override
+  String get hintFromStop => '出発停留所を選択';
+
+  @override
   String get chooseDropOffPoint => 'どこまで？';
+
+  @override
+  String get hintToStop => '到着停留所を選択';
 
   @override
   String get tapSeatsToChangeAvailability => 'タップして変更';
 
   @override
   String get setYourTime => '時間？';
+
+  @override
+  String get hintTime => '出発または到着時間を選択';
 
   @override
   String get incompleteProfile => 'プロフィール未完了';
@@ -618,6 +627,12 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get archived => 'アーカイブ済み';
+
+  @override
+  String get autoArchived => '自動アーカイブ';
+
+  @override
+  String get userArchived => 'アーカイブ済み';
 
   @override
   String get message => 'メッセージ';
@@ -699,13 +714,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get hintRouteSelection => '移動するルートを選択してください';
 
   @override
-  String get hintOriginSelection => 'どこから出発しますか？';
+  String get hintOriginSelection => '出発停留所を選択';
 
   @override
-  String get hintDestinationSelection => 'どこで降りますか？';
+  String get hintDestinationSelection => '到着停留所を選択';
 
   @override
-  String get hintTimeSelection => 'いつ移動する予定ですか？';
+  String get hintTimeSelection => '出発または到着時間を選択';
 
   @override
   String get hintSeatSelectionDriver => '座席をタップしてライダーに開放';

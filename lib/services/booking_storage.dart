@@ -104,7 +104,7 @@ class BookingStorage {
         if (kDebugMode) {
           print('📚 Auto-archiving old booking: ${booking.id} (arrived ${booking.arrivalTime}, canceled: ${booking.isCanceled})');
         }
-        return booking.copyWith(isArchived: true, archivedAt: now);
+        return booking.copyWith(isArchived: true, archivedAt: now, isAutoArchived: true);
       }
       
       return booking;
@@ -534,9 +534,11 @@ class BookingStorage {
       }
 
       final booking = bookings.value[index];
-      updateBooking(booking.copyWith(isArchived: true, archivedAt: DateTime.now()));
+      final archivedBooking = booking.copyWith(isArchived: true, archivedAt: DateTime.now(), isAutoArchived: false);
+      updateBooking(archivedBooking);
       if (kDebugMode) {
-        print('📚 BookingStorage: Archived booking $id');
+        print('📚 BookingStorage: Manually archived booking $id');
+        print('📚 BookingStorage: isArchived=${archivedBooking.isArchived}, isAutoArchived=${archivedBooking.isAutoArchived}');
       }
     } catch (e) {
       if (kDebugMode) {
@@ -557,7 +559,7 @@ class BookingStorage {
       }
 
       final booking = bookings.value[index];
-      updateBooking(booking.copyWith(isArchived: false, archivedAt: null));
+      updateBooking(booking.copyWith(isArchived: false, archivedAt: null, isAutoArchived: null));
       if (kDebugMode) {
         print('📚 BookingStorage: Unarchived booking $id');
       }

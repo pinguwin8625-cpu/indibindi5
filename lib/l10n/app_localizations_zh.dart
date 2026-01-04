@@ -140,10 +140,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chooseYourStops => '选择您的站点';
 
   @override
-  String get pickUpTime => '上车';
+  String get pickUpTime => '开始';
 
   @override
-  String get dropOffTime => '下车';
+  String get dropOffTime => '结束';
 
   @override
   String get today => '今天';
@@ -545,13 +545,22 @@ class AppLocalizationsZh extends AppLocalizations {
   String get pickUpAndDropOff => '从哪？';
 
   @override
+  String get hintFromStop => '选择您的出发站';
+
+  @override
   String get chooseDropOffPoint => '到哪？';
+
+  @override
+  String get hintToStop => '选择您的到达站';
 
   @override
   String get tapSeatsToChangeAvailability => '点击更改';
 
   @override
   String get setYourTime => '时间？';
+
+  @override
+  String get hintTime => '选择出发或到达时间';
 
   @override
   String get incompleteProfile => '资料不完整';
@@ -617,6 +626,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get archived => '已归档';
+
+  @override
+  String get autoArchived => '自动归档';
+
+  @override
+  String get userArchived => '已归档';
 
   @override
   String get message => '消息';
@@ -698,13 +713,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get hintRouteSelection => '选择您要行驶的路线';
 
   @override
-  String get hintOriginSelection => '您的行程从哪里开始？';
+  String get hintOriginSelection => '选择您的出发站';
 
   @override
-  String get hintDestinationSelection => '您的行程在哪里结束？';
+  String get hintDestinationSelection => '选择您的到达站';
 
   @override
-  String get hintTimeSelection => '您计划什么时候出行？';
+  String get hintTimeSelection => '选择出发或到达时间';
 
   @override
   String get hintSeatSelectionDriver => '点击座位使其对乘客可用';

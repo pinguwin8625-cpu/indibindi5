@@ -137,20 +137,6 @@ class _StopsLayerWidgetState extends State<StopsLayerWidget> {
           builder: (context) {
             final l10n = AppLocalizations.of(context)!;
 
-            // Determine which hint to show based on current state
-            String? hintText;
-            Color? hintColor;
-            if (localOriginIndex == null) {
-              hintText = l10n.hintOriginSelection;
-              hintColor = Color(0xFF4CAF50).withOpacity(0.6);
-            } else if (localDestinationIndex == null) {
-              hintText = l10n.hintDestinationSelection;
-              hintColor = Color(0xFFDD2C00).withOpacity(0.5);
-            } else {
-              hintText = l10n.hintTimeSelection;
-              hintColor = Color(0xFFFF6D00).withOpacity(0.6);
-            }
-
             return Container(
               padding: EdgeInsets.fromLTRB(16, 8, 16, 8),
               child: Column(
@@ -169,15 +155,26 @@ class _StopsLayerWidgetState extends State<StopsLayerWidget> {
                                   ? Center(
                                       child: FittedBox(
                                         fit: BoxFit.scaleDown,
-                                        child: Text(
-                                          l10n.pickUpAndDropOff,
-                                          style: TextStyle(
-                                            fontSize: 28,
-                                            fontWeight: FontWeight.w600,
-                                            color: Color(0xFF4CAF50), // Green for from
-                                            letterSpacing: 0.5,
-                                          ),
-                                          maxLines: 1,
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              Icons.location_on,
+                                              color: Color(0xFF4CAF50),
+                                              size: 28,
+                                            ),
+                                            SizedBox(width: 8),
+                                            Text(
+                                              l10n.pickUpAndDropOff,
+                                              style: TextStyle(
+                                                fontSize: 28,
+                                                fontWeight: FontWeight.w600,
+                                                color: Color(0xFF4CAF50), // Green for from
+                                                letterSpacing: 0.5,
+                                              ),
+                                              maxLines: 1,
+                                            ),
+                                          ],
                                         ),
                                       ),
                                     )
@@ -189,15 +186,26 @@ class _StopsLayerWidgetState extends State<StopsLayerWidget> {
                                   ? Center(
                                       child: FittedBox(
                                         fit: BoxFit.scaleDown,
-                                        child: Text(
-                                          l10n.chooseDropOffPoint,
-                                          style: TextStyle(
-                                            fontSize: 28,
-                                            fontWeight: FontWeight.w600,
-                                            color: Color(0xFFDD2C00), // Red for to
-                                            letterSpacing: 0.5,
-                                          ),
-                                          maxLines: 1,
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              Icons.flag,
+                                              color: Color(0xFFDD2C00),
+                                              size: 28,
+                                            ),
+                                            SizedBox(width: 8),
+                                            Text(
+                                              l10n.chooseDropOffPoint,
+                                              style: TextStyle(
+                                                fontSize: 28,
+                                                fontWeight: FontWeight.w600,
+                                                color: Color(0xFFDD2C00), // Red for to
+                                                letterSpacing: 0.5,
+                                              ),
+                                              maxLines: 1,
+                                            ),
+                                          ],
                                         ),
                                       ),
                                     )
@@ -212,33 +220,34 @@ class _StopsLayerWidgetState extends State<StopsLayerWidget> {
                         flex: 2,
                         child: (localOriginIndex != null && localDestinationIndex != null)
                             ? Center(
-                                child: Text(
-                                  l10n.setYourTime,
-                                  style: TextStyle(
-                                    fontSize: 28,
-                                    fontWeight: FontWeight.w600,
-                                    color: Color(0xFFFF6D00), // Orange for time
-                                    letterSpacing: 0.5,
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.access_time,
+                                        color: Color(0xFFFF6D00),
+                                        size: 28,
+                                      ),
+                                      SizedBox(width: 8),
+                                      Text(
+                                        l10n.setYourTime,
+                                        style: TextStyle(
+                                          fontSize: 28,
+                                          fontWeight: FontWeight.w600,
+                                          color: Color(0xFFFF6D00), // Orange for time
+                                          letterSpacing: 0.5,
+                                        ),
+                                        maxLines: 1,
+                                      ),
+                                    ],
                                   ),
                                 ),
                               )
                             : SizedBox.shrink(),
                       ),
                     ],
-                  ),
-                  // Hint row - full width
-                  Padding(
-                    padding: EdgeInsets.only(top: 8),
-                    child: Text(
-                      hintText,
-                      style: TextStyle(
-                        fontSize: 21,
-                        color: hintColor,
-                        fontStyle: FontStyle.italic,
-                      ),
-                      textAlign: TextAlign.center,
-                      maxLines: 1,
-                    ),
                   ),
                 ],
               ),

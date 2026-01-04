@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../models/booking.dart';
 import '../l10n/app_localizations.dart';
@@ -104,6 +105,12 @@ class _BookingCardState extends State<BookingCard> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
 
+    // Debug: Log archived booking label info
+    if (kDebugMode && widget.isArchived) {
+      print('🏷️ BookingCard: Archived booking ${widget.booking.id}');
+      print('🏷️ BookingCard: isAutoArchived=${widget.booking.isAutoArchived}, label will be: ${widget.booking.isAutoArchived == true ? "Auto-archived" : "Archived"}');
+    }
+
     return Card(
       margin: EdgeInsets.only(bottom: 16),
       elevation: 2,
@@ -141,26 +148,41 @@ class _BookingCardState extends State<BookingCard> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Center(
-                      child: Text(
-                        widget.isArchived
-                            ? '${l10n.archived} (${widget.isCanceled ? l10n.canceled : l10n.completed})'
-                            : (widget.isCanceled
-                                ? l10n.canceled
-                                : widget.isOngoing
-                                    ? l10n.ongoing
-                                    : (widget.isPast ? l10n.completed : l10n.upcoming)) + _getStatusSuffix(),
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: widget.isArchived
-                              ? Colors.grey[700]
-                              : widget.isCanceled
-                                  ? Colors.red[700]
+                      child: widget.isArchived
+                          ? RichText(
+                              text: TextSpan(
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                children: [
+                                  TextSpan(
+                                    text: widget.booking.isAutoArchived == true ? l10n.autoArchived : l10n.userArchived,
+                                    style: TextStyle(color: Colors.grey[700]),
+                                  ),
+                                  TextSpan(
+                                    text: ' (${widget.isCanceled ? l10n.canceled : l10n.completed})',
+                                    style: TextStyle(color: widget.isCanceled ? Colors.red[700] : Colors.green[700]),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : Text(
+                              (widget.isCanceled
+                                  ? l10n.canceled
                                   : widget.isOngoing
-                                      ? Colors.orange[700]
-                                      : (widget.isPast ? Colors.green[700] : Colors.blue[700]),
-                        ),
-                      ),
+                                      ? l10n.ongoing
+                                      : (widget.isPast ? l10n.completed : l10n.upcoming)) + _getStatusSuffix(),
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: widget.isCanceled
+                                    ? Colors.red[700]
+                                    : widget.isOngoing
+                                        ? Colors.orange[700]
+                                        : (widget.isPast ? Colors.green[700] : Colors.blue[700]),
+                              ),
+                            ),
                     ),
                   ),
                 ),
