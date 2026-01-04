@@ -975,7 +975,10 @@ class _BookingsTabState extends State<_BookingsTab> {
       );
     }
 
-    return card;
+    return Padding(
+      padding: EdgeInsets.only(bottom: 8),
+      child: card,
+    );
   }
 
   Widget _buildMiniatureSeatLayout(List<int> selectedSeats, Booking booking) {
@@ -1288,7 +1291,7 @@ class _MessagesTabState extends State<_MessagesTab> {
     final isHighlighted = _highlightedConversationId == conversation.id;
 
     Widget card = Padding(
-      padding: EdgeInsets.only(bottom: 10),
+      padding: EdgeInsets.only(bottom: 8),
       child: ConversationCard(
         conversation: conversation,
         showUnreadBadge: true,
@@ -1589,165 +1592,31 @@ class _RatingsTabState extends State<_RatingsTab> {
           itemCount: sortedRatings.length,
           itemBuilder: (context, index) {
             final rating = sortedRatings[index];
-            final fromUser = MockUsers.getUserById(rating.fromUserId);
-            final toUser = MockUsers.getUserById(rating.toUserId);
             final isHighlighted = _highlightedRatingId == rating.id;
 
-            Widget card = Card(
-          margin: EdgeInsets.only(bottom: 12),
-          child: Padding(
-            padding: EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header with users and overall rating
-                Row(
-                  children: [
-                    // From user
-                    Expanded(
-                      child: Row(
-                        children: [
-                          GestureDetector(
-                            onTap: fromUser != null && widget.onNavigateToUser != null
-                                ? () => widget.onNavigateToUser!(
-                                    fromUser,
-                                    navContext: AdminNavigationContext(
-                                      sourceTabIndex: 3,
-                                      ratingId: rating.id,
-                                    ),
-                                  )
-                                : null,
-                            child: CircleAvatar(
-                              radius: 20,
-                              backgroundColor: Colors.grey[300],
-                              backgroundImage: fromUser?.profilePhotoUrl != null
-                                  ? (fromUser!.profilePhotoUrl!.startsWith('http')
-                                      ? NetworkImage(fromUser.profilePhotoUrl!) as ImageProvider
-                                      : AssetImage(fromUser.profilePhotoUrl!))
-                                  : null,
-                              child: fromUser?.profilePhotoUrl == null
-                                  ? Icon(Icons.person, color: Colors.white, size: 20)
-                                  : null,
-                            ),
-                          ),
-                          SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              fromUser?.fullName ?? 'Unknown',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
+            Widget card = RatingCard(
+              rating: rating,
+              mode: RatingCardMode.full,
+              formatTimestamp: _formatTimestamp,
+              onFromUserTap: widget.onNavigateToUser != null
+                  ? (user) => widget.onNavigateToUser!(
+                      user,
+                      navContext: AdminNavigationContext(
+                        sourceTabIndex: 3,
+                        ratingId: rating.id,
                       ),
-                    ),
-
-                    // Arrow
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 8),
-                      child: Icon(Icons.arrow_forward, size: 20, color: Colors.grey[600]),
-                    ),
-
-                    // To user
-                    Expanded(
-                      child: Row(
-                        children: [
-                          GestureDetector(
-                            onTap: toUser != null && widget.onNavigateToUser != null
-                                ? () => widget.onNavigateToUser!(
-                                    toUser,
-                                    navContext: AdminNavigationContext(
-                                      sourceTabIndex: 3,
-                                      ratingId: rating.id,
-                                    ),
-                                  )
-                                : null,
-                            child: CircleAvatar(
-                              radius: 20,
-                              backgroundColor: Colors.grey[300],
-                              backgroundImage: toUser?.profilePhotoUrl != null
-                                  ? (toUser!.profilePhotoUrl!.startsWith('http')
-                                      ? NetworkImage(toUser.profilePhotoUrl!) as ImageProvider
-                                      : AssetImage(toUser.profilePhotoUrl!))
-                                  : null,
-                              child: toUser?.profilePhotoUrl == null
-                                  ? Icon(Icons.person, color: Colors.white, size: 20)
-                                  : null,
-                            ),
-                          ),
-                          SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              toUser?.fullName ?? 'Unknown',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
+                    )
+                  : null,
+              onToUserTap: widget.onNavigateToUser != null
+                  ? (user) => widget.onNavigateToUser!(
+                      user,
+                      navContext: AdminNavigationContext(
+                        sourceTabIndex: 3,
+                        ratingId: rating.id,
                       ),
-                    ),
-
-                    // Overall rating
-                    SizedBox(width: 8),
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.amber.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.amber, width: 1.5),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.star, color: Colors.amber[700], size: 18),
-                          SizedBox(width: 4),
-                          Text(
-                            rating.averageRating.toStringAsFixed(1),
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.amber[900],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-
-                // Category chips
-                SizedBox(height: 12),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 6,
-                  children: [
-                    if (rating.polite == 1) RatingCategoryChip(label: 'Polite'),
-                    if (rating.clean == 1) RatingCategoryChip(label: 'Clean'),
-                    if (rating.communicative == 1) RatingCategoryChip(label: 'Communicative'),
-                    if (rating.safe == 1) RatingCategoryChip(label: 'Safe'),
-                    if (rating.punctual == 1) RatingCategoryChip(label: 'Punctual'),
-                  ],
-                ),
-
-                // Timestamp
-                SizedBox(height: 8),
-                Text(
-                  _formatTimestamp(rating.ratedAt),
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.grey[600],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
+                    )
+                  : null,
+            );
 
             // Add highlight effect when this rating is the one we navigated back to
             if (isHighlighted) {
@@ -2302,7 +2171,7 @@ class _UserDetailsContentState extends State<_UserDetailsContent> {
           isExpanded: _bookingsExpanded,
           onTap: () => setState(() => _bookingsExpanded = !_bookingsExpanded),
           children: _buildBookingsChildren(),
-          contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+          contentPadding: EdgeInsets.symmetric(horizontal: 0, vertical: 12),
         ),
 
         SizedBox(height: 16),
@@ -2313,7 +2182,7 @@ class _UserDetailsContentState extends State<_UserDetailsContent> {
           count: widget.conversations.length,
           isExpanded: _messagesExpanded,
           onTap: () => setState(() => _messagesExpanded = !_messagesExpanded),
-          contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+          contentPadding: EdgeInsets.symmetric(horizontal: 0, vertical: 12),
           children: _buildMessagesChildren(),
         ),
 
@@ -2325,6 +2194,7 @@ class _UserDetailsContentState extends State<_UserDetailsContent> {
           count: widget.ratings.length,
           isExpanded: _ratingsExpanded,
           onTap: () => setState(() => _ratingsExpanded = !_ratingsExpanded),
+          contentPadding: EdgeInsets.symmetric(horizontal: 0, vertical: 12),
           children: widget.ratings.isEmpty
               ? [
                   Padding(
@@ -2336,64 +2206,10 @@ class _UserDetailsContentState extends State<_UserDetailsContent> {
                   )
                 ]
               : widget.ratings
-                  .map((rating) {
-                    final fromUser = MockUsers.getUserById(rating.fromUserId);
-                    return Padding(
-                      padding: EdgeInsets.only(bottom: 8),
-                      child: Card(
-                        child: Padding(
-                          padding: EdgeInsets.all(12),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Header with name and overall rating
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    fromUser?.fullName ?? 'Unknown User',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 15,
-                                    ),
-                                  ),
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(Icons.star, color: Colors.amber, size: 16),
-                                      SizedBox(width: 4),
-                                      Text(
-                                        rating.averageRating.toStringAsFixed(1),
-                                        style: TextStyle(fontWeight: FontWeight.bold),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: 8),
-                              // Category details
-                              Wrap(
-                                spacing: 8,
-                                runSpacing: 4,
-                                children: [
-                                  if (rating.polite == 1)
-                                    RatingCategoryChip(label: 'Polite'),
-                                  if (rating.clean == 1)
-                                    RatingCategoryChip(label: 'Clean'),
-                                  if (rating.communicative == 1)
-                                    RatingCategoryChip(label: 'Communicative'),
-                                  if (rating.safe == 1)
-                                    RatingCategoryChip(label: 'Safe'),
-                                  if (rating.punctual == 1)
-                                    RatingCategoryChip(label: 'Punctual'),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  })
+                  .map((rating) => RatingCard(
+                        rating: rating,
+                        mode: RatingCardMode.full,
+                      ))
                   .toList(),
         ),
 
@@ -2635,6 +2451,23 @@ class _UserDetailsContentState extends State<_UserDetailsContent> {
     );
   }
 
+  String _formatTimestamp(DateTime timestamp) {
+    final now = DateTime.now();
+    final diff = now.difference(timestamp);
+
+    if (diff.inDays > 30) {
+      return '${timestamp.day}/${timestamp.month}/${timestamp.year}';
+    } else if (diff.inDays > 0) {
+      return '${diff.inDays} day${diff.inDays > 1 ? 's' : ''} ago';
+    } else if (diff.inHours > 0) {
+      return '${diff.inHours} hour${diff.inHours > 1 ? 's' : ''} ago';
+    } else if (diff.inMinutes > 0) {
+      return '${diff.inMinutes} minute${diff.inMinutes > 1 ? 's' : ''} ago';
+    } else {
+      return 'Just now';
+    }
+  }
+
   List<Widget> _buildBookingsChildren() {
     if (widget.bookings.isEmpty) {
       return [
@@ -2821,7 +2654,7 @@ class _UserDetailsContentState extends State<_UserDetailsContent> {
         // Category bookings - full width
         if (isExpanded) ...[
           ...bookings.map((booking) => Padding(
-                padding: EdgeInsets.only(bottom: 6),
+                padding: EdgeInsets.only(bottom: 8),
                 child: BookingCard(
                   booking: booking,
                   isPast: isPast,
