@@ -24,6 +24,7 @@ class AdminNavigationContext {
   final Booking? booking; // For scrolling to specific booking
   final String? ratingId; // For scrolling to specific rating
   final bool fromChatScreen; // True if navigation started from inside a chat
+  final User? previousUser; // For navigating back to previous user in User Details
 
   AdminNavigationContext({
     required this.sourceTabIndex,
@@ -31,6 +32,7 @@ class AdminNavigationContext {
     this.booking,
     this.ratingId,
     this.fromChatScreen = false,
+    this.previousUser,
   });
 }
 
@@ -86,6 +88,11 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> with SingleTickerPr
   }
 
   String _getBackLabel(AdminNavigationContext navContext) {
+    // If coming from another user's details, show their name
+    if (navContext.previousUser != null) {
+      final user = navContext.previousUser!;
+      return '${user.name} ${user.surname.isNotEmpty ? user.surname[0] : ''}.';
+    }
     // If coming from a chat, show "Chat"
     if (navContext.conversation != null) {
       return 'Chat';
@@ -94,6 +101,12 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> with SingleTickerPr
   }
 
   void _navigateBack(AdminNavigationContext navContext) {
+    // If navigating back to a previous user's details
+    if (navContext.previousUser != null) {
+      _showUserDetails(context, navContext.previousUser!);
+      return;
+    }
+
     // First switch to the source tab
     _tabController.animateTo(navContext.sourceTabIndex);
 
@@ -156,7 +169,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> with SingleTickerPr
     final ratings = RatingService().getRatingsForUser(user.id);
 
     // Only show back button if navigating from a different tab
-    final showBackButton = navContext != null && navContext.sourceTabIndex != 0;
+    final showBackButton = navContext != null && (navContext.sourceTabIndex != 0 || navContext.previousUser != null);
 
     showModalBottomSheet(
       context: context,
@@ -252,6 +265,20 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> with SingleTickerPr
                 conversations: conversations,
                 ratings: ratings,
                 scrollController: scrollController,
+                onNavigateToUser: (tappedUser) {
+                  // Don't navigate if tapping the same user
+                  if (tappedUser.id == user.id) return;
+                  // Close current modal and open new user's details with back button
+                  Navigator.pop(context);
+                  _showUserDetails(
+                    context,
+                    tappedUser,
+                    navContext: AdminNavigationContext(
+                      sourceTabIndex: 0,
+                      previousUser: user,
+                    ),
+                  );
+                },
               ),
             ),
           ],
@@ -500,7 +527,7 @@ class _UsersTab extends StatelessWidget {
     );
   }
 
-  void _showUserDetails(BuildContext context, User user) {
+  void _showUserDetails(BuildContext context, User user, {User? previousUser}) {
     final bookings = BookingStorage().getBookingsForUser(user.id);
     // Filter out empty conversations (same as inbox) to sync data
     final conversations = MessagingService()
@@ -527,6 +554,36 @@ class _UsersTab extends StatelessWidget {
               ),
               child: Row(
                 children: [
+                  // Back button to previous user
+                  if (previousUser != null)
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.pop(context);
+                        _showUserDetails(context, previousUser);
+                      },
+                      child: Container(
+                        padding: EdgeInsets.all(8),
+                        margin: EdgeInsets.only(right: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.chevron_left, color: Colors.white, size: 20),
+                            Text(
+                              '${previousUser.name} ${previousUser.surname.isNotEmpty ? previousUser.surname[0] : ''}.',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   CircleAvatar(
                     radius: 30,
                     backgroundColor: Colors.white,
@@ -573,6 +630,13 @@ class _UsersTab extends StatelessWidget {
                 conversations: conversations,
                 ratings: ratings,
                 scrollController: scrollController,
+                onNavigateToUser: (tappedUser) {
+                  // Don't navigate if tapping the same user
+                  if (tappedUser.id == user.id) return;
+                  // Close current modal and open new user's details with back button
+                  Navigator.pop(context);
+                  _showUserDetails(context, tappedUser, previousUser: user);
+                },
               ),
             ),
           ],
@@ -2021,6 +2085,7 @@ class _UserDetailsContent extends StatefulWidget {
   final List<Conversation> conversations;
   final List<TripRating> ratings;
   final ScrollController scrollController;
+  final void Function(User user)? onNavigateToUser;
 
   const _UserDetailsContent({
     required this.user,
@@ -2028,6 +2093,7 @@ class _UserDetailsContent extends StatefulWidget {
     required this.conversations,
     required this.ratings,
     required this.scrollController,
+    this.onNavigateToUser,
   });
 
   @override
@@ -2212,6 +2278,8 @@ class _UserDetailsContentState extends State<_UserDetailsContent> {
                         rating: rating,
                         mode: RatingCardMode.full,
                         formatTimestamp: _formatTimestamp,
+                        onFromUserTap: widget.onNavigateToUser,
+                        onToUserTap: widget.onNavigateToUser,
                       ))
                   .toList(),
         ),
@@ -2673,6 +2741,30 @@ class _UserDetailsContentState extends State<_UserDetailsContent> {
                       booking: booking,
                       isInteractive: false,
                       currentUserId: null,
+                      onDriverPhotoTap: widget.onNavigateToUser != null
+                          ? () {
+                              final driverId = booking.driverUserId ?? booking.userId;
+                              final driver = MockUsers.getUserById(driverId);
+                              if (driver != null) {
+                                widget.onNavigateToUser!(driver);
+                              }
+                            }
+                          : null,
+                      onRiderPhotoTap: widget.onNavigateToUser != null
+                          ? (seatIndex) {
+                              if (booking.riders != null) {
+                                for (var rider in booking.riders!) {
+                                  if (rider.seatIndex == seatIndex) {
+                                    final riderUser = MockUsers.getUserById(rider.userId);
+                                    if (riderUser != null) {
+                                      widget.onNavigateToUser!(riderUser);
+                                    }
+                                    break;
+                                  }
+                                }
+                              }
+                            }
+                          : null,
                     );
                   },
                 ),
@@ -2896,6 +2988,7 @@ class _UserDetailsContentState extends State<_UserDetailsContent> {
             ),
           );
         },
+        onAvatarTap: widget.onNavigateToUser,
       ),
     );
   }
