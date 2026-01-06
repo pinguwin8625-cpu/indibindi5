@@ -109,8 +109,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get chooseYourRoute => 'hangi rota?';
 
   @override
-  String get chooseYourSeats =>
-      'müsaitliği değiştirmek için koltuklara dokunun';
+  String get chooseYourSeats => 'müsaitliği düzenlemek için koltuklara dokunun';
 
   @override
   String get availableSeats => 'Müsait Koltuklar';

@@ -109,7 +109,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chooseYourRoute => 'which route?';
 
   @override
-  String get chooseYourSeats => 'tap seats to change their availability';
+  String get chooseYourSeats => 'tap seats to edit availability';
 
   @override
   String get availableSeats => 'Available Seats';
