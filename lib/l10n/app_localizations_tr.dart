@@ -109,7 +109,8 @@ class AppLocalizationsTr extends AppLocalizations {
   String get chooseYourRoute => 'hangi rota?';
 
   @override
-  String get chooseYourSeats => 'Koltuklarınızı seçin';
+  String get chooseYourSeats =>
+      'müsaitliği değiştirmek için koltuklara dokunun';
 
   @override
   String get availableSeats => 'Müsait Koltuklar';
@@ -509,6 +510,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String get matchingRides => 'Eşleşen Yolculuklar';
 
   @override
+  String get chooseASeatOnMatchingRides => 'Koltuk Seçin';
+
+  @override
   String get withDriver => 'ile';
 
   @override
@@ -560,7 +564,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get tapSeatsToChangeAvailability => 'koltukları düzenlemek için dokun';
 
   @override
-  String get setYourTime => 'saat?';
+  String get setYourTime => 'ne zaman?';
 
   @override
   String get hintTime => 'başlangıç veya bitiş saati seçin';

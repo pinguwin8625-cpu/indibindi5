@@ -24,7 +24,7 @@ class AdminNavigationContext {
   final Booking? booking; // For scrolling to specific booking
   final String? ratingId; // For scrolling to specific rating
   final bool fromChatScreen; // True if navigation started from inside a chat
-  final User? previousUser; // For navigating back to previous user in User Details
+  final List<User> userHistory; // Stack of previous users for back navigation
 
   AdminNavigationContext({
     required this.sourceTabIndex,
@@ -32,7 +32,7 @@ class AdminNavigationContext {
     this.booking,
     this.ratingId,
     this.fromChatScreen = false,
-    this.previousUser,
+    this.userHistory = const [],
   });
 }
 
@@ -89,8 +89,8 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> with SingleTickerPr
 
   String _getBackLabel(AdminNavigationContext navContext) {
     // If coming from another user's details, show their name
-    if (navContext.previousUser != null) {
-      final user = navContext.previousUser!;
+    if (navContext.userHistory.isNotEmpty) {
+      final user = navContext.userHistory.last;
       return '${user.name} ${user.surname.isNotEmpty ? user.surname[0] : ''}.';
     }
     // If coming from a chat, show "Chat"
@@ -102,8 +102,16 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> with SingleTickerPr
 
   void _navigateBack(AdminNavigationContext navContext) {
     // If navigating back to a previous user's details
-    if (navContext.previousUser != null) {
-      _showUserDetails(context, navContext.previousUser!);
+    if (navContext.userHistory.isNotEmpty) {
+      final previousUser = navContext.userHistory.last;
+      final remainingHistory = navContext.userHistory.sublist(0, navContext.userHistory.length - 1);
+      _showUserDetails(
+        context,
+        previousUser,
+        navContext: remainingHistory.isNotEmpty
+            ? AdminNavigationContext(sourceTabIndex: 0, userHistory: remainingHistory)
+            : null,
+      );
       return;
     }
 
@@ -168,8 +176,8 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> with SingleTickerPr
         .toList();
     final ratings = RatingService().getRatingsForUser(user.id);
 
-    // Only show back button if navigating from a different tab
-    final showBackButton = navContext != null && (navContext.sourceTabIndex != 0 || navContext.previousUser != null);
+    // Only show back button if navigating from a different tab or from another user
+    final showBackButton = navContext != null && (navContext.sourceTabIndex != 0 || navContext.userHistory.isNotEmpty);
 
     showModalBottomSheet(
       context: context,
@@ -270,12 +278,14 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> with SingleTickerPr
                   if (tappedUser.id == user.id) return;
                   // Close current modal and open new user's details with back button
                   Navigator.pop(context);
+                  // Build up user history stack
+                  final newHistory = <User>[...(navContext?.userHistory ?? []), user];
                   _showUserDetails(
                     context,
                     tappedUser,
                     navContext: AdminNavigationContext(
                       sourceTabIndex: 0,
-                      previousUser: user,
+                      userHistory: newHistory,
                     ),
                   );
                 },
@@ -527,7 +537,7 @@ class _UsersTab extends StatelessWidget {
     );
   }
 
-  void _showUserDetails(BuildContext context, User user, {User? previousUser}) {
+  void _showUserDetails(BuildContext context, User user, {List<User> userHistory = const []}) {
     final bookings = BookingStorage().getBookingsForUser(user.id);
     // Filter out empty conversations (same as inbox) to sync data
     final conversations = MessagingService()
@@ -555,11 +565,13 @@ class _UsersTab extends StatelessWidget {
               child: Row(
                 children: [
                   // Back button to previous user
-                  if (previousUser != null)
+                  if (userHistory.isNotEmpty)
                     GestureDetector(
                       onTap: () {
                         Navigator.pop(context);
-                        _showUserDetails(context, previousUser);
+                        final previousUser = userHistory.last;
+                        final remainingHistory = userHistory.sublist(0, userHistory.length - 1);
+                        _showUserDetails(context, previousUser, userHistory: remainingHistory);
                       },
                       child: Container(
                         padding: EdgeInsets.all(8),
@@ -573,7 +585,7 @@ class _UsersTab extends StatelessWidget {
                           children: [
                             Icon(Icons.chevron_left, color: Colors.white, size: 20),
                             Text(
-                              '${previousUser.name} ${previousUser.surname.isNotEmpty ? previousUser.surname[0] : ''}.',
+                              '${userHistory.last.name} ${userHistory.last.surname.isNotEmpty ? userHistory.last.surname[0] : ''}.',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 12,
@@ -635,7 +647,7 @@ class _UsersTab extends StatelessWidget {
                   if (tappedUser.id == user.id) return;
                   // Close current modal and open new user's details with back button
                   Navigator.pop(context);
-                  _showUserDetails(context, tappedUser, previousUser: user);
+                  _showUserDetails(context, tappedUser, userHistory: [...userHistory, user]);
                 },
               ),
             ),

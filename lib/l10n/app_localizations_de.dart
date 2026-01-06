@@ -509,6 +509,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get matchingRides => 'Passende Fahrten';
 
   @override
+  String get chooseASeatOnMatchingRides => 'Choose a Seat';
+
+  @override
   String get withDriver => 'Mit';
 
   @override

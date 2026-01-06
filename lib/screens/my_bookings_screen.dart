@@ -31,8 +31,8 @@ class MyBookingsScreenState extends State<MyBookingsScreen>
     with SingleTickerProviderStateMixin {
   final BookingStorage _bookingStorage = BookingStorage();
   bool _showOlderPastBookings = false; // Archived starts folded
-  bool _showUpcoming = false; // Upcoming starts folded
-  bool _showOngoing = true; // Only ongoing is expanded by default
+  bool _showUpcoming = true; // Upcoming expanded by default
+  bool _showOngoing = false; // Ongoing starts folded
   bool _showCompleted = false; // Completed starts folded
   bool _showCanceled = false; // Canceled starts folded
   final ScrollController _driverScrollController = ScrollController();

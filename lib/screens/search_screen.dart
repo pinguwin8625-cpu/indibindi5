@@ -42,8 +42,9 @@ class SearchScreenState extends State<SearchScreen>
       case BookingLayer.stopsSelection:
         return l10n.screenTitleStopsTime;
       case BookingLayer.timeAndSeats:
-      case BookingLayer.matchingRides:
         return l10n.screenTitleSeat;
+      case BookingLayer.matchingRides:
+        return l10n.matchingRides;
     }
   }
 

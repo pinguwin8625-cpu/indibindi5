@@ -166,7 +166,7 @@
     "description": "Title for route selection"
   },
 
-  "chooseYourSeats": "Choose your seats",
+  "chooseYourSeats": "tap seats to edit availability",
   "@chooseYourSeats": {
     "description": "Title for seat selection"
   },
@@ -684,6 +684,11 @@
     "description": "Title for matching rides list"
   },
 
+  "chooseASeatOnMatchingRides": "Choose a Seat",
+  "@chooseASeatOnMatchingRides": {
+    "description": "Main title for matching rides screen"
+  },
+
   "withDriver": "With",
   "@withDriver": {
     "description": "Preposition for showing driver name"
@@ -767,7 +772,7 @@
     "description": "Hint text for driver seat selection"
   },
 
-  "setYourTime": "time?",
+  "setYourTime": "when?",
   "@setYourTime": {
     "description": "Title for time selection"
   },

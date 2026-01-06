@@ -506,6 +506,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get matchingRides => 'マッチする乗車';
 
   @override
+  String get chooseASeatOnMatchingRides => 'Choose a Seat';
+
+  @override
   String get withDriver => 'と';
 
   @override

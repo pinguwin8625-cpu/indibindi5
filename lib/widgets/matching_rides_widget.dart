@@ -41,11 +41,135 @@ class _MatchingRidesWidgetState extends State<MatchingRidesWidget> {
   VoidCallback? _confirmAction;
   String? _activeRideId; // Track which ride has pending seats
   final ScrollController _scrollController = ScrollController();
+  final Set<String> _expandedDays = {}; // Track which days are expanded
+
+  @override
+  void initState() {
+    super.initState();
+    // Today expanded by default
+    final now = DateTime.now();
+    _expandedDays.add(_getDayKey(now));
+  }
 
   @override
   void dispose() {
     _scrollController.dispose();
     super.dispose();
+  }
+
+  // Helper to get day key for tracking expansion
+  String _getDayKey(DateTime date) {
+    return '${date.year}-${date.month}-${date.day}';
+  }
+
+  // Helper to get relative day label with date
+  String _getRelativeDayLabel(DateTime date, AppLocalizations l10n) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final target = DateTime(date.year, date.month, date.day);
+    final diff = target.difference(today).inDays;
+
+    if (diff == 0) return l10n.today;
+    if (diff == 1) return l10n.tomorrow;
+
+    // Format date as "Mon 6" or "Tue 7"
+    final weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    final weekday = weekdays[date.weekday - 1];
+    return '$weekday ${date.day}';
+  }
+
+  // Get color for day divider - darker for earlier, lighter for later
+  Color _getDayColor(int dayIndex) {
+    // Black to grey color scheme
+    const colors = [
+      Color(0xFF212121), // Today - black
+      Color(0xFF424242), // Tomorrow - dark grey
+      Color(0xFF616161), // +2
+      Color(0xFF757575), // +3
+      Color(0xFF9E9E9E), // +4 and beyond - light grey
+    ];
+    return colors[dayIndex.clamp(0, colors.length - 1)];
+  }
+
+  // Build list of slivers with sticky date section headers
+  List<Widget> _buildRidesSlivers(List<RideInfo> rides, AppLocalizations l10n) {
+    if (rides.isEmpty) return [];
+
+    // Sort by departure time (earliest first)
+    final sortedRides = List<RideInfo>.from(rides)
+      ..sort((a, b) => a.departureTime.compareTo(b.departureTime));
+
+    // Group rides by day
+    final Map<String, List<RideInfo>> groupedRides = {};
+    for (final ride in sortedRides) {
+      final dayKey = _getDayKey(ride.departureTime);
+      groupedRides.putIfAbsent(dayKey, () => []).add(ride);
+    }
+
+    final slivers = <Widget>[];
+    int dayIndex = 0;
+
+    for (final entry in groupedRides.entries) {
+      final dayKey = entry.key;
+      final dayRides = entry.value;
+      final firstRide = dayRides.first;
+      final dayLabel = _getRelativeDayLabel(firstRide.departureTime, l10n);
+      final color = _getDayColor(dayIndex);
+      final isExpanded = _expandedDays.contains(dayKey);
+      final rideCount = dayRides.length;
+
+      // Add spacing between sections (except first)
+      if (dayIndex > 0) {
+        slivers.add(SliverToBoxAdapter(child: SizedBox(height: 24)));
+      }
+
+      // Add sticky header
+      slivers.add(
+        SliverPersistentHeader(
+          pinned: true,
+          delegate: _DaySectionHeaderDelegate(
+            title: dayLabel,
+            count: rideCount,
+            color: color,
+            isExpanded: isExpanded,
+            onTap: () {
+              setState(() {
+                if (isExpanded) {
+                  _expandedDays.remove(dayKey);
+                } else {
+                  _expandedDays.add(dayKey);
+                }
+              });
+            },
+          ),
+        ),
+      );
+
+      // Add rides if expanded
+      if (isExpanded) {
+        slivers.add(
+          SliverPadding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) => MatchingRideCard(
+                  key: ValueKey('ride-${dayRides[index].id}'),
+                  ride: dayRides[index],
+                  onBookingCompleted: widget.onBookingCompleted,
+                  onPendingChanged: _onPendingChanged,
+                  activeRideId: _activeRideId,
+                ),
+                childCount: dayRides.length,
+              ),
+            ),
+          ),
+        );
+      }
+
+      dayIndex++;
+    }
+
+    return slivers;
   }
 
   List<RideInfo> _getMatchingRides(BuildContext context) {
@@ -340,18 +464,19 @@ class _MatchingRidesWidgetState extends State<MatchingRidesWidget> {
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
                 child: Center(
                   child: Text(
-                    l10n.matchingRides,
+                    l10n.chooseASeatOnMatchingRides,
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.w600,
                       color: Color(0xFF5D4037),
                       letterSpacing: 0.5,
                     ),
+                    textAlign: TextAlign.center,
                   ),
                 ),
               ),
 
-              // Scrollable content area
+              // Scrollable content area with sticky headers
               Expanded(
                 child: matchingRides.isEmpty
                     ? Center(
@@ -383,62 +508,37 @@ class _MatchingRidesWidgetState extends State<MatchingRidesWidget> {
                           ],
                         ),
                       )
-                    : kIsWeb
-                        // Web: SingleChildScrollView with inline FAB button and scroll indicator
-                        ? ScrollIndicator(
-                            scrollController: _scrollController,
-                            child: SingleChildScrollView(
-                              controller: _scrollController,
-                              padding: EdgeInsets.symmetric(horizontal: 16),
-                              child: Column(
-                                children: [
-                                  ...matchingRides.map((ride) => MatchingRideCard(
-                                    key: ValueKey('ride-${ride.id}'),
-                                    ride: ride,
-                                    onBookingCompleted: widget.onBookingCompleted,
-                                    onPendingChanged: _onPendingChanged,
-                                    activeRideId: _activeRideId,
-                                  )),
-                                  // Inline FAB button for web (inside scrollable content)
-                                  if (_hasPendingSeats && _confirmAction != null)
-                                    Padding(
-                                      padding: EdgeInsets.symmetric(vertical: 24),
-                                      child: Center(
-                                        child: FloatingActionButton.extended(
-                                          onPressed: _confirmAction,
-                                          backgroundColor: Color(0xFF2E2E2E),
-                                          elevation: 4,
-                                          label: Text(
-                                            l10n.completeBooking,
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
+                    : ScrollIndicator(
+                        scrollController: _scrollController,
+                        child: CustomScrollView(
+                          controller: _scrollController,
+                          slivers: [
+                            ..._buildRidesSlivers(matchingRides, l10n),
+                            // Inline FAB button for web (inside scrollable content)
+                            if (kIsWeb && _hasPendingSeats && _confirmAction != null)
+                              SliverToBoxAdapter(
+                                child: Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 24),
+                                  child: Center(
+                                    child: FloatingActionButton.extended(
+                                      onPressed: _confirmAction,
+                                      backgroundColor: Color(0xFF2E2E2E),
+                                      elevation: 4,
+                                      label: Text(
+                                        l10n.completeBooking,
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
                                         ),
                                       ),
                                     ),
-                                ],
+                                  ),
+                                ),
                               ),
-                            ),
-                          )
-                        // Mobile: ListView with fixed button at bottom
-                        : ListView.builder(
-                            controller: _scrollController,
-                            padding: EdgeInsets.symmetric(horizontal: 16),
-                            itemCount: matchingRides.length,
-                            itemBuilder: (context, index) {
-                              final ride = matchingRides[index];
-                              return MatchingRideCard(
-                                key: ValueKey('ride-${ride.id}'),
-                                ride: ride,
-                                onBookingCompleted: widget.onBookingCompleted,
-                                onPendingChanged: _onPendingChanged,
-                                activeRideId: _activeRideId,
-                              );
-                            },
-                          ),
+                          ],
+                        ),
+                      ),
               ),
 
               // Fixed confirm button at bottom (mobile only)
@@ -482,5 +582,98 @@ class _MatchingRidesWidgetState extends State<MatchingRidesWidget> {
         );
       },
     );
+  }
+}
+
+// Sticky day section header delegate (same style as My Bookings)
+class _DaySectionHeaderDelegate extends SliverPersistentHeaderDelegate {
+  final String title;
+  final int count;
+  final Color color;
+  final bool isExpanded;
+  final VoidCallback onTap;
+
+  _DaySectionHeaderDelegate({
+    required this.title,
+    required this.count,
+    required this.color,
+    required this.isExpanded,
+    required this.onTap,
+  });
+
+  @override
+  double get minExtent => 50;
+
+  @override
+  double get maxExtent => 50;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            offset: Offset(0, 1),
+            blurRadius: 2,
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      isExpanded ? Icons.expand_less : Icons.expand_more,
+                      size: 20,
+                      color: color,
+                    ),
+                    SizedBox(width: 4),
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: color,
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    Text(
+                      '($count)',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: color,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  bool shouldRebuild(_DaySectionHeaderDelegate oldDelegate) {
+    return title != oldDelegate.title ||
+        count != oldDelegate.count ||
+        color != oldDelegate.color ||
+        isExpanded != oldDelegate.isExpanded;
   }
 }

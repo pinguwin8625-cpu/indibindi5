@@ -506,6 +506,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get matchingRides => '일치하는 탑승';
 
   @override
+  String get chooseASeatOnMatchingRides => 'Choose a Seat';
+
+  @override
   String get withDriver => '와 함께';
 
   @override

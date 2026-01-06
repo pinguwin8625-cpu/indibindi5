@@ -510,6 +510,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get matchingRides => 'Подходящие Поездки';
 
   @override
+  String get chooseASeatOnMatchingRides => 'Choose a Seat';
+
+  @override
   String get withDriver => 'С';
 
   @override

@@ -48,65 +48,29 @@ class SeatPlanningSectionWidget extends StatelessWidget {
       return null;
     }
 
-    // Calculate available seats count
-    int availableCount = 0;
-    for (int i = 0; i < 4; i++) {
-      if (userRole.toLowerCase() == 'driver') {
-        // For driver: selectedSeats are available
-        if (selectedSeats.contains(i)) {
-          availableCount++;
-        }
-      } else {
-        // For rider: selectedSeats are occupied, so available = not in list
-        if (!selectedSeats.contains(i)) {
-          availableCount++;
-        }
-      }
-    }
-
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Available seats count at the top - compact display
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: Color(0xFF00C853).withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Color(0xFF00C853).withValues(alpha: 0.3), width: 1),
-            ),
+          // Brown title with instruction text (swapped from top position)
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.event_seat, color: Color(0xFF00C853), size: 20),
+                Icon(Icons.touch_app, color: Color(0xFF5D4037), size: 24),
                 SizedBox(width: 8),
-                Text(
-                  '${l10n.available}: ',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Color(0xFF00C853),
+                Flexible(
+                  child: Text(
+                    l10n.chooseYourSeats,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF5D4037),
+                      letterSpacing: 0.5,
+                    ),
                   ),
-                ),
-                TweenAnimationBuilder<double>(
-                  key: ValueKey('available-$availableCount'),
-                  tween: Tween<double>(begin: 2.0, end: 1.0),
-                  duration: Duration(milliseconds: 600),
-                  curve: Curves.elasticOut,
-                  builder: (context, scale, child) {
-                    return Transform.scale(
-                      scale: scale,
-                      child: Text(
-                        '$availableCount',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF00C853),
-                        ),
-                      ),
-                    );
-                  },
                 ),
               ],
             ),

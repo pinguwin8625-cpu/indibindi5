@@ -511,6 +511,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get matchingRides => 'Trajets Correspondants';
 
   @override
+  String get chooseASeatOnMatchingRides => 'Choose a Seat';
+
+  @override
   String get withDriver => 'Avec';
 
   @override

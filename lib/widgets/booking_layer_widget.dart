@@ -85,20 +85,67 @@ class _BookingLayerWidgetState extends State<BookingLayerWidget> {
                         physics: AlwaysScrollableScrollPhysics(),
                         child: Column(
                           children: [
-                            // Title for driver
-                            Container(
-                              padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
-                              child: Text(
-                                l10n.chooseYourSeats,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 28,
-                                  fontWeight: FontWeight.w600,
-                                  color: Color(0xFF5D4037),
-                                  letterSpacing: 0.5,
+                            // Available seats count badge (swapped from SeatPlanningSectionWidget)
+                            if (widget.userRole.toLowerCase() == 'driver')
+                              Container(
+                                padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: Color(0xFF00C853).withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: Color(0xFF00C853).withValues(alpha: 0.3), width: 1),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.event_seat, color: Color(0xFF00C853), size: 20),
+                                      SizedBox(width: 8),
+                                      Text(
+                                        '${l10n.available}: ',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w500,
+                                          color: Color(0xFF00C853),
+                                        ),
+                                      ),
+                                      TweenAnimationBuilder<double>(
+                                        key: ValueKey('available-${widget.selectedSeats.length}'),
+                                        tween: Tween<double>(begin: 2.0, end: 1.0),
+                                        duration: Duration(milliseconds: 600),
+                                        curve: Curves.elasticOut,
+                                        builder: (context, scale, child) {
+                                          return Transform.scale(
+                                            scale: scale,
+                                            child: Text(
+                                              '${widget.selectedSeats.length}',
+                                              style: TextStyle(
+                                                fontSize: 20,
+                                                fontWeight: FontWeight.bold,
+                                                color: Color(0xFF00C853),
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              )
+                            else
+                              Container(
+                                padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
+                                child: Text(
+                                  l10n.matchingRides,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 28,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF5D4037),
+                                    letterSpacing: 0.5,
+                                  ),
                                 ),
                               ),
-                            ),
                             SizedBox(height: 16),
                             Padding(
                               padding: EdgeInsets.symmetric(horizontal: 16),
@@ -129,20 +176,67 @@ class _BookingLayerWidgetState extends State<BookingLayerWidget> {
                   // Mobile apps: centered layout with fixed button at bottom
                   : Column(
                       children: [
-                        // Title for driver
-                        Container(
-                          padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
-                          child: Text(
-                            l10n.chooseYourSeats,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF5D4037),
-                              letterSpacing: 0.5,
+                        // Available seats count badge (swapped from SeatPlanningSectionWidget)
+                        if (widget.userRole.toLowerCase() == 'driver')
+                          Container(
+                            padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
+                            child: Container(
+                              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: Color(0xFF00C853).withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Color(0xFF00C853).withValues(alpha: 0.3), width: 1),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.event_seat, color: Color(0xFF00C853), size: 20),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    '${l10n.available}: ',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                      color: Color(0xFF00C853),
+                                    ),
+                                  ),
+                                  TweenAnimationBuilder<double>(
+                                    key: ValueKey('available-${widget.selectedSeats.length}'),
+                                    tween: Tween<double>(begin: 2.0, end: 1.0),
+                                    duration: Duration(milliseconds: 600),
+                                    curve: Curves.elasticOut,
+                                    builder: (context, scale, child) {
+                                      return Transform.scale(
+                                        scale: scale,
+                                        child: Text(
+                                          '${widget.selectedSeats.length}',
+                                          style: TextStyle(
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.bold,
+                                            color: Color(0xFF00C853),
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )
+                        else
+                          Container(
+                            padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
+                            child: Text(
+                              l10n.matchingRides,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 28,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF5D4037),
+                                letterSpacing: 0.5,
+                              ),
                             ),
                           ),
-                        ),
                         Expanded(
                           child: Center(
                             child: Padding(

@@ -109,7 +109,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chooseYourRoute => 'which route?';
 
   @override
-  String get chooseYourSeats => 'Choose your seats';
+  String get chooseYourSeats => 'tap seats to change their availability';
 
   @override
   String get availableSeats => 'Available Seats';
@@ -508,6 +508,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get matchingRides => 'Matching Rides';
 
   @override
+  String get chooseASeatOnMatchingRides => 'Choose a Seat';
+
+  @override
   String get withDriver => 'With';
 
   @override
@@ -559,7 +562,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tapSeatsToChangeAvailability => 'tap seats to toggle';
 
   @override
-  String get setYourTime => 'time?';
+  String get setYourTime => 'when?';
 
   @override
   String get hintTime => 'choose a starting or ending time';

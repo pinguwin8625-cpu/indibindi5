@@ -319,7 +319,7 @@ abstract class AppLocalizations {
   /// Title for seat selection
   ///
   /// In en, this message translates to:
-  /// **'Choose your seats'**
+  /// **'tap seats to change their availability'**
   String get chooseYourSeats;
 
   /// Title for driver's available seats
@@ -1090,6 +1090,12 @@ abstract class AppLocalizations {
   /// **'Matching Rides'**
   String get matchingRides;
 
+  /// Main title for matching rides screen
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a Seat'**
+  String get chooseASeatOnMatchingRides;
+
   /// Preposition for showing driver name
   ///
   /// In en, this message translates to:
@@ -1195,7 +1201,7 @@ abstract class AppLocalizations {
   /// Title for time selection
   ///
   /// In en, this message translates to:
-  /// **'time?'**
+  /// **'when?'**
   String get setYourTime;
 
   /// Hint text for time selection

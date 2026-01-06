@@ -506,6 +506,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get matchingRides => '匹配的行程';
 
   @override
+  String get chooseASeatOnMatchingRides => 'Choose a Seat';
+
+  @override
   String get withDriver => '与';
 
   @override
