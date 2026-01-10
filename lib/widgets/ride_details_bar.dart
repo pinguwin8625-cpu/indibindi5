@@ -145,106 +145,102 @@ class RideDetailsBar extends StatelessWidget {
                   ],
                 ),
                 
-                // Origin only (when pick up is selected but not drop off)
-                if (displayOriginName != null && displayDestinationName == null)
-                  Padding(
-                    padding: EdgeInsets.only(top: 4),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Origin - location pin icon (same as progress bar)
-                        Icon(Icons.location_on, color: Colors.green, size: 14),
-                        SizedBox(width: 2),
-                        Flexible(
-                          child: Text(
-                            _shortenStopName(displayOriginName),
-                            style: TextStyle(fontSize: 11, color: Colors.grey[700]),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                // Origin → Destination with times (compact single row)
-                if (displayOriginName != null && displayDestinationName != null)
-                  Padding(
-                    padding: EdgeInsets.only(top: 4),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Origin - location pin icon (same as progress bar)
-                        Icon(Icons.location_on, color: Colors.green, size: 14),
-                        SizedBox(width: 2),
-                        Flexible(
-                          child: Text(
-                            _shortenStopName(displayOriginName),
-                            style: TextStyle(fontSize: 11, color: Colors.grey[700]),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        if (departureTime != null)
-                          Text(
-                            ' ${formatTimeHHmm(departureTime!)}',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.green[700],
-                            ),
-                          ),
-                        
-                        // Arrow
-                        Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 6),
-                          child: Icon(Icons.arrow_forward, size: 12, color: Colors.grey[400]),
-                        ),
-                        
-                        // Destination - flag icon (same as progress bar)
-                        Icon(Icons.flag, color: Colors.red, size: 14),
-                        SizedBox(width: 2),
-                        Flexible(
-                          child: Text(
-                            _shortenStopName(displayDestinationName),
-                            style: TextStyle(fontSize: 11, color: Colors.grey[700]),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        if (arrivalTime != null)
-                          Stack(
-                            clipBehavior: Clip.none,
-                            children: [
-                              Text(
-                                ' ${formatTimeHHmm(arrivalTime!)}',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.red[700],
-                                ),
-                              ),
-                              // Show +1 at top right corner if arrival is on a different day than departure
-                              if (departureTime != null &&
-                                  (arrivalTime!.day != departureTime!.day ||
-                                   arrivalTime!.month != departureTime!.month ||
-                                   arrivalTime!.year != departureTime!.year))
-                                Positioned(
-                                  top: -1,
-                                  right: -10,
+                // Always show stops row (with content or invisible placeholder for fixed height)
+                Padding(
+                  padding: EdgeInsets.only(top: 8),
+                  child: displayOriginName == null
+                      // Invisible placeholder to maintain height
+                      ? SizedBox(height: 14) // Same height as icon/text row
+                      : displayDestinationName == null
+                          // Origin only (when pick up is selected but not drop off)
+                          ? Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.location_on, color: Colors.green, size: 14),
+                                SizedBox(width: 2),
+                                Flexible(
                                   child: Text(
-                                    '+1',
-                                    style: TextStyle(
-                                      fontSize: 7,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.red[700],
-                                    ),
+                                    _shortenStopName(displayOriginName),
+                                    style: TextStyle(fontSize: 11, color: Colors.grey[700]),
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
-                            ],
-                          ),
-                      ],
-                    ),
-                  ),
+                              ],
+                            )
+                          // Origin → Destination with times (compact single row)
+                          : Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.location_on, color: Colors.green, size: 14),
+                                SizedBox(width: 2),
+                                Flexible(
+                                  child: Text(
+                                    _shortenStopName(displayOriginName),
+                                    style: TextStyle(fontSize: 11, color: Colors.grey[700]),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                if (departureTime != null)
+                                  Text(
+                                    ' ${formatTimeHHmm(departureTime!)}',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.green[700],
+                                    ),
+                                  ),
+
+                                // Arrow
+                                Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: 6),
+                                  child: Icon(Icons.arrow_forward, size: 12, color: Colors.grey[400]),
+                                ),
+
+                                // Destination - flag icon
+                                Icon(Icons.flag, color: Colors.red, size: 14),
+                                SizedBox(width: 2),
+                                Flexible(
+                                  child: Text(
+                                    _shortenStopName(displayDestinationName),
+                                    style: TextStyle(fontSize: 11, color: Colors.grey[700]),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                if (arrivalTime != null)
+                                  Stack(
+                                    clipBehavior: Clip.none,
+                                    children: [
+                                      Text(
+                                        ' ${formatTimeHHmm(arrivalTime!)}',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.red[700],
+                                        ),
+                                      ),
+                                      if (departureTime != null &&
+                                          (arrivalTime!.day != departureTime!.day ||
+                                           arrivalTime!.month != departureTime!.month ||
+                                           arrivalTime!.year != departureTime!.year))
+                                        Positioned(
+                                          top: -1,
+                                          right: -10,
+                                          child: Text(
+                                            '+1',
+                                            style: TextStyle(
+                                              fontSize: 7,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.red[700],
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                              ],
+                            ),
+                ),
               ],
             ),
           ),

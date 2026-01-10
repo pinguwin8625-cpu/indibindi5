@@ -52,30 +52,6 @@ class SeatPlanningSectionWidget extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Brown title with instruction text (swapped from top position)
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.touch_app, color: Color(0xFF5D4037), size: 24),
-                SizedBox(width: 8),
-                Flexible(
-                  child: Text(
-                    l10n.chooseYourSeats,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF5D4037),
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          SizedBox(height: 28),
           // Seat layout
           FittedBox(
             fit: BoxFit.scaleDown,
@@ -160,6 +136,21 @@ class SeatPlanningSectionWidget extends StatelessWidget {
                   ],
                 ),
               ],
+            ),
+          ),
+          // Instruction text below seat layout
+          SizedBox(height: 28),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              l10n.chooseYourSeats,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF5D4037),
+                letterSpacing: 0.5,
+              ),
             ),
           ),
         ],

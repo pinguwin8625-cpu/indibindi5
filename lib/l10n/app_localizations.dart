@@ -319,7 +319,7 @@ abstract class AppLocalizations {
   /// Title for seat selection
   ///
   /// In en, this message translates to:
-  /// **'tap seats to edit availability'**
+  /// **'tap seats to edit'**
   String get chooseYourSeats;
 
   /// Title for driver's available seats

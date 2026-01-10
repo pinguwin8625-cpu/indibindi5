@@ -166,7 +166,7 @@
     "description": "Title for route selection"
   },
 
-  "chooseYourSeats": "tap seats to edit availability",
+  "chooseYourSeats": "tap seats to edit",
   "@chooseYourSeats": {
     "description": "Title for seat selection"
   },

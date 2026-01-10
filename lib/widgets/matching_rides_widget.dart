@@ -459,22 +459,23 @@ class _MatchingRidesWidgetState extends State<MatchingRidesWidget> {
                 onBack: widget.onBack,
               ),
 
-              // Header
-              Container(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-                child: Center(
-                  child: Text(
-                    l10n.chooseASeatOnMatchingRides,
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF5D4037),
-                      letterSpacing: 0.5,
+              // Header - only show when there are matching rides
+              if (matchingRides.isNotEmpty)
+                Container(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                  child: Center(
+                    child: Text(
+                      l10n.chooseASeatOnMatchingRides,
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF5D4037),
+                        letterSpacing: 0.5,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
-                    textAlign: TextAlign.center,
                   ),
                 ),
-              ),
 
               // Scrollable content area with sticky headers
               Expanded(
