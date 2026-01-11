@@ -79,9 +79,11 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Origin time box - positioned to align with the origin
+        // Note: When hideUnusedStops, we're inside a Container with 4px vertical padding
+        // so no additional offset needed (container padding handles alignment)
         SizedBox(
           height: widget.hideUnusedStops
-              ? 0 // When hiding unused stops, origin is always at position 0
+              ? 0.0 // Container already has 4px vertical padding
               : widget.originIndex * 42.0,
         ), // Stop positioning only (no title offset)
         // Origin departure time box
@@ -98,10 +100,12 @@ class TimeSelectionWidgetState extends State<TimeSelectionWidget> {
 
         // Add space between origin and destination time boxes (only if destination is selected)
         // Space = (visible intermediate stops + expander row if any hidden) * row height
+        // When no intermediate stops, add half row height (15px) for proper spacing
         if (widget.destinationIndex != null)
           SizedBox(
             height: widget.hideUnusedStops
-                ? (widget.visibleIntermediateCount + (widget.hiddenIntermediateCount > 0 ? 1 : 0)) * 30.0
+                ? (widget.visibleIntermediateCount + (widget.hiddenIntermediateCount > 0 ? 1 : 0)) * 30.0 +
+                    (widget.visibleIntermediateCount == 0 && widget.hiddenIntermediateCount == 0 ? 15.0 : 0)
                 : (widget.destinationIndex! - widget.originIndex - 1) * 42.0,
           ),
 

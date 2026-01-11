@@ -52,7 +52,7 @@ class StopsLayerWidget extends StatefulWidget {
   State<StopsLayerWidget> createState() => _StopsLayerWidgetState();
 }
 
-class _StopsLayerWidgetState extends State<StopsLayerWidget> {
+class _StopsLayerWidgetState extends State<StopsLayerWidget> with SingleTickerProviderStateMixin {
   int? localOriginIndex;
   int? localDestinationIndex;
   DateTime? localDepartureTime;
@@ -62,6 +62,8 @@ class _StopsLayerWidgetState extends State<StopsLayerWidget> {
   int visibleIntermediateCount = 0; // Track visible intermediate stops
   int hiddenIntermediateCount = 0; // Track hidden intermediate stops
   final ScrollController _scrollController = ScrollController();
+  late AnimationController _borderAnimationController;
+  late Animation<double> _borderAnimation;
 
   @override
   void initState() {
@@ -71,11 +73,21 @@ class _StopsLayerWidgetState extends State<StopsLayerWidget> {
     localDepartureTime = widget.departureTime;
     localArrivalTime = widget.arrivalTime;
     localHasSelectedDateTime = widget.hasSelectedDateTime;
+
+    // Setup blinking border animation
+    _borderAnimationController = AnimationController(
+      duration: Duration(milliseconds: 1200),
+      vsync: this,
+    )..repeat(reverse: true);
+    _borderAnimation = Tween<double>(begin: 0.3, end: 1.0).animate(
+      CurvedAnimation(parent: _borderAnimationController, curve: Curves.easeInOut),
+    );
   }
 
   @override
   void dispose() {
     _scrollController.dispose();
+    _borderAnimationController.dispose();
     super.dispose();
   }
 
@@ -215,7 +227,7 @@ class _StopsLayerWidgetState extends State<StopsLayerWidget> {
                         ),
                       ),
                       SizedBox(width: 24),
-                      // Right column - "time?" (flex: 2 to match time picker column)
+                      // Right column - "when?" (flex: 2 to match time picker column)
                       Expanded(
                         flex: 2,
                         child: (localOriginIndex != null && localDestinationIndex != null)
@@ -236,7 +248,7 @@ class _StopsLayerWidgetState extends State<StopsLayerWidget> {
                                         style: TextStyle(
                                           fontSize: 28,
                                           fontWeight: FontWeight.w600,
-                                          color: Color(0xFFFF6D00), // Orange for time
+                                          color: Color(0xFFFF6D00),
                                           letterSpacing: 0.5,
                                         ),
                                         maxLines: 1,
@@ -330,67 +342,83 @@ class _StopsLayerWidgetState extends State<StopsLayerWidget> {
                         Expanded(
                           flex: 2,
                           child: localOriginIndex != null && localDestinationIndex != null
-                              ? TimeSelectionWidget(
-                                      userRole: widget.userRole,
-                                      selectedRoute: widget.selectedRoute,
-                                      originIndex: localOriginIndex!,
-                                      destinationIndex: localDestinationIndex,
-                                      hideUnusedStops: localOriginIndex != null && localDestinationIndex != null,
-                                      visibleIntermediateCount: visibleIntermediateCount,
-                                      hiddenIntermediateCount: hiddenIntermediateCount,
-                                      onDateTimeSelected: (hasSelected) {
-                                        // Only set localHasSelectedDateTime if user actually picked time
-                                        // Don't set it on automatic time calculations
-                                        if (hasSelected) {
-                                          setState(() {
-                                        localHasSelectedDateTime = hasSelected;
+                              ? AnimatedBuilder(
+                                  animation: _borderAnimation,
+                                  builder: (context, child) {
+                                    return Container(
+                                      decoration: BoxDecoration(
+                                        border: Border.all(
+                                          color: Color(0xFFFF6D00).withValues(alpha: _borderAnimation.value),
+                                          width: 2,
+                                        ),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      child: child,
+                                    );
+                                  },
+                                  child: TimeSelectionWidget(
+                                    userRole: widget.userRole,
+                                    selectedRoute: widget.selectedRoute,
+                                    originIndex: localOriginIndex!,
+                                    destinationIndex: localDestinationIndex,
+                                    hideUnusedStops: localOriginIndex != null && localDestinationIndex != null,
+                                    visibleIntermediateCount: visibleIntermediateCount,
+                                    hiddenIntermediateCount: hiddenIntermediateCount,
+                                    onDateTimeSelected: (hasSelected) {
+                                      // Only set localHasSelectedDateTime if user actually picked time
+                                      // Don't set it on automatic time calculations
+                                      if (hasSelected) {
+                                        setState(() {
+                                          localHasSelectedDateTime = hasSelected;
+                                        });
+                                        // Also notify parent when user actually selects time
+                                        widget.onTimeSelected?.call(
+                                          localDepartureTime ?? DateTime.now(),
+                                          localArrivalTime ?? DateTime.now(),
+                                        );
+                                        print(
+                                          '🕐 StopsLayer: User selected time, calling onTimeSelected',
+                                        );
+                                        _checkAndNavigate();
+                                      }
+                                    },
+                                    onRiderTimeChoiceChanged: (choice) {
+                                      setState(() {
+                                        riderTimeChoice = choice;
                                       });
-                                      // Also notify parent when user actually selects time
-                                      widget.onTimeSelected?.call(
-                                        localDepartureTime ?? DateTime.now(),
-                                        localArrivalTime ?? DateTime.now(),
-                                      );
                                       print(
-                                        '🕐 StopsLayer: User selected time, calling onTimeSelected',
+                                        '🧑 StopsLayer: Rider time choice changed to: $choice',
                                       );
-                                      _checkAndNavigate();
-                                    }
-                                  },
-                                  onRiderTimeChoiceChanged: (choice) {
-                                    setState(() {
-                                      riderTimeChoice = choice;
-                                    });
-                                    print(
-                                      '🧑 StopsLayer: Rider time choice changed to: $choice',
-                                    );
-                                    // Notify parent
-                                    widget.onRiderTimeChoiceChanged?.call(
-                                      choice,
-                                    );
-                                  },
-                                  onTimesChanged: (departure, arrival) {
-                                    print(
-                                      '🕐 StopsLayer: onTimesChanged called with:',
-                                    );
-                                    print('   departure: $departure');
-                                    print('   arrival: $arrival');
-                                    setState(() {
-                                      localDepartureTime = departure;
-                                      localArrivalTime = arrival;
-                                      // Don't set localHasSelectedDateTime here
-                                      // Only set it when user actually interacts
-                                    });
-                                    print(
-                                      '🕐 StopsLayer: After setState, localDepartureTime=$localDepartureTime, localArrivalTime=$localArrivalTime',
-                                    );
+                                      // Notify parent
+                                      widget.onRiderTimeChoiceChanged?.call(
+                                        choice,
+                                      );
+                                    },
+                                    onTimesChanged: (departure, arrival) {
+                                      print(
+                                        '🕐 StopsLayer: onTimesChanged called with:',
+                                      );
+                                      print('   departure: $departure');
+                                      print('   arrival: $arrival');
+                                      setState(() {
+                                        localDepartureTime = departure;
+                                        localArrivalTime = arrival;
+                                        // Don't set localHasSelectedDateTime here
+                                        // Only set it when user actually interacts
+                                      });
+                                      print(
+                                        '🕐 StopsLayer: After setState, localDepartureTime=$localDepartureTime, localArrivalTime=$localArrivalTime',
+                                      );
 
-                                    // Don't call onTimeSelected for automatic time calculations
-                                    // This callback should only be triggered by actual user time selection
-                                    print(
-                                      '🕐 StopsLayer: Time updated but not calling onTimeSelected (automatic calculation)',
-                                    );
-                                    // Don't auto-navigate on initial time setup
-                                  },
+                                      // Don't call onTimeSelected for automatic time calculations
+                                      // This callback should only be triggered by actual user time selection
+                                      print(
+                                        '🕐 StopsLayer: Time updated but not calling onTimeSelected (automatic calculation)',
+                                      );
+                                      // Don't auto-navigate on initial time setup
+                                    },
+                                  ),
                                 )
                               : Container(),
                         ),

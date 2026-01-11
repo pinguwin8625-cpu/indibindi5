@@ -149,6 +149,10 @@ class _StopsSectionWidgetState extends State<StopsSectionWidget> {
         displayedRowCount = 1 + visibleIntermediateCount + 1 + 1;
       }
       totalHeight = displayedRowCount * compactRowHeight;
+      // Add extra spacing when no intermediate stops (adjacent stops selected)
+      if (intermediateCount == 0) {
+        totalHeight += 15.0;
+      }
     } else {
       displayedRowCount = widget.selectedRoute.stops.length;
       totalHeight = displayedRowCount * normalRowHeight;
@@ -262,6 +266,14 @@ class _StopsSectionWidgetState extends State<StopsSectionWidget> {
   ) {
     // If no hidden stops, show all
     if (hiddenCount == 0) {
+      // If only origin and destination (no intermediate stops), add extra spacing
+      if (relevantStopIndices.length == 2) {
+        return [
+          _buildCompactStopRow(relevantStopIndices.first),
+          SizedBox(height: 15.0), // Extra spacing when adjacent stops
+          _buildCompactStopRow(relevantStopIndices.last),
+        ];
+      }
       return relevantStopIndices.map((i) => _buildCompactStopRow(i)).toList();
     }
 
