@@ -6,6 +6,8 @@ import '../l10n/app_localizations.dart';
 import '../providers/locale_provider.dart';
 import '../utils/dialog_helper.dart';
 import '../widgets/scroll_indicator.dart';
+import '../models/feedback_event.dart';
+import '../services/feedback_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -284,9 +286,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
 
     if (confirmed) {
-      ScaffoldMessenger.of(
+      FeedbackService.show(
         context,
-      ).showSnackBar(SnackBar(content: Text(l10n.cacheCleared)));
+        FeedbackEvent.success(l10n.cacheCleared),
+      );
     }
   }
 }

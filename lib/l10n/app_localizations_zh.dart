@@ -687,6 +687,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get conversationArchived => '对话已归档';
 
   @override
+  String get conversationUnarchived => 'Conversation unarchived';
+
+  @override
   String get conversationDeleted => 'Conversation deleted';
 
   @override

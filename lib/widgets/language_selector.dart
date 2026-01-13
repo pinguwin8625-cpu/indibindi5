@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/locale_provider.dart';
 import '../l10n/app_localizations.dart';
+import '../models/feedback_event.dart';
+import '../services/feedback_service.dart';
 
 class LanguageSelector extends StatelessWidget {
   final bool isDarkBackground;
@@ -110,8 +112,9 @@ class LanguageSelector extends StatelessWidget {
         await localeProvider.setLocale(Locale(languageCode));
         final languageName = _getLanguageName(languageCode);
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.languageChanged(languageName))),
+          FeedbackService.show(
+            context,
+            FeedbackEvent.success(l10n.languageChanged(languageName)),
           );
         }
       },

@@ -688,6 +688,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get conversationArchived => '대화가 보관되었습니다';
 
   @override
+  String get conversationUnarchived => 'Conversation unarchived';
+
+  @override
   String get conversationDeleted => 'Conversation deleted';
 
   @override

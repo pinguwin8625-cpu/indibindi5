@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import '../models/routes.dart';
+import '../models/feedback_event.dart';
 import '../l10n/app_localizations.dart';
 import '../services/auth_service.dart';
 import '../services/messaging_service.dart';
+import '../services/feedback_service.dart';
 import '../screens/chat_screen.dart';
 
 class RouteSelectionWidget extends StatelessWidget {
@@ -138,12 +140,9 @@ class RouteSelectionWidget extends StatelessWidget {
     final currentUser = AuthService.currentUser;
     if (currentUser == null) {
       final l10n = AppLocalizations.of(context)!;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l10n.snackbarPleaseLoginToSuggestRoute),
-          duration: Duration(seconds: 3),
-          behavior: SnackBarBehavior.floating,
-        ),
+      FeedbackService.show(
+        context,
+        FeedbackEvent.warning(l10n.snackbarPleaseLoginToSuggestRoute),
       );
       return;
     }

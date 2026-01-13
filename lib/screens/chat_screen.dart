@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import '../models/message.dart';
 import '../models/user.dart';
+import '../models/feedback_event.dart';
 import '../services/messaging_service.dart';
 import '../services/auth_service.dart';
 import '../services/mock_users.dart';
+import '../services/feedback_service.dart';
 import '../utils/date_time_helpers.dart';
 import '../l10n/app_localizations.dart';
-import '../widgets/ride_details_bar.dart';
+import '../widgets/ride_info_card.dart';
 import 'dart:io';
 
 class ChatScreen extends StatefulWidget {
@@ -64,16 +66,7 @@ class _ChatScreenState extends State<ChatScreen> {
     final isSupport = widget.conversation.id.startsWith('support_');
     if (widget.isAdminView && !isSupport) {
       final l10n = AppLocalizations.of(context)!;
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l10n.snackbarAdminViewOnly),
-          backgroundColor: Colors.orange,
-          duration: Duration(seconds: 3),
-          behavior: SnackBarBehavior.floating,
-          dismissDirection: DismissDirection.down,
-        ),
-      );
+      FeedbackService.show(context, FeedbackEvent.warning(l10n.snackbarAdminViewOnly));
       return;
     }
 
@@ -82,16 +75,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
     if (!widget.conversation.isMessagingAllowed) {
       final l10n = AppLocalizations.of(context)!;
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l10n.snackbarMessagingExpired),
-          backgroundColor: Colors.red,
-          duration: Duration(seconds: 3),
-          behavior: SnackBarBehavior.floating,
-          dismissDirection: DismissDirection.down,
-        ),
-      );
+      FeedbackService.show(context, FeedbackEvent.error(l10n.snackbarMessagingExpired));
       return;
     }
 
@@ -141,16 +125,7 @@ class _ChatScreenState extends State<ChatScreen> {
         }
       });
     } catch (e) {
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString()),
-          backgroundColor: Colors.red,
-          duration: Duration(seconds: 3),
-          behavior: SnackBarBehavior.floating,
-          dismissDirection: DismissDirection.down,
-        ),
-      );
+      FeedbackService.show(context, FeedbackEvent.error(e.toString()));
     }
   }
 
@@ -345,7 +320,7 @@ class _ChatScreenState extends State<ChatScreen> {
               children: [
                 // Ride details card (only show for non-support conversations)
                 if (!widget.conversation.id.startsWith('support_'))
-                  RideDetailsBar(
+                  RideInfoCard(
                     routeName: conversation.routeName,
                     originName: conversation.originName,
                     destinationName: conversation.destinationName,

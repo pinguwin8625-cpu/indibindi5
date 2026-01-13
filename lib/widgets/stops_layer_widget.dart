@@ -3,7 +3,7 @@ import '../models/routes.dart';
 import '../widgets/stops_section_widget.dart';
 import '../widgets/time_selection_widget.dart';
 import '../widgets/scroll_indicator.dart';
-import '../widgets/ride_details_bar.dart';
+import '../widgets/ride_info_card.dart';
 import '../utils/booking_logic.dart';
 import '../l10n/app_localizations.dart';
 
@@ -136,7 +136,7 @@ class _StopsLayerWidgetState extends State<StopsLayerWidget> with SingleTickerPr
     return Column(
       children: [
         // Summary bar showing selected route with back button
-        RideDetailsBar(
+        RideInfoCard(
           selectedRoute: widget.selectedRoute,
           userRole: widget.userRole,
           originIndex: localOriginIndex,
@@ -347,6 +347,7 @@ class _StopsLayerWidgetState extends State<StopsLayerWidget> with SingleTickerPr
                                   builder: (context, child) {
                                     return Container(
                                       decoration: BoxDecoration(
+                                        color: Color(0xFFFF6D00).withValues(alpha: 0.05),
                                         border: Border.all(
                                           color: Color(0xFFFF6D00).withValues(alpha: _borderAnimation.value),
                                           width: 2,

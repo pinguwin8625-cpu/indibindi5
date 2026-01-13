@@ -10,8 +10,10 @@ import '../l10n/app_localizations.dart';
 import '../services/auth_service.dart';
 import '../services/rating_service.dart';
 import '../services/mock_users.dart';
+import '../services/feedback_service.dart';
 import '../utils/dialog_helper.dart';
 import '../models/user.dart';
+import '../models/feedback_event.dart';
 import '../widgets/scroll_indicator.dart';
 import '../widgets/rating_widgets.dart';
 
@@ -215,11 +217,11 @@ class _AccountScreenState extends State<AccountScreen> {
                                     // Switch to this user
                                     AuthService.loginWithId(testUser.id);
                                     setState(() {});
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(l10n.snackbarSwitchedToUser(testUser.fullName)),
+                                    FeedbackService.show(
+                                      context,
+                                      FeedbackEvent.success(
+                                        l10n.snackbarSwitchedToUser(testUser.fullName),
                                         duration: Duration(seconds: 2),
-                                        behavior: SnackBarBehavior.floating,
                                       ),
                                     );
                                   },

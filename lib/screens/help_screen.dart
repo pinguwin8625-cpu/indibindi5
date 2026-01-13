@@ -4,6 +4,8 @@ import '../services/messaging_service.dart';
 import '../services/auth_service.dart';
 import '../widgets/scroll_indicator.dart';
 import '../utils/dialog_helper.dart';
+import '../models/feedback_event.dart';
+import '../services/feedback_service.dart';
 import 'chat_screen.dart';
 
 class HelpScreen extends StatefulWidget {
@@ -108,8 +110,9 @@ class _HelpScreenState extends State<HelpScreen> {
             icon: Icons.help_outline,
             title: l10n.faq,
             onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(l10n.faq)),
+              FeedbackService.show(
+                context,
+                FeedbackEvent.success(l10n.faq),
               );
             },
           ),
@@ -124,8 +127,9 @@ class _HelpScreenState extends State<HelpScreen> {
             icon: Icons.privacy_tip_outlined,
             title: l10n.privacyPolicy,
             onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(l10n.privacyPolicy)),
+              FeedbackService.show(
+                context,
+                FeedbackEvent.success(l10n.privacyPolicy),
               );
             },
           ),
@@ -134,8 +138,9 @@ class _HelpScreenState extends State<HelpScreen> {
             icon: Icons.description_outlined,
             title: l10n.termsOfService,
             onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(l10n.termsOfService)),
+              FeedbackService.show(
+                context,
+                FeedbackEvent.success(l10n.termsOfService),
               );
             },
           ),
@@ -144,8 +149,9 @@ class _HelpScreenState extends State<HelpScreen> {
             icon: Icons.download_outlined,
             title: l10n.downloadMyData,
             onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(l10n.preparingData)),
+              FeedbackService.show(
+                context,
+                FeedbackEvent.success(l10n.preparingData),
               );
             },
           ),
@@ -154,8 +160,9 @@ class _HelpScreenState extends State<HelpScreen> {
             icon: Icons.info_outline,
             title: l10n.about,
             onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(l10n.about)),
+              FeedbackService.show(
+                context,
+                FeedbackEvent.success(l10n.about),
               );
             },
           ),

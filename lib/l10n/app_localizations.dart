@@ -1444,6 +1444,12 @@ abstract class AppLocalizations {
   /// **'Conversation archived'**
   String get conversationArchived;
 
+  /// Message when conversation is unarchived
+  ///
+  /// In en, this message translates to:
+  /// **'Conversation unarchived'**
+  String get conversationUnarchived;
+
   /// Message when conversation is deleted
   ///
   /// In en, this message translates to:

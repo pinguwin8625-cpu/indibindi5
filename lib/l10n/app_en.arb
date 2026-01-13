@@ -981,6 +981,11 @@
     "description": "Message when conversation is archived"
   },
 
+  "conversationUnarchived": "Conversation unarchived",
+  "@conversationUnarchived": {
+    "description": "Message when conversation is unarchived"
+  },
+
   "conversationDeleted": "Conversation deleted",
   "@conversationDeleted": {
     "description": "Message when conversation is deleted"

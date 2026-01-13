@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import '../models/routes.dart';
+import '../models/feedback_event.dart';
 import '../screens/route_line_with_stops.dart';
 import '../l10n/app_localizations.dart';
 import '../services/auth_service.dart';
 import '../services/messaging_service.dart';
+import '../services/feedback_service.dart';
 import '../screens/chat_screen.dart';
 
 class StopsSectionWidget extends StatefulWidget {
@@ -226,12 +228,9 @@ class _StopsSectionWidgetState extends State<StopsSectionWidget> {
     final currentUser = AuthService.currentUser;
     if (currentUser == null) {
       final l10n = AppLocalizations.of(context)!;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l10n.snackbarPleaseLoginToSuggestStop),
-          duration: Duration(seconds: 3),
-          behavior: SnackBarBehavior.floating,
-        ),
+      FeedbackService.show(
+        context,
+        FeedbackEvent.warning(l10n.snackbarPleaseLoginToSuggestStop),
       );
       return;
     }

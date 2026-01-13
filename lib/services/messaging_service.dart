@@ -4,6 +4,7 @@ import 'dart:convert';
 import '../models/message.dart';
 import '../models/booking.dart';
 import '../services/auth_service.dart';
+import '../services/booking_storage.dart';
 import '../services/mock_users.dart';
 
 class MessagingService {
@@ -80,6 +81,9 @@ class MessagingService {
               }).toList(),
               isManuallyArchived: data['isManuallyArchived'] ?? false,
               isDeleted: data['isDeleted'] ?? false,
+              resolvedAt: data['resolvedAt'] != null
+                  ? DateTime.parse(data['resolvedAt'])
+                  : null,
             );
             
             loadedConversations.add(conversation);
@@ -168,6 +172,7 @@ class MessagingService {
           }).toList(),
           'isManuallyArchived': conv.isManuallyArchived,
           'isDeleted': conv.isDeleted,
+          'resolvedAt': conv.resolvedAt?.toIso8601String(),
         };
       }).toList();
 
@@ -507,6 +512,11 @@ class MessagingService {
     conversations.value = updatedConversations;
     _saveConversations();
 
+    // Also unarchive the associated booking if it exists
+    if (!conversationId.startsWith('support_') && conversation.bookingId.isNotEmpty) {
+      BookingStorage().unarchiveBooking(conversation.bookingId);
+    }
+
     if (kDebugMode) {
       print('📂 Unarchived conversation: $conversationId');
     }
@@ -530,6 +540,44 @@ class MessagingService {
 
     if (kDebugMode) {
       print('🗑️ Deleted conversation: $conversationId');
+    }
+  }
+
+  /// Mark a support conversation as resolved (admin only).
+  /// The conversation will be archived after 3 days and hidden after 7 days.
+  void resolveSupportConversation(String conversationId) {
+    final conversation = getConversation(conversationId);
+    if (conversation == null) return;
+
+    // Only allow resolving support conversations
+    if (!conversation.bookingId.startsWith('support')) {
+      if (kDebugMode) {
+        print('⚠️ Cannot resolve non-support conversation: $conversationId');
+      }
+      return;
+    }
+
+    // Already resolved
+    if (conversation.resolvedAt != null) {
+      if (kDebugMode) {
+        print('⚠️ Conversation already resolved: $conversationId');
+      }
+      return;
+    }
+
+    final updatedConversation = conversation.copyWith(
+      resolvedAt: DateTime.now(),
+    );
+
+    final updatedConversations = conversations.value.map((c) {
+      return c.id == conversationId ? updatedConversation : c;
+    }).toList();
+
+    conversations.value = updatedConversations;
+    _saveConversations();
+
+    if (kDebugMode) {
+      print('✅ Resolved support conversation: $conversationId');
     }
   }
 

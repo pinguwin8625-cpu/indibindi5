@@ -71,6 +71,7 @@ class Conversation {
   final List<Message> messages;
   final bool isManuallyArchived; // User manually archived this conversation
   final bool isDeleted; // User deleted this conversation
+  final DateTime? resolvedAt; // When admin marked support ticket as resolved
 
   Conversation({
     required this.id,
@@ -87,14 +88,19 @@ class Conversation {
     this.messages = const [],
     this.isManuallyArchived = false,
     this.isDeleted = false,
+    this.resolvedAt,
   });
+
+  /// Whether this support conversation has been resolved by an admin
+  bool get isResolved => resolvedAt != null;
 
   // Check if messaging is still allowed (synced with booking - not archived)
   bool get isMessagingAllowed {
-    // Support conversations don't have a booking - use time-based logic
+    // Support conversations - messaging allowed until resolved + 3 days
     if (bookingId.startsWith('support')) {
+      if (resolvedAt == null) return true; // Not resolved yet, messaging allowed
       final now = DateTime.now();
-      final cutoffTime = arrivalTime.add(Duration(days: 3));
+      final cutoffTime = resolvedAt!.add(Duration(days: 3));
       return now.isBefore(cutoffTime);
     }
     // For ride conversations, sync with booking archive status
@@ -105,11 +111,12 @@ class Conversation {
 
   // Check if conversation is archived (synced with booking)
   bool get isArchived {
-    // Support conversations - use time-based logic
+    // Support conversations - archived 3-7 days after resolved
     if (bookingId.startsWith('support')) {
+      if (resolvedAt == null) return false; // Not resolved yet
       final now = DateTime.now();
-      final archiveCutoff = arrivalTime.add(Duration(days: 3));
-      final hideCutoff = arrivalTime.add(Duration(days: 7));
+      final archiveCutoff = resolvedAt!.add(Duration(days: 3));
+      final hideCutoff = resolvedAt!.add(Duration(days: 7));
       return now.isAfter(archiveCutoff) && now.isBefore(hideCutoff);
     }
     // For ride conversations, sync with booking
@@ -120,10 +127,11 @@ class Conversation {
 
   // Check if conversation should be visible in inbox (synced with booking - not hidden)
   bool get isVisible {
-    // Support conversations - use time-based logic
+    // Support conversations - visible until 7 days after resolved
     if (bookingId.startsWith('support')) {
+      if (resolvedAt == null) return true; // Not resolved yet, always visible
       final now = DateTime.now();
-      final cutoffTime = arrivalTime.add(Duration(days: 7));
+      final cutoffTime = resolvedAt!.add(Duration(days: 7));
       return now.isBefore(cutoffTime);
     }
     // For ride conversations, sync with booking
@@ -134,10 +142,11 @@ class Conversation {
 
   // Check if conversation is hidden (synced with booking)
   bool get isHidden {
-    // Support conversations - use time-based logic
+    // Support conversations - hidden after 7 days from resolved
     if (bookingId.startsWith('support')) {
+      if (resolvedAt == null) return false; // Not resolved yet
       final now = DateTime.now();
-      final cutoffTime = arrivalTime.add(Duration(days: 7));
+      final cutoffTime = resolvedAt!.add(Duration(days: 7));
       return now.isAfter(cutoffTime);
     }
     // For ride conversations, sync with booking
@@ -219,6 +228,7 @@ class Conversation {
     List<Message>? messages,
     bool? isManuallyArchived,
     bool? isDeleted,
+    DateTime? resolvedAt,
   }) {
     return Conversation(
       id: id ?? this.id,
@@ -235,6 +245,7 @@ class Conversation {
       messages: messages ?? this.messages,
       isManuallyArchived: isManuallyArchived ?? this.isManuallyArchived,
       isDeleted: isDeleted ?? this.isDeleted,
+      resolvedAt: resolvedAt ?? this.resolvedAt,
     );
   }
 }

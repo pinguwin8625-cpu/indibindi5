@@ -689,6 +689,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get conversationArchived => 'تم أرشفة المحادثة';
 
   @override
+  String get conversationUnarchived => 'Conversation unarchived';
+
+  @override
   String get conversationDeleted => 'Conversation deleted';
 
   @override

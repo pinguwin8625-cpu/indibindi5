@@ -3,9 +3,8 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import '../models/routes.dart';
 import '../models/booking.dart';
 import '../services/booking_storage.dart';
-import '../services/auth_service.dart';
 import '../services/mock_users.dart';
-import '../widgets/ride_details_bar.dart';
+import '../widgets/ride_info_card.dart';
 import '../widgets/matching_rides_card.dart';
 import '../widgets/scroll_indicator.dart';
 import '../l10n/app_localizations.dart';
@@ -177,7 +176,6 @@ class _MatchingRidesWidgetState extends State<MatchingRidesWidget> {
     try {
       final bookingStorage = BookingStorage();
       final allBookings = bookingStorage.getAllBookings();
-      final currentUser = AuthService.currentUser;
 
       print(
         '🔍 MATCHING DEBUG: Total bookings in storage: ${allBookings.length}',
@@ -227,11 +225,8 @@ class _MatchingRidesWidgetState extends State<MatchingRidesWidget> {
               return false;
             }
 
-            // Cannot book a seat on your own driver booking (against regulations)
-            if (currentUser != null && booking.userId == currentUser.id) {
-              print('   ❌ Cannot book seat on your own ride');
-              return false;
-            }
+            // Note: Own rides are now shown in the list, but booking is blocked
+            // in rider_seat_selection_screen.dart with an error message
 
             // Skip corrupted bookings (more riders than offered seats)
             if ((booking.riders?.length ?? 0) > booking.selectedSeats.length) {
@@ -448,7 +443,7 @@ class _MatchingRidesWidgetState extends State<MatchingRidesWidget> {
           child: Column(
             children: [
               // Summary bar showing route, stops, and time with back button
-              RideDetailsBar(
+              RideInfoCard(
                 selectedRoute: widget.selectedRoute,
                 originIndex: widget.originIndex,
                 destinationIndex: widget.destinationIndex,

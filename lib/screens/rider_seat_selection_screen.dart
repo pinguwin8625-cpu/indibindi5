@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import '../models/routes.dart';
 import '../models/booking.dart';
+import '../models/feedback_event.dart';
 import '../services/booking_storage.dart';
 import '../services/auth_service.dart';
 import '../services/messaging_service.dart';
 import '../services/mock_users.dart';
+import '../services/feedback_service.dart';
 import '../widgets/seat_planning_section_widget.dart';
 import '../widgets/scroll_indicator.dart';
 import '../widgets/booking_progress_bar.dart';
@@ -236,14 +238,7 @@ class _RiderSeatSelectionScreenState extends State<RiderSeatSelectionScreen> {
     if (driverBooking.userId == currentUser.id) {
       if (mounted) {
         final l10n = AppLocalizations.of(context)!;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(l10n.snackbarCannotBookOwnRideDetail),
-            backgroundColor: Colors.red,
-            duration: Duration(seconds: 3),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        FeedbackService.show(context, FeedbackEvent.error(l10n.snackbarCannotBookOwnRideDetail));
       }
       return;
     }
@@ -262,16 +257,12 @@ class _RiderSeatSelectionScreenState extends State<RiderSeatSelectionScreen> {
 
       if (mounted) {
         final l10n = AppLocalizations.of(context)!;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              conflictingBooking != null
-                  ? l10n.snackbarConflictingBooking('${_formatTime(conflictingBooking.departureTime)} - ${_formatTime(conflictingBooking.arrivalTime)}')
-                  : l10n.snackbarAlreadyBookedThisRide,
-            ),
-            backgroundColor: Colors.red,
-            duration: Duration(seconds: 3),
-            behavior: SnackBarBehavior.floating,
+        FeedbackService.show(
+          context,
+          FeedbackEvent.error(
+            conflictingBooking != null
+                ? l10n.snackbarConflictingBooking('${_formatTime(conflictingBooking.departureTime)} - ${_formatTime(conflictingBooking.arrivalTime)}')
+                : l10n.snackbarAlreadyBookedThisRide,
           ),
         );
       }

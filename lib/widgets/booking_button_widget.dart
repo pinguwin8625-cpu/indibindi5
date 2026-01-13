@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import '../models/routes.dart';
 import '../models/booking.dart';
+import '../models/feedback_event.dart';
 import '../services/booking_storage.dart';
 import '../services/auth_service.dart';
 import '../services/mock_users.dart';
+import '../services/feedback_service.dart';
 import '../l10n/app_localizations.dart';
 
 class BookingButtonWidget extends StatefulWidget {
@@ -209,16 +211,12 @@ class _BookingButtonWidgetState extends State<BookingButtonWidget> {
       
       // Show error message
       final l10n = AppLocalizations.of(context)!;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            conflictingBooking != null
-                ? l10n.snackbarConflictingBooking('${_formatTime(conflictingBooking.departureTime)} - ${_formatTime(conflictingBooking.arrivalTime)}')
-                : l10n.snackbarAlreadyBookedThisRide,
-          ),
-          backgroundColor: Colors.red,
-          duration: Duration(seconds: 3),
-          behavior: SnackBarBehavior.floating,
+      FeedbackService.show(
+        context,
+        FeedbackEvent.error(
+          conflictingBooking != null
+              ? l10n.snackbarConflictingBooking('${_formatTime(conflictingBooking.departureTime)} - ${_formatTime(conflictingBooking.arrivalTime)}')
+              : l10n.snackbarAlreadyBookedThisRide,
         ),
       );
       return;

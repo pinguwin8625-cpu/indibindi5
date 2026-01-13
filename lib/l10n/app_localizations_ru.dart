@@ -697,6 +697,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get conversationArchived => 'Разговор заархивирован';
 
   @override
+  String get conversationUnarchived => 'Conversation unarchived';
+
+  @override
   String get conversationDeleted => 'Conversation deleted';
 
   @override

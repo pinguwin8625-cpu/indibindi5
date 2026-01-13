@@ -8,6 +8,7 @@ import '../services/mock_users.dart';
 import '../services/auth_service.dart';
 import '../l10n/app_localizations.dart';
 import 'rating_widgets.dart';
+import 'ride_info_card.dart';
 
 /// Display mode for ConversationCard
 enum ConversationCardMode {
@@ -94,67 +95,60 @@ class ConversationCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(color: Colors.grey[300]!, width: 0.5),
               ),
-              child: Column(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Top: Date and times (or support type)
-                  _buildTopRow(context, isSupport, forInbox: true, l10n: l10n),
-                  SizedBox(height: 6),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Left: Profile photo and name (fixed narrow width)
-                      SizedBox(
-                        width: 70,
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            // Show support icon for support conversations (only for non-admin users)
-                            if (isSupport && !isAdmin)
-                              CircleAvatar(
-                                radius: 20,
-                                backgroundColor: Colors.red,
-                                child: Icon(Icons.support_agent, size: 22, color: Colors.white),
-                              )
-                            else
-                              _buildInboxAvatar(profilePhotoUrl),
-                            SizedBox(height: 4),
-                            SizedBox(
-                              width: 70,
-                              child: Text(
-                                otherUserName,
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                                textAlign: TextAlign.center,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            // Don't show rating for support conversations (except for admins)
-                            if ((!isSupport || isAdmin) && otherUser?.rating != null) ...[
-                              SizedBox(height: 3),
-                              RatingDisplay(
-                                rating: otherUser?.rating ?? 0.0,
-                                starSize: 12,
-                                fontSize: 11,
-                                starColor: Colors.amber,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ],
-                          ],
+                  // Left: Avatar + Name + Rating stacked vertically
+                  SizedBox(
+                    width: 50,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (isSupport && !isAdmin)
+                          CircleAvatar(
+                            radius: 20,
+                            backgroundColor: Colors.red,
+                            child: Icon(Icons.support_agent, size: 20, color: Colors.white),
+                          )
+                        else
+                          _buildInboxAvatar(profilePhotoUrl),
+                        SizedBox(height: 4),
+                        Text(
+                          otherUserName,
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
                         ),
-                      ),
-                      SizedBox(width: 8),
-                      // Message preview - takes all remaining space
-                      Expanded(
-                        flex: 100,
-                        child: conversation.getLastMessageForUser(userId) != null
-                            ? _buildMessagePreview(userId)
-                            : SizedBox.shrink(),
-                      ),
-                    ],
+                        // Rating below name
+                        if ((!isSupport || isAdmin) && otherUser?.rating != null) ...[
+                          SizedBox(height: 2),
+                          RatingDisplay(
+                            rating: otherUser?.rating ?? 0.0,
+                            starSize: 10,
+                            fontSize: 9,
+                            starColor: Colors.amber,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  SizedBox(width: 8),
+                  // Right: Message bubble + Ride info stacked vertically
+                  Expanded(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (conversation.getLastMessageForUser(userId) != null)
+                          _buildMessagePreview(userId),
+                        SizedBox(height: 6),
+                        _buildTopRow(context, isSupport, forInbox: true, l10n: l10n),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -503,82 +497,14 @@ class ConversationCard extends StatelessWidget {
       );
     }
 
-    // For regular conversations, show date and times
-    return Row(
-      children: [
-        // Date
-        Container(
-          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-          decoration: BoxDecoration(
-            color: Colors.grey.withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(4),
-          ),
-          child: Text(
-            _formatDate(conversation.departureTime),
-            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.black87),
-          ),
-        ),
-        SizedBox(width: 8),
-        // Departure
-        Expanded(
-          child: Row(
-            children: [
-              Icon(Icons.location_on, color: Colors.green, size: 14),
-              SizedBox(width: 2),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.green.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  _formatTimeHHmm(conversation.departureTime),
-                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.green[700]),
-                ),
-              ),
-              SizedBox(width: 4),
-              Expanded(
-                child: Text(
-                  conversation.originName,
-                  style: TextStyle(fontSize: 11, color: Colors.black87),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-        ),
-        SizedBox(width: 8),
-        // Arrival
-        Expanded(
-          child: Row(
-            children: [
-              Icon(Icons.flag, color: Colors.red, size: 14),
-              SizedBox(width: 2),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.red.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  _formatTimeHHmm(conversation.arrivalTime),
-                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.red[700]),
-                ),
-              ),
-              SizedBox(width: 4),
-              Expanded(
-                child: Text(
-                  conversation.destinationName,
-                  style: TextStyle(fontSize: 11, color: Colors.black87),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
+    // Use RideInfoCard for both inbox and admin modes (same as search screens)
+    return RideInfoCard(
+      routeName: conversation.routeName,
+      originName: conversation.originName,
+      destinationName: conversation.destinationName,
+      departureTime: conversation.departureTime,
+      arrivalTime: conversation.arrivalTime,
+      embedded: true,
     );
   }
 
@@ -630,18 +556,18 @@ class ConversationCard extends StatelessWidget {
   }
 
   /// Build avatar for inbox mode (simpler, no labels)
-  Widget _buildInboxAvatar(String? profilePhotoUrl) {
+  Widget _buildInboxAvatar(String? profilePhotoUrl, {double radius = 20}) {
     if (profilePhotoUrl != null && profilePhotoUrl.isNotEmpty) {
       if (profilePhotoUrl.startsWith('assets/')) {
         return CircleAvatar(
-          radius: 20,
+          radius: radius,
           backgroundImage: AssetImage(profilePhotoUrl),
         );
       } else {
         final photoFile = File(profilePhotoUrl);
         if (photoFile.existsSync()) {
           return CircleAvatar(
-            radius: 20,
+            radius: radius,
             backgroundImage: FileImage(photoFile),
           );
         }
@@ -650,17 +576,18 @@ class ConversationCard extends StatelessWidget {
 
     // Fallback to default icon
     return CircleAvatar(
-      radius: 20,
+      radius: radius,
       backgroundColor: Colors.blue.withValues(alpha: 0.1),
-      child: Icon(Icons.person, color: Colors.blue),
+      child: Icon(Icons.person, color: Colors.blue, size: radius),
     );
   }
 
   /// Build message preview bubble for inbox mode
   Widget _buildMessagePreview(String currentUserId) {
     final lastMessage = conversation.getLastMessageForUser(currentUserId)!;
+    final isSystemMessage = lastMessage.isSystemMessage;
     // For system messages, they're never "from" the current user
-    final isFromCurrentUser = !lastMessage.isSystemMessage && lastMessage.senderId == currentUserId;
+    final isFromCurrentUser = !isSystemMessage && lastMessage.senderId == currentUserId;
 
     final bubbleColor = Colors.white;
     final textColor = Colors.grey[700]!;
@@ -673,86 +600,75 @@ class ConversationCard extends StatelessWidget {
           padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
             color: bubbleColor,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(isFromCurrentUser ? 8 : 2),
-              topRight: Radius.circular(isFromCurrentUser ? 2 : 8),
-              bottomLeft: Radius.circular(8),
-              bottomRight: Radius.circular(8),
-            ),
+            borderRadius: isSystemMessage
+                ? BorderRadius.circular(8)
+                : BorderRadius.only(
+                    topLeft: Radius.circular(isFromCurrentUser ? 8 : 2),
+                    topRight: Radius.circular(isFromCurrentUser ? 2 : 8),
+                    bottomLeft: Radius.circular(8),
+                    bottomRight: Radius.circular(8),
+                  ),
             border: Border.all(color: Colors.grey[300]!, width: 0.5),
           ),
-          child: Column(
-            crossAxisAlignment: isFromCurrentUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                lastMessage.content,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: textColor,
+              // Robot icon for system messages
+              if (isSystemMessage) ...[
+                Padding(
+                  padding: EdgeInsets.only(top: 2),
+                  child: Icon(Icons.smart_toy_outlined, size: 14, color: Colors.grey[500]),
                 ),
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-                textAlign: isFromCurrentUser ? TextAlign.right : TextAlign.left,
-              ),
-              SizedBox(height: 4),
-              // Timestamp at opposite side
-              Align(
-                alignment: isFromCurrentUser ? Alignment.bottomLeft : Alignment.bottomRight,
+                SizedBox(width: 6),
+              ],
+              Expanded(
                 child: Text(
-                  _formatMessageTime(lastMessage.timestamp),
+                  lastMessage.content,
                   style: TextStyle(
-                    fontSize: 10,
-                    color: Colors.grey[500],
+                    fontSize: 12,
+                    color: textColor,
                   ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: isSystemMessage ? TextAlign.left : (isFromCurrentUser ? TextAlign.right : TextAlign.left),
+                ),
+              ),
+              SizedBox(width: 6),
+              Text(
+                _formatMessageTime(lastMessage.timestamp),
+                style: TextStyle(
+                  fontSize: 10,
+                  color: Colors.grey[500],
                 ),
               ),
             ],
           ),
         ),
-        // Chat bubble tail
-        if (isFromCurrentUser)
-          // Tail on right side (sent by current user)
-          Positioned(
-            right: -8,
-            top: 8,
-            child: CustomPaint(
-              size: Size(12, 16),
-              painter: _BubbleTailPainterRight(color: bubbleColor),
+        // Chat bubble tail (not for system messages)
+        if (!isSystemMessage) ...[
+          if (isFromCurrentUser)
+            // Tail on right side (sent by current user)
+            Positioned(
+              right: -8,
+              top: 8,
+              child: CustomPaint(
+                size: Size(12, 16),
+                painter: _BubbleTailPainterRight(color: bubbleColor),
+              ),
+            )
+          else
+            // Tail on left side (sent by other user)
+            Positioned(
+              left: -8,
+              top: 8,
+              child: CustomPaint(
+                size: Size(12, 16),
+                painter: _BubbleTailPainterLeft(color: bubbleColor),
+              ),
             ),
-          )
-        else
-          // Tail on left side (sent by other user)
-          Positioned(
-            left: -8,
-            top: 8,
-            child: CustomPaint(
-              size: Size(12, 16),
-              painter: _BubbleTailPainterLeft(color: bubbleColor),
-            ),
-          ),
+        ],
       ],
     );
-  }
-
-  String _formatDate(DateTime date) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final target = DateTime(date.year, date.month, date.day);
-    final diffDays = target.difference(today).inDays;
-
-    if (diffDays == 0) return 'Today';
-    if (diffDays == 1) return 'Tmrw';
-    if (diffDays == -1) return 'Yday';
-
-    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return '${date.day} ${months[date.month - 1]}';
-  }
-
-  String _formatTimeHHmm(DateTime time) {
-    final hour = time.hour.toString().padLeft(2, '0');
-    final minute = time.minute.toString().padLeft(2, '0');
-    return '$hour:$minute';
   }
 
   String _formatMessageTime(DateTime timestamp) {

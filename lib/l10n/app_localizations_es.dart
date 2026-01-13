@@ -695,6 +695,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get conversationArchived => 'Conversación archivada';
 
   @override
+  String get conversationUnarchived => 'Conversation unarchived';
+
+  @override
   String get conversationDeleted => 'Conversation deleted';
 
   @override

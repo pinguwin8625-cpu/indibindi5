@@ -5,7 +5,7 @@ import '../widgets/time_selection_widget.dart';
 import '../widgets/seat_planning_section_widget.dart';
 import '../widgets/booking_button_widget.dart';
 import '../widgets/scroll_indicator.dart';
-import '../widgets/ride_details_bar.dart';
+import '../widgets/ride_info_card.dart';
 import '../l10n/app_localizations.dart';
 
 class BookingLayerWidget extends StatefulWidget {
@@ -61,7 +61,7 @@ class _BookingLayerWidgetState extends State<BookingLayerWidget> {
     return Column(
       children: [
         // Summary bar showing route, stops, and time with back button
-        RideDetailsBar(
+        RideInfoCard(
           selectedRoute: widget.selectedRoute,
           originIndex: widget.originIndex,
           destinationIndex: widget.destinationIndex,

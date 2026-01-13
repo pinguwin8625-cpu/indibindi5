@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
 import '../models/routes.dart';
 import '../models/booking.dart';
+import '../models/feedback_event.dart';
 import '../l10n/app_localizations.dart';
 import '../services/auth_service.dart';
 import '../services/booking_storage.dart';
 import '../services/messaging_service.dart';
 import '../services/mock_users.dart';
+import '../services/feedback_service.dart';
 import 'rating_widgets.dart';
 
 /// A card that displays a matching ride with the same style as booking cards
@@ -105,14 +107,7 @@ class _MatchingRideCardState extends State<MatchingRideCard>
     // Cannot select seats on own ride
     if (_isOwnRide) {
       final l10n = AppLocalizations.of(context)!;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l10n.cannotBookOwnRide),
-          backgroundColor: Colors.orange,
-          duration: Duration(seconds: 3),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      FeedbackService.show(context, FeedbackEvent.error(l10n.snackbarCannotBookOwnRideDetail));
       return;
     }
 
@@ -225,16 +220,12 @@ class _MatchingRideCardState extends State<MatchingRideCard>
       
       if (mounted) {
         final l10n = AppLocalizations.of(context)!;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              conflictingBooking != null
-                  ? l10n.snackbarConflictingBooking('${_formatTimeForConflict(conflictingBooking.departureTime)} - ${_formatTimeForConflict(conflictingBooking.arrivalTime)}')
-                  : l10n.alreadyHaveRideScheduled,
-            ),
-            backgroundColor: Colors.red,
-            duration: Duration(seconds: 3),
-            behavior: SnackBarBehavior.floating,
+        FeedbackService.show(
+          context,
+          FeedbackEvent.error(
+            conflictingBooking != null
+                ? l10n.snackbarConflictingBooking('${_formatTimeForConflict(conflictingBooking.departureTime)} - ${_formatTimeForConflict(conflictingBooking.arrivalTime)}')
+                : l10n.alreadyHaveRideScheduled,
           ),
         );
       }

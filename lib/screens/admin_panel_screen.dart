@@ -6,10 +6,12 @@ import '../services/booking_storage.dart';
 import '../services/messaging_service.dart';
 import '../services/rating_service.dart';
 import '../services/mock_users.dart';
+import '../services/feedback_service.dart';
 import '../models/user.dart';
 import '../models/booking.dart';
 import '../models/message.dart';
 import '../models/trip_rating.dart';
+import '../models/feedback_event.dart';
 import '../widgets/booking_card_widget.dart';
 import '../widgets/conversation_card_widget.dart';
 import '../widgets/seat_layout_widget.dart';
@@ -392,11 +394,9 @@ class _UsersTab extends StatelessWidget {
 
   void _copyToClipboard(BuildContext context, String text, String label) {
     Clipboard.setData(ClipboardData(text: text));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$label copied'),
-        duration: Duration(seconds: 1),
-      ),
+    FeedbackService.show(
+      context,
+      FeedbackEvent.success('$label copied', duration: Duration(seconds: 1)),
     );
   }
 
@@ -883,12 +883,9 @@ class _BookingsTabState extends State<_BookingsTab> {
     }
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Cleared $clearedCount bookings'),
-          backgroundColor: Color(0xFF00C853),
-          behavior: SnackBarBehavior.floating,
-        ),
+      FeedbackService.show(
+        context,
+        FeedbackEvent.success('Cleared $clearedCount bookings'),
       );
     }
   }
@@ -1543,12 +1540,9 @@ class _MessagesTabState extends State<_MessagesTab> {
     }
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Cleared $clearedCount conversations'),
-          backgroundColor: Color(0xFF00C853),
-          behavior: SnackBarBehavior.floating,
-        ),
+      FeedbackService.show(
+        context,
+        FeedbackEvent.success('Cleared $clearedCount conversations'),
       );
     }
   }
@@ -1812,11 +1806,9 @@ class _RatingsTabState extends State<_RatingsTab> {
         ratingService.clearAll();
       }
       setState(() {});
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Ratings cleared for $userName'),
-          behavior: SnackBarBehavior.floating,
-        ),
+      FeedbackService.show(
+        context,
+        FeedbackEvent.success('Ratings cleared for $userName'),
       );
     }
   }
@@ -2117,11 +2109,9 @@ class _UserDetailsContentState extends State<_UserDetailsContent> {
 
   void _copyToClipboard(String text, String label) {
     Clipboard.setData(ClipboardData(text: text));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$label copied'),
-        duration: Duration(seconds: 1),
-      ),
+    FeedbackService.show(
+      context,
+      FeedbackEvent.success('$label copied', duration: Duration(seconds: 1)),
     );
   }
   bool _messagesExpanded = false;
@@ -2400,11 +2390,9 @@ class _UserDetailsContentState extends State<_UserDetailsContent> {
               onPressed: () {
                 Navigator.pop(dialogContext);
                 // TODO: Implement actual account deletion
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Account deletion would be processed here'),
-                    backgroundColor: Colors.red,
-                  ),
+                FeedbackService.show(
+                  context,
+                  FeedbackEvent.warning('Account deletion would be processed here'),
                 );
               },
               style: TextButton.styleFrom(foregroundColor: Colors.red),

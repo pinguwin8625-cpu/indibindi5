@@ -6,9 +6,11 @@ import '../services/auth_service.dart';
 import '../services/rating_service.dart';
 import '../services/messaging_service.dart';
 import '../services/mock_users.dart';
+import '../services/feedback_service.dart';
 import '../models/booking.dart';
 import '../models/trip_rating.dart';
 import '../models/message.dart';
+import '../models/feedback_event.dart';
 import '../utils/dialog_helper.dart';
 import '../l10n/app_localizations.dart';
 import '../widgets/scroll_indicator.dart';
@@ -1009,13 +1011,9 @@ class MyBookingsScreenState extends State<MyBookingsScreen>
 
     if (hasAlreadyRated) {
       final l10n = AppLocalizations.of(context)!;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l10n.snackbarAlreadyRated(otherUserName)),
-          backgroundColor: Colors.orange,
-          duration: Duration(seconds: 3),
-          behavior: SnackBarBehavior.floating,
-        ),
+      FeedbackService.show(
+        context,
+        FeedbackEvent.warning(l10n.snackbarAlreadyRated(otherUserName)),
       );
       return;
     }
@@ -1199,13 +1197,9 @@ class MyBookingsScreenState extends State<MyBookingsScreen>
 
     // Show success message
     final l10n = AppLocalizations.of(context)!;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(l10n.snackbarRatingSubmitted(rating.averageRating.toStringAsFixed(1), otherUserName)),
-        backgroundColor: Colors.green,
-        duration: Duration(seconds: 3),
-        behavior: SnackBarBehavior.floating,
-      ),
+    FeedbackService.show(
+      context,
+      FeedbackEvent.success(l10n.snackbarRatingSubmitted(rating.averageRating.toStringAsFixed(1), otherUserName)),
     );
   }
 }
