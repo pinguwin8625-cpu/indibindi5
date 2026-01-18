@@ -616,6 +616,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get booked => 'Reservado';
 
   @override
+  String get pending => 'Pending';
+
+  @override
   String get noMessagesYet => 'Nenhuma mensagem ainda';
 
   @override
@@ -768,6 +771,11 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String systemNotificationRiderBooked(String riderName, String driverName) {
     return '$riderName reservou um assento na viagem de $driverName';
+  }
+
+  @override
+  String systemNotificationPreBooking(String riderName, String driverName) {
+    return '$riderName contacted $driverName';
   }
 
   @override

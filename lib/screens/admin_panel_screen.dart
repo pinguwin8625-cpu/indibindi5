@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import '../l10n/app_localizations.dart';
 import '../services/auth_service.dart';
 import '../services/booking_storage.dart';
@@ -7,6 +8,7 @@ import '../services/messaging_service.dart';
 import '../services/rating_service.dart';
 import '../services/mock_users.dart';
 import '../services/feedback_service.dart';
+import '../providers/app_settings_provider.dart';
 import '../models/user.dart';
 import '../models/booking.dart';
 import '../models/message.dart';
@@ -54,7 +56,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> with SingleTickerPr
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 5, vsync: this);
   }
 
   @override
@@ -85,6 +87,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> with SingleTickerPr
       case 1: return 'Bookings';
       case 2: return 'Messages';
       case 3: return 'Ratings';
+      case 4: return 'Settings';
       default: return '';
     }
   }
@@ -370,6 +373,10 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> with SingleTickerPr
               ),
               text: 'Ratings',
             ),
+            Tab(
+              icon: Icon(Icons.settings, size: 18),
+              text: 'Settings',
+            ),
           ],
         ),
       ),
@@ -380,6 +387,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> with SingleTickerPr
           _BookingsTab(key: _bookingsTabKey, onNavigateToUser: _navigateToUser),
           _MessagesTab(key: _messagesTabKey, onNavigateToUser: _navigateToUser),
           _RatingsTab(key: _ratingsTabKey, onNavigateToUser: _navigateToUser),
+          const _SettingsTab(),
         ],
       ),
     );
@@ -2993,4 +3001,109 @@ class _UserDetailsContentState extends State<_UserDetailsContent> {
     );
   }
 
+}
+
+// Settings Tab for admin configuration
+class _SettingsTab extends StatelessWidget {
+  const _SettingsTab();
+
+  @override
+  Widget build(BuildContext context) {
+    final appSettings = Provider.of<AppSettingsProvider>(context);
+
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        // Messaging Settings Section
+        _buildSectionHeader('Messaging'),
+        const SizedBox(height: 8),
+        _buildToggleTile(
+          title: 'Allow messaging before booking',
+          subtitle: 'Riders can message drivers before making a booking',
+          value: appSettings.allowMessagingBeforeBooking,
+          onChanged: (value) {
+            appSettings.setAllowMessagingBeforeBooking(value);
+          },
+        ),
+        const SizedBox(height: 24),
+
+        // Info section
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.blue[50],
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.blue[200]!),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.info_outline, color: Colors.blue[700], size: 20),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'When "Allow messaging before booking" is enabled, riders will see a message icon on driver avatars in the matching rides section, allowing them to contact drivers before committing to a booking.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.blue[900],
+                    height: 1.4,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSectionHeader(String title) {
+    return Text(
+      title,
+      style: const TextStyle(
+        fontSize: 18,
+        fontWeight: FontWeight.bold,
+        color: Color(0xFF2E2E2E),
+      ),
+    );
+  }
+
+  Widget _buildToggleTile({
+    required String title,
+    required String subtitle,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[300]!),
+      ),
+      child: SwitchListTile(
+        title: Text(
+          title,
+          style: const TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Text(
+            subtitle,
+            style: TextStyle(
+              fontSize: 13,
+              color: Colors.grey[600],
+            ),
+          ),
+        ),
+        value: value,
+        onChanged: onChanged,
+        activeTrackColor: const Color(0xFFDD2C00).withValues(alpha: 0.5),
+        activeThumbColor: const Color(0xFFDD2C00),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      ),
+    );
+  }
 }

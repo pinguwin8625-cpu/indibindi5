@@ -540,14 +540,33 @@ class MyBookingsScreenState extends State<MyBookingsScreen>
           excludeUserId: currentUser?.id,
         );
       } else {
-        // Rider canceled - notify the driver
+        // Rider canceled - notify ONLY the driver in THIS specific conversation
         final notificationContent = l10n.systemNotificationRiderCanceled(
           currentUser?.fullName ?? 'Rider',
         );
-        messagingService.sendSystemNotificationForBooking(
-          bookingId: booking.id,
+
+        // Extract driver booking ID from rider booking ID (format: driverBookingId_rider_riderId)
+        final driverBookingId = booking.id.split('_rider_')[0];
+
+        // Find the specific conversation between this rider and the driver
+        // Format: driverBookingId_driverId_riderId
+        final driverUserId = booking.driverUserId ?? '';
+        final conversationId = '${driverBookingId}_${driverUserId}_${currentUser?.id}';
+
+        // Send notification to driver in this specific conversation
+        messagingService.sendSystemNotification(
+          conversationId: conversationId,
+          receiverId: driverUserId,
+          receiverName: booking.driverName ?? 'Driver',
           content: notificationContent,
-          excludeUserId: currentUser?.id,
+        );
+
+        // Send confirmation to the rider themselves in the same conversation
+        messagingService.sendSystemNotification(
+          conversationId: conversationId,
+          receiverId: currentUser?.id ?? '',
+          receiverName: currentUser?.fullName ?? '',
+          content: notificationContent,
         );
       }
 
@@ -556,23 +575,16 @@ class MyBookingsScreenState extends State<MyBookingsScreen>
   }
 
   Future<void> _archiveBooking(Booking booking) async {
-    final isArchived = booking.isArchived == true;
     final confirmed = await DialogHelper.showConfirmDialog(
       context: context,
-      title: isArchived ? 'Unarchive Booking' : 'Archive Booking',
-      content: isArchived
-          ? 'Are you sure you want to unarchive this booking?'
-          : 'Are you sure you want to archive this booking?',
+      title: 'Archive Booking',
+      content: 'Are you sure you want to archive this booking?\n\nThe affiliated conversation will also be archived.',
       cancelText: 'No',
-      confirmText: isArchived ? 'Yes, Unarchive' : 'Yes, Archive',
+      confirmText: 'Yes, Archive',
     );
 
     if (confirmed) {
-      if (isArchived) {
-        BookingStorage().unarchiveBooking(booking.id);
-      } else {
-        BookingStorage().archiveBooking(booking.id);
-      }
+      BookingStorage().archiveBooking(booking.id);
     }
   }
 

@@ -611,6 +611,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get booked => '예약됨';
 
   @override
+  String get pending => 'Pending';
+
+  @override
   String get noMessagesYet => '아직 메시지가 없습니다';
 
   @override
@@ -758,6 +761,11 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String systemNotificationRiderBooked(String riderName, String driverName) {
     return '$riderName님이 $driverName님의 탑승에 좌석을 예약했습니다';
+  }
+
+  @override
+  String systemNotificationPreBooking(String riderName, String driverName) {
+    return '$riderName contacted $driverName';
   }
 
   @override

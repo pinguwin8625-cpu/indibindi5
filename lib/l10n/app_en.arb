@@ -851,6 +851,11 @@
     "description": "Booked status text"
   },
 
+  "pending": "Pending",
+  "@pending": {
+    "description": "Pending booking status"
+  },
+
   "noMessagesYet": "No messages yet",
   "@noMessagesYet": {
     "description": "Empty inbox message"
@@ -1105,6 +1110,19 @@
   "systemNotificationRiderBooked": "{riderName} booked a seat on {driverName}'s ride",
   "@systemNotificationRiderBooked": {
     "description": "System notification shown to rider after booking a seat",
+    "placeholders": {
+      "riderName": {
+        "type": "String"
+      },
+      "driverName": {
+        "type": "String"
+      }
+    }
+  },
+
+  "systemNotificationPreBooking": "{riderName} contacted {driverName}",
+  "@systemNotificationPreBooking": {
+    "description": "System notification shown when rider messages driver before booking",
     "placeholders": {
       "riderName": {
         "type": "String"

@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'screens/auth_screen.dart';
 import 'screens/main_screen.dart';
 import 'providers/locale_provider.dart';
+import 'providers/app_settings_provider.dart';
 import 'services/auth_service.dart';
 import 'services/booking_storage.dart';
 import 'services/messaging_service.dart';
@@ -20,8 +21,11 @@ void main() async {
   await RatingService().ensureLoaded();
 
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => LocaleProvider(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => LocaleProvider()),
+        ChangeNotifierProvider(create: (_) => AppSettingsProvider()),
+      ],
       child: const IndibindiApp(),
     ),
   );

@@ -3,8 +3,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../models/message.dart';
 import '../models/booking.dart';
+import '../models/routes.dart';
 import '../services/auth_service.dart';
-import '../services/booking_storage.dart';
 import '../services/mock_users.dart';
 
 class MessagingService {
@@ -324,6 +324,56 @@ class MessagingService {
       throw Exception('Messaging period has expired (3 days after arrival)');
     }
 
+    // Check if this is the first message in a pre-booking conversation
+    // Pre-booking conversations have no messages yet and were created before booking
+    final isFirstMessage = conversation.messages.isEmpty;
+    final isPreBookingConversation = !conversation.id.startsWith('support_');
+
+    if (isFirstMessage && isPreBookingConversation) {
+      // Send pre-booking system notification BEFORE the user's message
+      // Format names as "FirstName S." (first name + surname initial)
+      final riderDisplayName = _formatNameForMessage(conversation.riderName);
+      final driverDisplayName = _formatNameForMessage(conversation.driverName);
+      final preBookingMessage = '$riderDisplayName contacted $driverDisplayName';
+
+      // Send notification to driver
+      final driverNotification = Message(
+        id: 'msg_${_messageIdCounter++}',
+        conversationId: conversationId,
+        senderId: Message.systemSenderId,
+        senderName: Message.systemSenderName,
+        receiverId: conversation.driverId,
+        receiverName: conversation.driverName,
+        content: preBookingMessage,
+        timestamp: DateTime.now(),
+        isRead: false,
+        isSystemMessage: true,
+      );
+
+      // Send notification to rider
+      final riderNotification = Message(
+        id: 'msg_${_messageIdCounter++}',
+        conversationId: conversationId,
+        senderId: Message.systemSenderId,
+        senderName: Message.systemSenderName,
+        receiverId: conversation.riderId,
+        receiverName: conversation.riderName,
+        content: preBookingMessage,
+        timestamp: DateTime.now(),
+        isRead: false,
+        isSystemMessage: true,
+      );
+
+      // Add system messages to conversation first
+      conversation = conversation.copyWith(
+        messages: [driverNotification, riderNotification],
+      );
+
+      if (kDebugMode) {
+        print('🤖 Sent pre-booking system notifications to both driver and rider');
+      }
+    }
+
     final message = Message(
       id: 'msg_${_messageIdCounter++}',
       conversationId: conversationId,
@@ -451,6 +501,72 @@ class MessagingService {
     return conversation;
   }
 
+  // Create or get pre-booking conversation (rider messaging driver before booking)
+  Conversation getOrCreatePreBookingConversation({
+    required String riderId,
+    required String riderName,
+    required String driverId,
+    required String driverName,
+    required String routeName,
+    required DateTime departureTime,
+    required DateTime arrivalTime,
+    required String rideId, // Add ride ID to make conversation unique per ride
+  }) {
+    // Generate a unique conversation ID for pre-booking messages
+    // Format: rideId_driverId_riderId (same as post-booking format)
+    // This ensures pre-booking and post-booking messages use the same thread
+    final conversationId = '${rideId}_${driverId}_$riderId';
+
+    if (kDebugMode) {
+      print('💬 getOrCreatePreBookingConversation: $conversationId');
+      print('   rider=$riderName, driver=$driverName');
+    }
+
+    // Check if conversation already exists (may have been created during booking)
+    var conversation = getConversation(conversationId);
+
+    if (conversation == null) {
+      // Get stop names from route
+      final route = predefinedRoutes.firstWhere(
+        (r) => r.name == routeName,
+        orElse: () => predefinedRoutes.first,
+      );
+      final originName = route.stops.isNotEmpty ? route.stops.first.name : 'Origin';
+      final destinationName = route.stops.isNotEmpty ? route.stops.last.name : 'Destination';
+
+      conversation = Conversation(
+        id: conversationId,
+        bookingId: rideId, // Link to the specific ride being discussed
+        driverId: driverId,
+        driverName: driverName,
+        riderId: riderId,
+        riderName: riderName,
+        routeName: routeName,
+        originName: originName,
+        destinationName: destinationName,
+        departureTime: departureTime,
+        arrivalTime: arrivalTime,
+        messages: [],
+      );
+
+      // Add to conversations list immediately so it's available for system notifications
+      // (e.g., if the booking gets canceled before any messages are sent)
+      conversations.value = [...conversations.value, conversation];
+      _saveConversations();
+
+      if (kDebugMode) {
+        print('💬 Created and saved new pre-booking conversation: $conversationId');
+        print('💬 Pre-booking system message will be sent when first user message is sent');
+      }
+    } else {
+      if (kDebugMode) {
+        print('💬 Reusing existing conversation: ${conversation.id}');
+      }
+    }
+
+    return conversation;
+  }
+
   // Mark messages as read
   void markMessagesAsRead(String conversationId, String userId) {
     final conversation = getConversation(conversationId);
@@ -475,50 +591,27 @@ class MessagingService {
     _saveConversations(); // Persist changes
   }
 
-  // Archive a conversation (manually archive)
-  void archiveConversation(String conversationId) {
-    final conversation = getConversation(conversationId);
-    if (conversation == null) return;
+  // Archive conversation by booking ID (called when booking is archived)
+  void archiveConversationForBooking(String bookingId) {
+    final index = conversations.value.indexWhere((c) => c.bookingId == bookingId);
+    if (index == -1) {
+      if (kDebugMode) {
+        print('📁 No conversation found for booking: $bookingId');
+      }
+      return;
+    }
 
-    final updatedConversation = conversation.copyWith(
-      isManuallyArchived: true,
-    );
-
+    final conversation = conversations.value[index];
+    final updatedConversation = conversation.copyWith(isManuallyArchived: true);
     final updatedConversations = conversations.value.map((c) {
-      return c.id == conversationId ? updatedConversation : c;
+      return c.id == conversation.id ? updatedConversation : c;
     }).toList();
 
     conversations.value = updatedConversations;
     _saveConversations();
 
     if (kDebugMode) {
-      print('📁 Archived conversation: $conversationId');
-    }
-  }
-
-  // Unarchive a conversation
-  void unarchiveConversation(String conversationId) {
-    final conversation = getConversation(conversationId);
-    if (conversation == null) return;
-
-    final updatedConversation = conversation.copyWith(
-      isManuallyArchived: false,
-    );
-
-    final updatedConversations = conversations.value.map((c) {
-      return c.id == conversationId ? updatedConversation : c;
-    }).toList();
-
-    conversations.value = updatedConversations;
-    _saveConversations();
-
-    // Also unarchive the associated booking if it exists
-    if (!conversationId.startsWith('support_') && conversation.bookingId.isNotEmpty) {
-      BookingStorage().unarchiveBooking(conversation.bookingId);
-    }
-
-    if (kDebugMode) {
-      print('📂 Unarchived conversation: $conversationId');
+      print('📁 Archived conversation for booking: $bookingId');
     }
   }
 
@@ -785,6 +878,18 @@ class MessagingService {
       print('🤖 Sending system notification to ${relatedConversations.length} conversations for booking $bookingId');
     }
 
+    // If no conversations found, this might be a pre-booking conversation that hasn't
+    // been added to the list yet. We should still create the conversation with the notification.
+    if (relatedConversations.isEmpty) {
+      if (kDebugMode) {
+        print('🤖 No existing conversations found for booking $bookingId');
+        print('   This may be a canceled ride before any messages were sent');
+      }
+      // We can't send a notification without knowing who the parties are
+      // The conversation will need to be created when first accessed
+      return;
+    }
+
     for (var conversation in relatedConversations) {
       // Determine who to notify (the other party, not the one who made the change)
       String receiverId;
@@ -882,5 +987,21 @@ class MessagingService {
       receiverName: riderName,
       content: riderNotificationContent,
     );
+  }
+
+  // Helper function to format names for system messages
+  // Converts "Sarah Miller" to "Sarah M."
+  String _formatNameForMessage(String fullName) {
+    final parts = fullName.trim().split(' ');
+    if (parts.length < 2) {
+      // No surname, just return the name as is
+      return fullName;
+    }
+
+    final firstName = parts[0];
+    final surname = parts.sublist(1).join(' '); // Handle multiple surnames
+    final surnameInitial = surname.isNotEmpty ? surname[0].toUpperCase() : '';
+
+    return surnameInitial.isNotEmpty ? '$firstName $surnameInitial.' : firstName;
   }
 }

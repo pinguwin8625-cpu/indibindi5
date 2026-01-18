@@ -52,7 +52,7 @@ class StopsLayerWidget extends StatefulWidget {
   State<StopsLayerWidget> createState() => _StopsLayerWidgetState();
 }
 
-class _StopsLayerWidgetState extends State<StopsLayerWidget> with SingleTickerProviderStateMixin {
+class _StopsLayerWidgetState extends State<StopsLayerWidget> {
   int? localOriginIndex;
   int? localDestinationIndex;
   DateTime? localDepartureTime;
@@ -62,8 +62,6 @@ class _StopsLayerWidgetState extends State<StopsLayerWidget> with SingleTickerPr
   int visibleIntermediateCount = 0; // Track visible intermediate stops
   int hiddenIntermediateCount = 0; // Track hidden intermediate stops
   final ScrollController _scrollController = ScrollController();
-  late AnimationController _borderAnimationController;
-  late Animation<double> _borderAnimation;
 
   @override
   void initState() {
@@ -73,21 +71,11 @@ class _StopsLayerWidgetState extends State<StopsLayerWidget> with SingleTickerPr
     localDepartureTime = widget.departureTime;
     localArrivalTime = widget.arrivalTime;
     localHasSelectedDateTime = widget.hasSelectedDateTime;
-
-    // Setup blinking border animation
-    _borderAnimationController = AnimationController(
-      duration: Duration(milliseconds: 1200),
-      vsync: this,
-    )..repeat(reverse: true);
-    _borderAnimation = Tween<double>(begin: 0.3, end: 1.0).animate(
-      CurvedAnimation(parent: _borderAnimationController, curve: Curves.easeInOut),
-    );
   }
 
   @override
   void dispose() {
     _scrollController.dispose();
-    _borderAnimationController.dispose();
     super.dispose();
   }
 
@@ -342,23 +330,7 @@ class _StopsLayerWidgetState extends State<StopsLayerWidget> with SingleTickerPr
                         Expanded(
                           flex: 2,
                           child: localOriginIndex != null && localDestinationIndex != null
-                              ? AnimatedBuilder(
-                                  animation: _borderAnimation,
-                                  builder: (context, child) {
-                                    return Container(
-                                      decoration: BoxDecoration(
-                                        color: Color(0xFFFF6D00).withValues(alpha: 0.05),
-                                        border: Border.all(
-                                          color: Color(0xFFFF6D00).withValues(alpha: _borderAnimation.value),
-                                          width: 2,
-                                        ),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                      child: child,
-                                    );
-                                  },
-                                  child: TimeSelectionWidget(
+                              ? TimeSelectionWidget(
                                     userRole: widget.userRole,
                                     selectedRoute: widget.selectedRoute,
                                     originIndex: localOriginIndex!,
@@ -419,8 +391,7 @@ class _StopsLayerWidgetState extends State<StopsLayerWidget> with SingleTickerPr
                                       );
                                       // Don't auto-navigate on initial time setup
                                     },
-                                  ),
-                                )
+                                  )
                               : Container(),
                         ),
                       ],

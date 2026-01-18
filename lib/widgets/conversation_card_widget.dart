@@ -1,7 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import '../models/message.dart';
 import '../models/user.dart';
+import '../models/booking.dart';
 import '../services/booking_storage.dart';
 import '../services/rating_service.dart';
 import '../services/mock_users.dart';
@@ -75,85 +77,160 @@ class ConversationCard extends StatelessWidget {
 
     final profilePhotoUrl = otherUser?.profilePhotoUrl;
 
-    // Card color based on archived/unread state
-    final cardColor = isArchived
-        ? Colors.grey[100]
-        : (unreadCount > 0 ? Colors.blue[100] : Colors.blue[50]);
+    // Get booking status - need to check for the CURRENT USER's booking, not just any booking
+    // For riders: look for rider booking (format: driverBookingId_rider_userId)
+    // For drivers: check if THIS SPECIFIC rider (the one in this conversation) has booked
+    Booking? booking;
+    bool isBooked = false;
+    bool isCanceled = false;
 
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(height: 4),
-            Container(
-              padding: EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: cardColor,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey[300]!, width: 0.5),
-              ),
-              child: Row(
+    if (currentUser != null) {
+      if (amITheDriver) {
+        // Current user is the driver - check if the specific rider in this conversation has booked
+        // Format: driverBookingId_rider_riderId
+        final riderBookingId = '${conversation.bookingId}_rider_${conversation.riderId}';
+        booking = BookingStorage().getBookingById(riderBookingId);
+
+        if (kDebugMode) {
+          print('📋 Driver looking for rider booking: $riderBookingId');
+        }
+
+        // Also check if the driver's own booking is canceled (affects all riders)
+        final driverBooking = BookingStorage().getBookingById(conversation.bookingId);
+        if (driverBooking?.isCanceled == true) {
+          isCanceled = true;
+        } else if (booking?.isCanceled == true) {
+          // This specific rider canceled their booking
+          isCanceled = true;
+        }
+
+        isBooked = booking != null && !isCanceled;
+      } else {
+        // Current user is the rider - look for their rider booking
+        // Format: driverBookingId_rider_userId
+        final riderBookingId = '${conversation.bookingId}_rider_${currentUser.id}';
+        booking = BookingStorage().getBookingById(riderBookingId);
+
+        if (kDebugMode) {
+          print('📋 Rider looking for their booking: $riderBookingId');
+        }
+
+        isBooked = booking != null;
+        isCanceled = booking?.isCanceled == true;
+      }
+    }
+
+    if (kDebugMode) {
+      print('📋 ConversationCard inbox mode for conversation: ${conversation.id}');
+      print('   conversation.bookingId=${conversation.bookingId}');
+      print('   current user booking found=${booking != null}');
+      print('   booking id searched=${booking?.id}');
+      print('   isBooked=$isBooked');
+      print('   isCanceled=$isCanceled');
+      print('   isSupport=$isSupport');
+      print('   Will show icon: ${!isSupport}');
+    }
+
+    // Use white background like booking cards
+    // Layout: Cross/Grid format
+    // Top row: [Avatar + Name + Rating] | [Message Bubble]
+    // Bottom row: [Booking Status Label] | [Ride Details]
+    return Card(
+      margin: EdgeInsets.only(bottom: 4),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: EdgeInsets.all(12),
+          child: Column(
+            children: [
+              // TOP ROW: Avatar section (left) + Message bubble (right)
+              Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Left: Avatar + Name + Rating stacked vertically
+                  // Top-Left: Avatar + Name + Rating
                   SizedBox(
-                    width: 50,
+                    width: 80,
+                    height: 48, // Match bubble height
                     child: Column(
-                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        if (isSupport && !isAdmin)
-                          CircleAvatar(
-                            radius: 20,
-                            backgroundColor: Colors.red,
-                            child: Icon(Icons.support_agent, size: 20, color: Colors.white),
-                          )
-                        else
-                          _buildInboxAvatar(profilePhotoUrl),
-                        SizedBox(height: 4),
-                        Text(
-                          otherUserName,
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.center,
+                        Row(
+                          children: [
+                            if (isSupport && !isAdmin)
+                              CircleAvatar(
+                                radius: 16,
+                                backgroundColor: Colors.red,
+                                child: Icon(Icons.support_agent, size: 16, color: Colors.white),
+                              )
+                            else
+                              _buildInboxAvatar(profilePhotoUrl, radius: 16),
+                            SizedBox(width: 6),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    otherUserName,
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  // Rating below name
+                                  if ((!isSupport || isAdmin) && otherUser?.rating != null) ...[
+                                    SizedBox(height: 2),
+                                    RatingDisplay(
+                                      rating: otherUser?.rating ?? 0.0,
+                                      starSize: 9,
+                                      fontSize: 8,
+                                      starColor: Colors.amber,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
-                        // Rating below name
-                        if ((!isSupport || isAdmin) && otherUser?.rating != null) ...[
-                          SizedBox(height: 2),
-                          RatingDisplay(
-                            rating: otherUser?.rating ?? 0.0,
-                            starSize: 10,
-                            fontSize: 9,
-                            starColor: Colors.amber,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ],
                       ],
                     ),
                   ),
                   SizedBox(width: 8),
-                  // Right: Message bubble + Ride info stacked vertically
+                  // Top-Right: Message bubble
                   Expanded(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (conversation.getLastMessageForUser(userId) != null)
-                          _buildMessagePreview(userId),
-                        SizedBox(height: 6),
-                        _buildTopRow(context, isSupport, forInbox: true, l10n: l10n),
-                      ],
-                    ),
+                    child: conversation.getLastMessageForUser(userId) != null
+                        ? _buildMessagePreview(userId, unreadCount)
+                        : SizedBox(height: 48),
                   ),
                 ],
               ),
-            ),
-          ],
+              SizedBox(height: 8),
+              // BOTTOM ROW: Booking status label (left) + Ride details (right)
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Bottom-Left: Booking status label
+                  SizedBox(
+                    width: 80,
+                    child: !isSupport
+                        ? _buildBookingStatusBadge(context, isBooked, isCanceled)
+                        : SizedBox.shrink(),
+                  ),
+                  SizedBox(width: 8),
+                  // Bottom-Right: Ride details
+                  Expanded(
+                    child: _buildTopRow(context, isSupport, forInbox: true, l10n: l10n),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -583,13 +660,18 @@ class ConversationCard extends StatelessWidget {
   }
 
   /// Build message preview bubble for inbox mode
-  Widget _buildMessagePreview(String currentUserId) {
+  Widget _buildMessagePreview(String currentUserId, int unreadCount) {
     final lastMessage = conversation.getLastMessageForUser(currentUserId)!;
     final isSystemMessage = lastMessage.isSystemMessage;
     // For system messages, they're never "from" the current user
     final isFromCurrentUser = !isSystemMessage && lastMessage.senderId == currentUserId;
 
-    final bubbleColor = Colors.white;
+    // Check if this specific message is unread
+    final isMessageUnread = !lastMessage.isRead && lastMessage.receiverId == currentUserId;
+
+    // Change bubble color if there are unread messages (app's signature green)
+    // BUT: don't highlight system messages with green bubble
+    final bubbleColor = (unreadCount > 0 && !isSystemMessage) ? Colors.green[100]! : Colors.white;
     final textColor = Colors.grey[700]!;
 
     return Stack(
@@ -597,6 +679,7 @@ class ConversationCard extends StatelessWidget {
       children: [
         Container(
           width: double.infinity,
+          height: 48, // Fixed height for 2-row bubble (approximately 2 lines of text + padding)
           padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
             color: bubbleColor,
@@ -617,7 +700,11 @@ class ConversationCard extends StatelessWidget {
               if (isSystemMessage) ...[
                 Padding(
                   padding: EdgeInsets.only(top: 2),
-                  child: Icon(Icons.smart_toy_outlined, size: 14, color: Colors.grey[500]),
+                  child: Icon(
+                    Icons.smart_toy_outlined,
+                    size: 14,
+                    color: _getSystemMessageColor(lastMessage.content),
+                  ),
                 ),
                 SizedBox(width: 6),
               ],
@@ -626,7 +713,8 @@ class ConversationCard extends StatelessWidget {
                   lastMessage.content,
                   style: TextStyle(
                     fontSize: 12,
-                    color: textColor,
+                    color: isSystemMessage ? _getSystemMessageColor(lastMessage.content) : textColor,
+                    fontWeight: (isSystemMessage && isMessageUnread) ? FontWeight.bold : FontWeight.normal,
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -681,6 +769,111 @@ class ConversationCard extends StatelessWidget {
     if (diff.inDays < 7) return '${diff.inDays}d';
 
     return '${timestamp.day}/${timestamp.month}';
+  }
+
+  /// Get color for system message based on content
+  Color _getSystemMessageColor(String content) {
+    // Check if message is about cancellation
+    if (content.contains('iptal') ||
+        content.contains('canceled') ||
+        content.contains('İptal')) {
+      return Colors.red[700]!; // Standard red (matches badge)
+    }
+    // Check if message is about booking/confirmation
+    else if (content.contains('rezerve') ||
+             content.contains('booked') ||
+             content.contains('Rezerve')) {
+      return Colors.green[700]!; // Standard green (matches badge)
+    }
+    // Check if message is about pre-booking contact (pending)
+    else if (content.contains('iletişime geçti') ||
+             content.contains('contacted')) {
+      return Colors.orange[700]!; // Orange for pending/pre-booking (matches badge)
+    }
+    // Default color for other system messages
+    return Colors.grey[700]!;
+  }
+
+  /// Build booking status badge with icon and text
+  Widget _buildBookingStatusBadge(BuildContext context, bool isBooked, bool isCanceled) {
+    final l10n = AppLocalizations.of(context)!;
+    IconData icon;
+    Color color;
+    String text;
+
+    if (isCanceled) {
+      icon = Icons.cancel;
+      color = Colors.red[700]!;
+      text = l10n.canceled;
+    } else if (isBooked) {
+      icon = Icons.check_circle;
+      color = Colors.green[700]!;
+      text = l10n.booked;
+    } else {
+      icon = Icons.schedule;
+      color = Colors.orange[700]!;
+      text = l10n.pending;
+    }
+
+    if (kDebugMode) {
+      print('🎨 Building booking status badge: isBooked=$isBooked, isCanceled=$isCanceled, text=$text');
+    }
+
+    // Split text into words for two-row display
+    final words = text.split(' ');
+
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            icon,
+            size: 16,
+            color: color,
+          ),
+          SizedBox(height: 4),
+          // Display text in two rows (one word per row if multiple words)
+          if (words.length == 1)
+            Text(
+              words[0],
+              style: TextStyle(
+                fontSize: 9,
+                fontWeight: FontWeight.w600,
+                color: color,
+              ),
+              textAlign: TextAlign.center,
+            )
+          else
+            Column(
+              children: [
+                Text(
+                  words[0],
+                  style: TextStyle(
+                    fontSize: 9,
+                    fontWeight: FontWeight.w600,
+                    color: color,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                Text(
+                  words.sublist(1).join(' '),
+                  style: TextStyle(
+                    fontSize: 9,
+                    fontWeight: FontWeight.w600,
+                    color: color,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+        ],
+      ),
+    );
   }
 }
 

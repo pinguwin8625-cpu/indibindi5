@@ -1,15 +1,18 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
+import 'package:provider/provider.dart';
 import '../models/routes.dart';
 import '../models/booking.dart';
 import '../models/feedback_event.dart';
 import '../l10n/app_localizations.dart';
+import '../providers/app_settings_provider.dart';
 import '../services/auth_service.dart';
 import '../services/booking_storage.dart';
 import '../services/messaging_service.dart';
 import '../services/mock_users.dart';
 import '../services/feedback_service.dart';
+import '../screens/chat_screen.dart';
 import 'rating_widgets.dart';
 
 /// A card that displays a matching ride with the same style as booking cards
@@ -937,10 +940,15 @@ class _MatchingRideCardState extends State<MatchingRideCard>
   }
 
   Widget _buildDriverPhoto() {
+    final appSettings = Provider.of<AppSettingsProvider>(context, listen: false);
+    final allowMessaging = appSettings.allowMessagingBeforeBooking;
+
+    Widget photoWidget;
+
     if (widget.ride.driverPhoto.isNotEmpty) {
       // Check if it's an asset or file path
       if (widget.ride.driverPhoto.startsWith('assets/')) {
-        return ClipRRect(
+        photoWidget = ClipRRect(
           borderRadius: BorderRadius.circular(12),
           child: Image.asset(
             widget.ride.driverPhoto,
@@ -955,7 +963,7 @@ class _MatchingRideCardState extends State<MatchingRideCard>
       } else {
         final photoFile = File(widget.ride.driverPhoto);
         if (photoFile.existsSync()) {
-          return ClipRRect(
+          photoWidget = ClipRRect(
             borderRadius: BorderRadius.circular(12),
             child: Image.file(
               photoFile,
@@ -964,11 +972,26 @@ class _MatchingRideCardState extends State<MatchingRideCard>
               fit: BoxFit.cover,
             ),
           );
+        } else {
+          photoWidget = _buildDefaultDriverPhoto();
         }
       }
+    } else {
+      photoWidget = _buildDefaultDriverPhoto();
     }
 
-    // Default placeholder if no driver photo
+    // Add chevron and tap handler if messaging before booking is allowed
+    if (allowMessaging && !_isOwnRide) {
+      return GestureDetector(
+        onTap: _onDriverPhotoTap,
+        child: _wrapWithChevron(photoWidget),
+      );
+    }
+
+    return photoWidget;
+  }
+
+  Widget _buildDefaultDriverPhoto() {
     return Container(
       width: 54,
       height: 54,
@@ -977,6 +1000,73 @@ class _MatchingRideCardState extends State<MatchingRideCard>
         borderRadius: BorderRadius.circular(12),
       ),
       child: Icon(Icons.person, size: 32, color: Colors.grey[600]),
+    );
+  }
+
+  Widget _wrapWithChevron(Widget photo) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        photo,
+        Positioned(
+          right: -2,
+          bottom: -2,
+          child: Container(
+            padding: EdgeInsets.all(1),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.2),
+                  blurRadius: 2,
+                  offset: Offset(0, 1),
+                ),
+              ],
+            ),
+            child: Icon(
+              Icons.chevron_right,
+              size: 12,
+              color: Colors.grey[600],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _onDriverPhotoTap() {
+    final currentUser = AuthService.currentUser;
+    if (currentUser == null) return;
+
+    final driverId = widget.ride.driverId;
+    final driver = MockUsers.getUserById(driverId);
+    if (driver == null) return;
+
+    // Create or get existing conversation with the driver
+    final messagingService = MessagingService();
+
+    // Create a pre-booking conversation
+    final conversation = messagingService.getOrCreatePreBookingConversation(
+      riderId: currentUser.id,
+      riderName: currentUser.fullName,
+      driverId: driverId,
+      driverName: driver.fullName,
+      routeName: widget.ride.route.name,
+      departureTime: widget.ride.departureTime,
+      arrivalTime: widget.ride.arrivalTime,
+      rideId: widget.ride.id, // Pass the ride ID to make conversation unique per ride
+    );
+
+    // Navigate to chat screen
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ChatScreen(
+          conversation: conversation,
+          createConversationOnFirstMessage: true,
+        ),
+      ),
     );
   }
 

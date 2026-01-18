@@ -610,6 +610,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get booked => '已预订';
 
   @override
+  String get pending => 'Pending';
+
+  @override
   String get noMessagesYet => '暂无消息';
 
   @override
@@ -757,6 +760,11 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String systemNotificationRiderBooked(String riderName, String driverName) {
     return '$riderName在$driverName的行程中预订了座位';
+  }
+
+  @override
+  String systemNotificationPreBooking(String riderName, String driverName) {
+    return '$riderName contacted $driverName';
   }
 
   @override

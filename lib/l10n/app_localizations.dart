@@ -1294,6 +1294,12 @@ abstract class AppLocalizations {
   /// **'Booked'**
   String get booked;
 
+  /// Pending booking status
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get pending;
+
   /// Empty inbox message
   ///
   /// In en, this message translates to:
@@ -1569,6 +1575,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{riderName} booked a seat on {driverName}\'s ride'**
   String systemNotificationRiderBooked(String riderName, String driverName);
+
+  /// System notification shown when rider messages driver before booking
+  ///
+  /// In en, this message translates to:
+  /// **'{riderName} contacted {driverName}'**
+  String systemNotificationPreBooking(String riderName, String driverName);
 
   /// Snackbar shown when admin tries to send message in view mode
   ///

@@ -169,10 +169,33 @@ class _InboxScreenState extends State<InboxScreen>
             final now = DateTime.now();
 
             // Helper to check booking status
+            // IMPORTANT: Must check the CURRENT USER's booking, not just conversation.bookingId
+            // For drivers: check driver booking (conversation.bookingId)
+            // For riders: check rider booking (conversation.bookingId_rider_currentUserId)
             bool isUpcoming(Conversation c) {
               if (c.id.startsWith('support_')) return false;
-              final booking = BookingStorage().getBookingById(c.bookingId);
-              if (booking == null) return false;
+
+              // Determine which booking to check based on current user role
+              String bookingIdToCheck;
+              if (c.driverId == currentUser.id) {
+                // Current user is driver - check the SPECIFIC RIDER'S booking, not the driver booking
+                // This ensures we see the correct status for each rider individually
+                bookingIdToCheck = '${c.bookingId}_rider_${c.riderId}';
+              } else {
+                // Current user is rider - check rider booking
+                bookingIdToCheck = '${c.bookingId}_rider_${currentUser.id}';
+              }
+
+              final booking = BookingStorage().getBookingById(bookingIdToCheck);
+
+              // If no booking found, this is a pre-booking conversation where rider messaged but hasn't booked yet
+              // Show it in Upcoming if the departure time is in the future
+              if (booking == null) {
+                // Check if this is a pre-booking conversation (has messages but no booking)
+                // Use conversation's departure time to determine if it should show
+                return c.departureTime.isAfter(now);
+              }
+
               return booking.departureTime.isAfter(now) &&
                   booking.isCanceled != true &&
                   booking.isArchived != true;
@@ -180,21 +203,57 @@ class _InboxScreenState extends State<InboxScreen>
 
             bool isOngoing(Conversation c) {
               if (c.id.startsWith('support_')) return false;
-              final booking = BookingStorage().getBookingById(c.bookingId);
+
+              String bookingIdToCheck;
+              if (c.driverId == currentUser.id) {
+                // Driver checks the specific rider's booking
+                bookingIdToCheck = '${c.bookingId}_rider_${c.riderId}';
+              } else {
+                bookingIdToCheck = '${c.bookingId}_rider_${currentUser.id}';
+              }
+
+              final booking = BookingStorage().getBookingById(bookingIdToCheck);
               if (booking == null) return false;
+              // Check canceled first to avoid categorizing in multiple sections
+              if (booking.isCanceled == true) return false;
               return booking.departureTime.isBefore(now) &&
                   booking.arrivalTime.isAfter(now) &&
-                  booking.isCanceled != true &&
                   booking.isArchived != true;
             }
 
             bool isCompleted(Conversation c) {
               if (c.id.startsWith('support_')) return false;
-              final booking = BookingStorage().getBookingById(c.bookingId);
+
+              String bookingIdToCheck;
+              if (c.driverId == currentUser.id) {
+                // Driver checks the specific rider's booking
+                bookingIdToCheck = '${c.bookingId}_rider_${c.riderId}';
+              } else {
+                bookingIdToCheck = '${c.bookingId}_rider_${currentUser.id}';
+              }
+
+              final booking = BookingStorage().getBookingById(bookingIdToCheck);
               if (booking == null) return false;
+              // Check canceled first to avoid categorizing in multiple sections
+              if (booking.isCanceled == true) return false;
               return booking.arrivalTime.isBefore(now) &&
-                  booking.isCanceled != true &&
                   booking.isArchived != true;
+            }
+
+            bool isCanceled(Conversation c) {
+              if (c.id.startsWith('support_')) return false;
+
+              String bookingIdToCheck;
+              if (c.driverId == currentUser.id) {
+                // Driver checks the specific rider's booking
+                bookingIdToCheck = '${c.bookingId}_rider_${c.riderId}';
+              } else {
+                bookingIdToCheck = '${c.bookingId}_rider_${currentUser.id}';
+              }
+
+              final booking = BookingStorage().getBookingById(bookingIdToCheck);
+              if (booking == null) return false;
+              return booking.isCanceled == true && booking.isArchived != true;
             }
 
             // Categorize
@@ -222,13 +281,18 @@ class _InboxScreenState extends State<InboxScreen>
                 .toList()
               ..sort((a, b) => b.departureTime.compareTo(a.departureTime));
 
+            final canceled = validConversations
+                .where((c) => isCanceled(c) && !c.isArchived && !c.isManuallyArchived)
+                .toList()
+              ..sort((a, b) => b.departureTime.compareTo(a.departureTime));
+
             final archived = validConversations
                 .where((c) => (c.isArchived || c.isManuallyArchived))
                 .toList()
               ..sort((a, b) => b.departureTime.compareTo(a.departureTime));
 
             // Check if we have any conversations
-            final hasAnyConversations = support.isNotEmpty || upcoming.isNotEmpty || ongoing.isNotEmpty || completed.isNotEmpty || archived.isNotEmpty;
+            final hasAnyConversations = support.isNotEmpty || upcoming.isNotEmpty || ongoing.isNotEmpty || completed.isNotEmpty || canceled.isNotEmpty || archived.isNotEmpty;
 
             if (!hasAnyConversations) {
               return Center(
@@ -282,6 +346,15 @@ class _InboxScreenState extends State<InboxScreen>
                     startCollapsed: true,
                     color: Colors.green[700],
                   ),
+                if (canceled.isNotEmpty)
+                  _CollapsibleMessageSection(
+                    title: l10n.canceledRides,
+                    count: canceled.length,
+                    conversations: canceled,
+                    currentUserId: currentUser.id,
+                    startCollapsed: false,
+                    color: Colors.red[700],
+                  ),
                 if (archived.isNotEmpty)
                   _CollapsibleMessageSection(
                     title: l10n.archived,
@@ -290,8 +363,6 @@ class _InboxScreenState extends State<InboxScreen>
                     currentUserId: currentUser.id,
                     startCollapsed: true,
                     color: Colors.grey[700],
-                    showArchiveSwipe: false,
-                    showUnarchiveSwipe: true,
                   ),
               ],
             );
@@ -320,8 +391,6 @@ class _CollapsibleMessageSection extends StatefulWidget {
   final String currentUserId;
   final bool startCollapsed;
   final Color? color;
-  final bool showArchiveSwipe;
-  final bool showUnarchiveSwipe;
 
   const _CollapsibleMessageSection({
     required this.title,
@@ -330,8 +399,6 @@ class _CollapsibleMessageSection extends StatefulWidget {
     required this.currentUserId,
     this.startCollapsed = false,
     this.color,
-    this.showArchiveSwipe = true,
-    this.showUnarchiveSwipe = false,
   });
 
   @override
@@ -414,226 +481,27 @@ class _CollapsibleMessageSectionState
         if (_isExpanded) ...[
           SizedBox(height: 4),
           ...widget.conversations.map((conversation) {
-            final card = ConversationCard(
-              conversation: conversation,
-              mode: ConversationCardMode.inbox,
-              currentUserId: widget.currentUserId,
-              unreadUserId: widget.currentUserId,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ChatScreen(conversation: conversation),
-                  ),
-                );
-              },
-            );
-
-            Widget wrappedCard = card;
-            final l10n = AppLocalizations.of(context)!;
-
-            if (widget.showArchiveSwipe) {
-              wrappedCard = _SwipeToRevealAction(
-                icon: Icons.archive_outlined,
-                label: l10n.archive,
-                color: Colors.grey[500]!,
-                onAction: () {
-                  final convId = conversation.id;
-                  MessagingService().archiveConversation(convId);
-                  FeedbackService.show(
-                    context,
-                    FeedbackEvent.success(
-                      l10n.conversationArchived,
-                      duration: Duration(seconds: 2),
-                    ),
-                  );
-                },
-                child: card,
-              );
-            } else if (widget.showUnarchiveSwipe) {
-              wrappedCard = _SwipeToRevealAction(
-                icon: Icons.unarchive_outlined,
-                label: l10n.unarchive,
-                color: Colors.grey[500]!,
-                onAction: () {
-                  final convId = conversation.id;
-                  MessagingService().unarchiveConversation(convId);
-                  FeedbackService.show(
-                    context,
-                    FeedbackEvent.success(
-                      l10n.conversationUnarchived,
-                      duration: Duration(seconds: 2),
-                    ),
-                  );
-                },
-                child: card,
-              );
-            }
-
             return Padding(
               padding: EdgeInsets.only(bottom: 4),
-              child: wrappedCard,
+              child: ConversationCard(
+                conversation: conversation,
+                mode: ConversationCardMode.inbox,
+                currentUserId: widget.currentUserId,
+                unreadUserId: widget.currentUserId,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ChatScreen(conversation: conversation),
+                    ),
+                  );
+                },
+              ),
             );
           }),
         ],
         SizedBox(height: 4),
       ],
-    );
-  }
-}
-
-/// Swipe to reveal action button widget (archive/unarchive)
-class _SwipeToRevealAction extends StatefulWidget {
-  final Widget child;
-  final VoidCallback onAction;
-  final IconData icon;
-  final String label;
-  final Color color;
-
-  const _SwipeToRevealAction({
-    required this.child,
-    required this.onAction,
-    required this.icon,
-    required this.label,
-    required this.color,
-  });
-
-  @override
-  State<_SwipeToRevealAction> createState() => _SwipeToRevealActionState();
-}
-
-class _SwipeToRevealActionState extends State<_SwipeToRevealAction>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  bool _isRevealed = false;
-  static const double _revealWidth = 80.0;
-
-  // Track the currently active (swiped) instance
-  static _SwipeToRevealActionState? _currentlyRevealed;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: Duration(milliseconds: 200),
-    );
-  }
-
-  @override
-  void dispose() {
-    if (_currentlyRevealed == this) {
-      _currentlyRevealed = null;
-    }
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _onHorizontalDragStart(DragStartDetails details) {
-    // Close any other revealed card when starting to swipe a new one
-    if (_currentlyRevealed != null && _currentlyRevealed != this) {
-      _currentlyRevealed!._closeReveal();
-    }
-  }
-
-  void _onHorizontalDragUpdate(DragUpdateDetails details) {
-    if (details.delta.dx < 0) {
-      _controller.value += -details.delta.dx / _revealWidth;
-    } else {
-      _controller.value -= details.delta.dx / _revealWidth;
-    }
-    _controller.value = _controller.value.clamp(0.0, 1.0);
-  }
-
-  void _onHorizontalDragEnd(DragEndDetails details) {
-    if (_controller.value > 0.5) {
-      _controller.forward();
-      setState(() => _isRevealed = true);
-      _currentlyRevealed = this;
-    } else {
-      _controller.reverse();
-      setState(() => _isRevealed = false);
-      if (_currentlyRevealed == this) {
-        _currentlyRevealed = null;
-      }
-    }
-  }
-
-  void _closeReveal() {
-    _controller.reverse();
-    setState(() => _isRevealed = false);
-    if (_currentlyRevealed == this) {
-      _currentlyRevealed = null;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, _) {
-        return LayoutBuilder(
-          builder: (context, constraints) {
-            return Stack(
-              clipBehavior: Clip.none,
-              children: [
-                // Action button behind (only visible when swiping)
-                if (_controller.value > 0)
-                  Positioned(
-                    right: 0,
-                    top: 4,
-                    bottom: 4,
-                    child: Opacity(
-                      opacity: _controller.value,
-                      child: GestureDetector(
-                        onTap: () {
-                          _closeReveal();
-                          widget.onAction();
-                        },
-                        child: Container(
-                          width: _revealWidth,
-                          padding: EdgeInsets.symmetric(horizontal: 8),
-                          decoration: BoxDecoration(
-                            color: widget.color,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(widget.icon, color: Colors.white, size: 22),
-                              SizedBox(height: 2),
-                              Text(
-                                widget.label,
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                // Card that slides left
-                Transform.translate(
-                  offset: Offset(-_controller.value * (_revealWidth + 8), 0),
-                  child: GestureDetector(
-                    onHorizontalDragStart: _onHorizontalDragStart,
-                    onHorizontalDragUpdate: _onHorizontalDragUpdate,
-                    onHorizontalDragEnd: _onHorizontalDragEnd,
-                    onTap: _isRevealed ? _closeReveal : null,
-                    child: widget.child,
-                  ),
-                ),
-              ],
-            );
-          },
-        );
-      },
     );
   }
 }

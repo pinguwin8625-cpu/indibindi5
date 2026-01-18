@@ -536,7 +536,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get completed => 'Tamamlanan';
 
   @override
-  String get canceled => 'İptal Edilen';
+  String get canceled => 'İptal Edildi';
 
   @override
   String get suggestRoute => 'Yeni güzergah öner';
@@ -616,6 +616,9 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get booked => 'Rezerve Edildi';
+
+  @override
+  String get pending => 'Bekleyen';
 
   @override
   String get noMessagesYet => 'Henüz mesaj yok';
@@ -771,6 +774,11 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String systemNotificationRiderBooked(String riderName, String driverName) {
     return '$riderName, $driverName\'in yolculuğuna koltuk rezerve etti';
+  }
+
+  @override
+  String systemNotificationPreBooking(String riderName, String driverName) {
+    return '$riderName, $driverName ile iletişime geçti';
   }
 
   @override

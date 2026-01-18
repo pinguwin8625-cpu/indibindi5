@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../models/booking.dart';
 import 'mock_users.dart';
+import 'messaging_service.dart';
 
 // A persistent store for bookings using SharedPreferences.
 class BookingStorage {
@@ -523,6 +524,7 @@ class BookingStorage {
   }
 
   // Archive a booking (mark as archived)
+  // Also archives the affiliated conversation automatically
   void archiveBooking(String id) {
     try {
       final index = bookings.value.indexWhere((b) => b.id == id);
@@ -536,6 +538,10 @@ class BookingStorage {
       final booking = bookings.value[index];
       final archivedBooking = booking.copyWith(isArchived: true, archivedAt: DateTime.now(), isAutoArchived: false);
       updateBooking(archivedBooking);
+
+      // Also archive the affiliated conversation
+      MessagingService().archiveConversationForBooking(id);
+
       if (kDebugMode) {
         print('📚 BookingStorage: Manually archived booking $id');
         print('📚 BookingStorage: isArchived=${archivedBooking.isArchived}, isAutoArchived=${archivedBooking.isAutoArchived}');
@@ -543,29 +549,6 @@ class BookingStorage {
     } catch (e) {
       if (kDebugMode) {
         print('📚 BookingStorage: Error archiving booking $id - $e');
-      }
-    }
-  }
-
-  // Unarchive a booking (mark as not archived)
-  void unarchiveBooking(String id) {
-    try {
-      final index = bookings.value.indexWhere((b) => b.id == id);
-      if (index == -1) {
-        if (kDebugMode) {
-          print('📚 BookingStorage: Cannot unarchive - booking not found: $id');
-        }
-        return;
-      }
-
-      final booking = bookings.value[index];
-      updateBooking(booking.copyWith(isArchived: false, archivedAt: null, isAutoArchived: null));
-      if (kDebugMode) {
-        print('📚 BookingStorage: Unarchived booking $id');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('📚 BookingStorage: Error unarchiving booking $id - $e');
       }
     }
   }
