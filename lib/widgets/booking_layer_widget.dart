@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import '../models/routes.dart';
+import '../providers/app_settings_provider.dart';
 import '../widgets/time_selection_widget.dart';
 import '../widgets/seat_planning_section_widget.dart';
 import '../widgets/booking_button_widget.dart';
@@ -57,8 +58,19 @@ class _BookingLayerWidgetState extends State<BookingLayerWidget> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final appSettings = AppSettingsProvider();
 
-    return Column(
+    // Use ListenableBuilder to react to settings changes
+    return ListenableBuilder(
+      listenable: appSettings,
+      builder: (context, child) {
+        // For drivers: disable seat selection if setting is off OR action is completed
+        // For riders: only disable if action is completed
+        final isDriverSeatDisabled = widget.userRole.toLowerCase() == 'driver'
+            ? (widget.isActionCompleted || !appSettings.allowDriverSeatChange)
+            : widget.isActionCompleted;
+
+        return Column(
       children: [
         // Summary bar showing route, stops, and time with back button
         RideInfoCard(
@@ -152,7 +164,7 @@ class _BookingLayerWidgetState extends State<BookingLayerWidget> {
                               child: SeatPlanningSectionWidget(
                                 userRole: widget.userRole,
                                 selectedSeats: widget.selectedSeats,
-                                isDisabled: widget.isActionCompleted,
+                                isDisabled: isDriverSeatDisabled,
                                 onSeatsSelected: widget.onSeatsSelected,
                               ),
                             ),
@@ -233,7 +245,7 @@ class _BookingLayerWidgetState extends State<BookingLayerWidget> {
                                 SeatPlanningSectionWidget(
                                   userRole: widget.userRole,
                                   selectedSeats: widget.selectedSeats,
-                                  isDisabled: widget.isActionCompleted,
+                                  isDisabled: isDriverSeatDisabled,
                                   onSeatsSelected: widget.onSeatsSelected,
                                 ),
                                 // Bottom spacer
@@ -276,7 +288,7 @@ class _BookingLayerWidgetState extends State<BookingLayerWidget> {
                               child: SeatPlanningSectionWidget(
                                 userRole: widget.userRole,
                                 selectedSeats: widget.selectedSeats,
-                                isDisabled: widget.isActionCompleted,
+                                isDisabled: isDriverSeatDisabled,
                                 onSeatsSelected: widget.onSeatsSelected,
                               ),
                             ),
@@ -359,7 +371,7 @@ class _BookingLayerWidgetState extends State<BookingLayerWidget> {
                                       SeatPlanningSectionWidget(
                                         userRole: widget.userRole,
                                         selectedSeats: widget.selectedSeats,
-                                        isDisabled: widget.isActionCompleted,
+                                        isDisabled: isDriverSeatDisabled,
                                         onSeatsSelected: widget.onSeatsSelected,
                                       ),
                                       SizedBox(height: 24),
@@ -387,6 +399,8 @@ class _BookingLayerWidgetState extends State<BookingLayerWidget> {
             onBookingCompleted: widget.onBookingCompleted,
           ),
       ],
+    );
+      },
     );
   }
 }

@@ -709,6 +709,11 @@
     "description": "Ongoing rides section title"
   },
 
+  "current": "Current",
+  "@current": {
+    "description": "Current rides section title (upcoming + ongoing)"
+  },
+
   "archive": "Archive",
   "@archive": {
     "description": "Archive section title for old bookings"
@@ -1409,5 +1414,25 @@
   "tutorialInboxDesc2": "Need help? Use the support options to ask questions or share feedback.",
   "@tutorialInboxDesc2": {
     "description": "Inbox screen tutorial step 2 description"
+  },
+
+  "makeAvailable": "Make Available",
+  "@makeAvailable": {
+    "description": "Button to make a seat available for riders"
+  },
+
+  "makeUnavailable": "Make Unavailable",
+  "@makeUnavailable": {
+    "description": "Button to make a seat unavailable for riders"
+  },
+
+  "updateSeats": "Update Seats",
+  "@updateSeats": {
+    "description": "Button to confirm seat availability changes"
+  },
+
+  "seatsUpdated": "Seat availability updated",
+  "@seatsUpdated": {
+    "description": "Confirmation message when seats are updated"
   }
 }

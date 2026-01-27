@@ -156,6 +156,7 @@
   "atTime": "saat",
   "upcoming": "Yaklaşan",
   "ongoing": "Devam Eden",
+  "current": "Güncel",
   "archive": "Arşiv",
   "unarchive": "Arşivden Çıkar",
   "canceledRides": "İptal Edilen",
@@ -244,5 +245,10 @@
   "snackbarCopiedToClipboard": "{label} panoya kopyalandı",
   "snackbarCannotMessageYourself": "Kendinize mesaj gönderemezsiniz",
   "snackbarErrorOpeningChat": "Destek sohbeti açılırken hata oluştu: {error}",
-  "snackbarConversationRestored": "Konuşma geri yüklendi"
+  "snackbarConversationRestored": "Konuşma geri yüklendi",
+
+  "makeAvailable": "Müsait Yap",
+  "makeUnavailable": "Müsait Değil Yap",
+  "updateSeats": "Koltukları Güncelle",
+  "seatsUpdated": "Koltuk müsaitliği güncellendi"
 }

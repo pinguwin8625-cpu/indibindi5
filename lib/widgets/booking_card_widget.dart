@@ -83,19 +83,20 @@ class _BookingCardState extends State<BookingCard> {
     return '${date.day} ${monthAbbr[date.month - 1]}';
   }
 
-  // Get status suffix (Archived/Hidden) based on time since arrival
+  // Get status suffix (Hidden) based on time since arrival
+  // Completed: visible for 7 days, then hidden
+  // Canceled: visible for 1 day, then hidden
   String _getStatusSuffix() {
     final now = DateTime.now();
     final arrivalTime = widget.booking.arrivalTime;
 
-    // Check if archived (3-7 days after arrival)
-    final archiveCutoff = arrivalTime.add(Duration(days: 3));
-    final hideCutoff = arrivalTime.add(Duration(days: 7));
+    // Different cutoff for canceled vs completed
+    final hideCutoff = widget.isCanceled
+        ? arrivalTime.add(Duration(days: 1))
+        : arrivalTime.add(Duration(days: 7));
 
     if (now.isAfter(hideCutoff)) {
       return ' (Hidden)';
-    } else if (now.isAfter(archiveCutoff)) {
-      return ' (Archived)';
     }
 
     return '';

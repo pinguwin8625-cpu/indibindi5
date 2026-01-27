@@ -524,6 +524,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String get ongoing => 'Devam Eden';
 
   @override
+  String get current => 'Güncel';
+
+  @override
   String get archive => 'Arşiv';
 
   @override
@@ -959,4 +962,16 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get tutorialInboxDesc2 =>
       'Need help? Use the support options to ask questions or share feedback.';
+
+  @override
+  String get makeAvailable => 'Müsait Yap';
+
+  @override
+  String get makeUnavailable => 'Müsait Değil Yap';
+
+  @override
+  String get updateSeats => 'Koltukları Güncelle';
+
+  @override
+  String get seatsUpdated => 'Koltuk müsaitliği güncellendi';
 }

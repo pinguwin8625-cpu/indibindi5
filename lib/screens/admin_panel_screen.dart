@@ -3027,6 +3027,19 @@ class _SettingsTab extends StatelessWidget {
         ),
         const SizedBox(height: 24),
 
+        // Driver Settings Section
+        _buildSectionHeader('Driver'),
+        const SizedBox(height: 8),
+        _buildToggleTile(
+          title: 'Allow driver seat availability change',
+          subtitle: 'Drivers can toggle which seats are available when creating a ride',
+          value: appSettings.allowDriverSeatChange,
+          onChanged: (value) {
+            appSettings.setAllowDriverSeatChange(value);
+          },
+        ),
+        const SizedBox(height: 24),
+
         // Info section
         Container(
           padding: const EdgeInsets.all(16),

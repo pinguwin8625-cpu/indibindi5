@@ -16,6 +16,7 @@ import '../l10n/app_localizations.dart';
 import '../widgets/scroll_indicator.dart';
 import '../widgets/language_selector.dart';
 import '../widgets/seat_layout_widget.dart';
+import '../widgets/driver_seat_management_widget.dart';
 import '../widgets/booking_card_widget.dart';
 import '../widgets/rating_widgets.dart';
 import 'chat_screen.dart';
@@ -32,9 +33,7 @@ class MyBookingsScreen extends StatefulWidget {
 class MyBookingsScreenState extends State<MyBookingsScreen>
     with SingleTickerProviderStateMixin {
   final BookingStorage _bookingStorage = BookingStorage();
-  bool _showOlderPastBookings = false; // Archived starts folded
-  bool _showUpcoming = true; // Upcoming expanded by default
-  bool _showOngoing = false; // Ongoing starts folded
+  bool _showUpcoming = true; // Current expanded by default
   bool _showCompleted = false; // Completed starts folded
   bool _showCanceled = false; // Canceled starts folded
   final ScrollController _driverScrollController = ScrollController();
@@ -249,58 +248,39 @@ class MyBookingsScreenState extends State<MyBookingsScreen>
           print('🔍 Booking: id=${b.id}, departure=${b.departureTime}, arrival=${b.arrivalTime}, role=${b.userRole}, canceled=${b.isCanceled}, archived=${b.isArchived}');
         }
 
-        // Upcoming: departure time is in the future
-        final upcomingBookings =
+        // Current: upcoming (departure in future) + ongoing (departure passed but arrival not yet)
+        final currentBookings =
             userBookings
                 .where(
                   (b) =>
-                      b.departureTime.isAfter(now) &&
-                      (b.isCanceled != true) &&
-                      (b.isArchived != true),
-                )
-                .toList()
-              ..sort((a, b) => b.departureTime.compareTo(a.departureTime));
-
-        // Ongoing: departure time has passed but arrival time hasn't (strictly after now)
-        final ongoingBookings =
-            userBookings
-                .where(
-                  (b) =>
-                      b.departureTime.isBefore(now) &&
                       b.arrivalTime.isAfter(now) &&
-                      (b.isCanceled != true) &&
-                      (b.isArchived != true),
+                      (b.isCanceled != true),
                 )
                 .toList()
-              ..sort((a, b) => b.departureTime.compareTo(a.departureTime));
-        
-        print('🔍 MyBookings: now=$now, ongoing=${ongoingBookings.length}');
+              ..sort((a, b) => a.departureTime.compareTo(b.departureTime)); // Sort by departure ascending
 
-        // Past: arrival time has passed or equals now
-        final pastBookings =
+        print('🔍 MyBookings: now=$now, current=${currentBookings.length}');
+
+        // Completed: arrival time has passed, show only within last 7 days
+        final sevenDaysAgo = now.subtract(Duration(days: 7));
+        final recentBookings =
             userBookings
                 .where(
                   (b) =>
                       !b.arrivalTime.isAfter(now) &&
-                      (b.isCanceled != true) &&
-                      (b.isArchived != true),
+                      b.arrivalTime.isAfter(sevenDaysAgo) &&
+                      (b.isCanceled != true),
                 )
                 .toList()
               ..sort((a, b) => b.departureTime.compareTo(a.departureTime));
 
+        // Canceled: only show within last 1 day
+        final oneDayAgo = now.subtract(Duration(days: 1));
         final canceledBookings =
             userBookings
-                .where((b) => b.isCanceled == true && (b.isArchived != true))
+                .where((b) => b.isCanceled == true && b.arrivalTime.isAfter(oneDayAgo))
                 .toList()
               ..sort((a, b) => b.departureTime.compareTo(a.departureTime));
-
-        // Archived bookings (exclude hidden ones - those are completely hidden from UI)
-        final archivedBookings =
-            userBookings.where((b) => b.isArchived == true && b.isHidden != true).toList()
-              ..sort((a, b) => b.departureTime.compareTo(a.departureTime));
-
-        // Recent completed bookings (for Completed section)
-        final recentBookings = pastBookings;
 
         if (userBookings.isEmpty) {
           return Center(
@@ -323,18 +303,18 @@ class MyBookingsScreenState extends State<MyBookingsScreen>
           child: CustomScrollView(
             controller: scrollController,
             slivers: [
-              // Upcoming section
-              if (upcomingBookings.isNotEmpty) ...[
+              // Current section (upcoming + ongoing combined)
+              if (currentBookings.isNotEmpty) ...[
                 SliverPersistentHeader(
                   pinned: true,
                   delegate: _SectionHeaderDelegate(
-                    title: l10n.upcoming,
+                    title: l10n.current,
                     minHeight: 50,
                     maxHeight: 50,
                     sectionColor: Colors.blue[700]!,
                     isCollapsible: true,
                     isExpanded: _showUpcoming,
-                    count: upcomingBookings.length,
+                    count: currentBookings.length,
                     onTap: () {
                       setState(() {
                         _showUpcoming = !_showUpcoming;
@@ -347,53 +327,22 @@ class MyBookingsScreenState extends State<MyBookingsScreen>
                     padding: EdgeInsets.symmetric(horizontal: 16),
                     sliver: SliverList(
                       delegate: SliverChildBuilderDelegate(
-                        (context, index) => _buildBookingCard(
-                          upcomingBookings[index],
-                          isPast: false,
-                        ),
-                        childCount: upcomingBookings.length,
+                        (context, index) {
+                          final booking = currentBookings[index];
+                          final isOngoing = booking.departureTime.isBefore(now);
+                          return _buildBookingCard(
+                            booking,
+                            isPast: false,
+                            isOngoing: isOngoing,
+                          );
+                        },
+                        childCount: currentBookings.length,
                       ),
                     ),
                   ),
               ],
 
-              // Ongoing section
-              if (ongoingBookings.isNotEmpty) ...[
-                SliverToBoxAdapter(child: SizedBox(height: 24)),
-                SliverPersistentHeader(
-                  pinned: true,
-                  delegate: _SectionHeaderDelegate(
-                    title: l10n.ongoing,
-                    minHeight: 50,
-                    maxHeight: 50,
-                    sectionColor: Colors.orange[700]!,
-                    isCollapsible: true,
-                    isExpanded: _showOngoing,
-                    count: ongoingBookings.length,
-                    onTap: () {
-                      setState(() {
-                        _showOngoing = !_showOngoing;
-                      });
-                    },
-                  ),
-                ),
-                if (_showOngoing)
-                  SliverPadding(
-                    padding: EdgeInsets.symmetric(horizontal: 16),
-                    sliver: SliverList(
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) => _buildBookingCard(
-                          ongoingBookings[index],
-                          isPast: false,
-                          isOngoing: true,
-                        ),
-                        childCount: ongoingBookings.length,
-                      ),
-                    ),
-                  ),
-              ],
-
-              // Completed section (last 24 hours)
+              // Completed section (last 7 days)
               if (recentBookings.isNotEmpty) ...[
                 SliverToBoxAdapter(child: SizedBox(height: 24)),
                 SliverPersistentHeader(
@@ -464,45 +413,6 @@ class MyBookingsScreenState extends State<MyBookingsScreen>
                   ),
               ],
 
-              // Archived section at the bottom
-              if (archivedBookings.isNotEmpty) ...[
-                SliverToBoxAdapter(child: SizedBox(height: 24)),
-                SliverPersistentHeader(
-                  pinned: true,
-                  delegate: _SectionHeaderDelegate(
-                    title: l10n.archived,
-                    minHeight: 50,
-                    maxHeight: 50,
-                    isCollapsible: true,
-                    isExpanded: _showOlderPastBookings,
-                    count: archivedBookings.length,
-                    sectionColor: Colors.grey[700]!,
-                    onTap: () {
-                      setState(() {
-                        _showOlderPastBookings = !_showOlderPastBookings;
-                      });
-                    },
-                  ),
-                ),
-                if (_showOlderPastBookings)
-                  SliverPadding(
-                    padding: EdgeInsets.symmetric(horizontal: 16),
-                    sliver: SliverList(
-                      delegate: SliverChildBuilderDelegate((context, index) {
-                        final booking = archivedBookings[index];
-                        return _buildBookingCard(
-                          booking,
-                          isPast: !booking.arrivalTime.isAfter(DateTime.now()),
-                          isCanceled: booking.isCanceled == true,
-                          isOngoing:
-                              booking.departureTime.isBefore(DateTime.now()) &&
-                              booking.arrivalTime.isAfter(DateTime.now()),
-                          isArchived: true,
-                        );
-                      }, childCount: archivedBookings.length),
-                    ),
-                  ),
-              ],
             ],
           ),
         );
@@ -612,7 +522,29 @@ class MyBookingsScreenState extends State<MyBookingsScreen>
   }
 
   Widget _buildMiniatureSeatLayout(List<int> selectedSeats, Booking booking) {
-    // Use the centralized seat layout widget
+    final currentUser = AuthService.currentUser;
+    final isDriver = currentUser != null &&
+                     booking.userId == currentUser.id &&
+                     booking.userRole.toLowerCase() == 'driver';
+    final now = DateTime.now();
+    final canEdit = isDriver &&
+                    booking.departureTime.isAfter(now) &&
+                    booking.isCanceled != true;
+
+    // For editable driver bookings, use the seat management widget
+    if (canEdit) {
+      return _DriverSeatEditor(
+        booking: booking,
+        onDriverPhotoTap: () {
+          _showUserActionDialog(booking, isDriver: true);
+        },
+        onRiderPhotoTap: (seatIndex) {
+          _showUserActionDialog(booking, isDriver: false, riderSeatIndex: seatIndex);
+        },
+      );
+    }
+
+    // Use the centralized seat layout widget for view-only
     return SeatLayoutWidget(
       booking: booking,
       isInteractive: false,
@@ -1321,5 +1253,104 @@ class _SectionHeaderDelegate extends SliverPersistentHeaderDelegate {
     return title != oldDelegate.title ||
         isExpanded != oldDelegate.isExpanded ||
         count != oldDelegate.count;
+  }
+}
+
+/// Stateful widget for driver seat editing with Update button
+class _DriverSeatEditor extends StatefulWidget {
+  final Booking booking;
+  final VoidCallback? onDriverPhotoTap;
+  final Function(int seatIndex)? onRiderPhotoTap;
+
+  const _DriverSeatEditor({
+    required this.booking,
+    this.onDriverPhotoTap,
+    this.onRiderPhotoTap,
+  });
+
+  @override
+  State<_DriverSeatEditor> createState() => _DriverSeatEditorState();
+}
+
+class _DriverSeatEditorState extends State<_DriverSeatEditor> {
+  List<int>? _pendingSeats;
+  bool _hasChanges = false;
+
+  void _onSeatsChanged(List<int> updatedSeats) {
+    setState(() {
+      _pendingSeats = updatedSeats;
+      _hasChanges = !_listEquals(updatedSeats, widget.booking.selectedSeats);
+    });
+  }
+
+  bool _listEquals(List<int> a, List<int> b) {
+    if (a.length != b.length) return false;
+    final sortedA = List<int>.from(a)..sort();
+    final sortedB = List<int>.from(b)..sort();
+    for (int i = 0; i < sortedA.length; i++) {
+      if (sortedA[i] != sortedB[i]) return false;
+    }
+    return true;
+  }
+
+  void _updateSeats() {
+    if (_pendingSeats == null) return;
+
+    final l10n = AppLocalizations.of(context)!;
+
+    // Update the booking with new seat selection
+    final updatedBooking = widget.booking.copyWith(
+      selectedSeats: _pendingSeats!,
+    );
+
+    BookingStorage().updateBooking(updatedBooking);
+
+    // Show confirmation
+    FeedbackService.show(
+      context,
+      FeedbackEvent.success(l10n.seatsUpdated),
+    );
+
+    setState(() {
+      _hasChanges = false;
+      _pendingSeats = null;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Seat management widget
+        DriverSeatManagementWidget(
+          booking: widget.booking,
+          onSeatsChanged: _onSeatsChanged,
+        ),
+
+        // Update button (only shown when there are changes)
+        if (_hasChanges) ...[
+          SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _updateSeats,
+              icon: Icon(Icons.check, size: 18),
+              label: Text(l10n.updateSeats),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Color(0xFF00C853),
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
   }
 }

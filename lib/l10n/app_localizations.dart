@@ -1120,6 +1120,12 @@ abstract class AppLocalizations {
   /// **'Ongoing'**
   String get ongoing;
 
+  /// Current rides section title (upcoming + ongoing)
+  ///
+  /// In en, this message translates to:
+  /// **'Current'**
+  String get current;
+
   /// Archive section title for old bookings
   ///
   /// In en, this message translates to:
@@ -1875,6 +1881,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Need help? Use the support options to ask questions or share feedback.'**
   String get tutorialInboxDesc2;
+
+  /// Button to make a seat available for riders
+  ///
+  /// In en, this message translates to:
+  /// **'Make Available'**
+  String get makeAvailable;
+
+  /// Button to make a seat unavailable for riders
+  ///
+  /// In en, this message translates to:
+  /// **'Make Unavailable'**
+  String get makeUnavailable;
+
+  /// Button to confirm seat availability changes
+  ///
+  /// In en, this message translates to:
+  /// **'Update Seats'**
+  String get updateSeats;
+
+  /// Confirmation message when seats are updated
+  ///
+  /// In en, this message translates to:
+  /// **'Seat availability updated'**
+  String get seatsUpdated;
 }
 
 class _AppLocalizationsDelegate

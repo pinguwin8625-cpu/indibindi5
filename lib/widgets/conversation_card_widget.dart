@@ -1,9 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kDebugMode;
 import '../models/message.dart';
 import '../models/user.dart';
-import '../models/booking.dart';
 import '../services/booking_storage.dart';
 import '../services/rating_service.dart';
 import '../services/mock_users.dart';
@@ -16,8 +14,10 @@ import 'ride_info_card.dart';
 enum ConversationCardMode {
   /// Admin mode: Shows both driver and rider with labels, status badges, no message preview
   admin,
-  /// Inbox mode: Shows single avatar (other party) with message preview
+  /// Inbox mode: Shows single avatar (other party) with message preview and ride details
   inbox,
+  /// Inbox grouped mode: Shows simplified card without ride details (used inside ride groups)
+  inboxGrouped,
 }
 
 /// Shared conversation card widget used across:
@@ -26,30 +26,40 @@ enum ConversationCardMode {
 /// - Inbox screen (inbox mode)
 class ConversationCard extends StatelessWidget {
   final Conversation conversation;
-  final VoidCallback onTap;
+  final VoidCallback? onTap; // Nullable - when null, the card is non-tappable (e.g., embedded in another tappable widget)
   final ConversationCardMode mode;
   final String? currentUserId; // Required for inbox mode to determine "other" user
   final bool showUnreadBadge;
   final String unreadUserId; // User ID to check unread count for
   final void Function(User user)? onAvatarTap; // Callback when avatar is tapped
   final bool isArchived; // For inbox mode styling
+  final bool showRiderLabel; // Show "Rider" label on avatar (for driver's inbox view)
+  final bool showDriverLabel; // Show "Driver" label on avatar (for rider's inbox view)
+  final bool isCanceled; // For greyed out canceled booking styling
+  final bool hideAvatar; // Hide avatar completely (when shown in header already)
 
   const ConversationCard({
     super.key,
     required this.conversation,
-    required this.onTap,
+    this.onTap,
     this.mode = ConversationCardMode.admin,
     this.currentUserId,
     this.showUnreadBadge = true,
     this.unreadUserId = 'admin',
     this.onAvatarTap,
     this.isArchived = false,
+    this.showRiderLabel = false,
+    this.showDriverLabel = false,
+    this.isCanceled = false,
+    this.hideAvatar = false,
   });
 
   @override
   Widget build(BuildContext context) {
     if (mode == ConversationCardMode.inbox) {
       return _buildInboxMode(context);
+    } else if (mode == ConversationCardMode.inboxGrouped) {
+      return _buildInboxGroupedMode(context);
     }
     return _buildAdminMode(context);
   }
@@ -77,132 +87,69 @@ class ConversationCard extends StatelessWidget {
 
     final profilePhotoUrl = otherUser?.profilePhotoUrl;
 
-    // Get booking status - need to check for the CURRENT USER's booking, not just any booking
-    // For riders: look for rider booking (format: driverBookingId_rider_userId)
-    // For drivers: check if THIS SPECIFIC rider (the one in this conversation) has booked
-    Booking? booking;
-    bool isBooked = false;
-    bool isCanceled = false;
-
-    if (currentUser != null) {
-      if (amITheDriver) {
-        // Current user is the driver - check if the specific rider in this conversation has booked
-        // Format: driverBookingId_rider_riderId
-        final riderBookingId = '${conversation.bookingId}_rider_${conversation.riderId}';
-        booking = BookingStorage().getBookingById(riderBookingId);
-
-        if (kDebugMode) {
-          print('📋 Driver looking for rider booking: $riderBookingId');
-        }
-
-        // Also check if the driver's own booking is canceled (affects all riders)
-        final driverBooking = BookingStorage().getBookingById(conversation.bookingId);
-        if (driverBooking?.isCanceled == true) {
-          isCanceled = true;
-        } else if (booking?.isCanceled == true) {
-          // This specific rider canceled their booking
-          isCanceled = true;
-        }
-
-        isBooked = booking != null && !isCanceled;
-      } else {
-        // Current user is the rider - look for their rider booking
-        // Format: driverBookingId_rider_userId
-        final riderBookingId = '${conversation.bookingId}_rider_${currentUser.id}';
-        booking = BookingStorage().getBookingById(riderBookingId);
-
-        if (kDebugMode) {
-          print('📋 Rider looking for their booking: $riderBookingId');
-        }
-
-        isBooked = booking != null;
-        isCanceled = booking?.isCanceled == true;
-      }
-    }
-
-    if (kDebugMode) {
-      print('📋 ConversationCard inbox mode for conversation: ${conversation.id}');
-      print('   conversation.bookingId=${conversation.bookingId}');
-      print('   current user booking found=${booking != null}');
-      print('   booking id searched=${booking?.id}');
-      print('   isBooked=$isBooked');
-      print('   isCanceled=$isCanceled');
-      print('   isSupport=$isSupport');
-      print('   Will show icon: ${!isSupport}');
-    }
-
     // Use white background like booking cards
-    // Layout: Cross/Grid format
-    // Top row: [Avatar + Name + Rating] | [Message Bubble]
-    // Bottom row: [Booking Status Label] | [Ride Details]
+    // Layout: Top row: [Avatar + Name/Rating] | [Message Bubble]
+    // Bottom row: Ride Details
     return Card(
       margin: EdgeInsets.only(bottom: 4),
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
-        onTap: onTap,
+        onTap: onTap ?? () {},
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: EdgeInsets.all(12),
           child: Column(
             children: [
-              // TOP ROW: Avatar section (left) + Message bubble (right)
+              // TOP ROW: [Avatar + Name/Rating] | Message bubble
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Top-Left: Avatar + Name + Rating
-                  SizedBox(
-                    width: 80,
-                    height: 48, // Match bubble height
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Row(
+                  // Left: Avatar + Name/Rating side by side
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (isSupport && !isAdmin)
+                        CircleAvatar(
+                          radius: 16,
+                          backgroundColor: Colors.red,
+                          child: Icon(Icons.support_agent, size: 16, color: Colors.white),
+                        )
+                      else
+                        _buildInboxAvatar(profilePhotoUrl, radius: 16),
+                      SizedBox(width: 6),
+                      SizedBox(
+                        width: 48,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            if (isSupport && !isAdmin)
-                              CircleAvatar(
-                                radius: 16,
-                                backgroundColor: Colors.red,
-                                child: Icon(Icons.support_agent, size: 16, color: Colors.white),
-                              )
-                            else
-                              _buildInboxAvatar(profilePhotoUrl, radius: 16),
-                            SizedBox(width: 6),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    otherUserName,
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  // Rating below name
-                                  if ((!isSupport || isAdmin) && otherUser?.rating != null) ...[
-                                    SizedBox(height: 2),
-                                    RatingDisplay(
-                                      rating: otherUser?.rating ?? 0.0,
-                                      starSize: 9,
-                                      fontSize: 8,
-                                      starColor: Colors.amber,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ],
-                                ],
+                            Text(
+                              otherUserName,
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
                               ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
+                            if ((!isSupport || isAdmin) && otherUser?.rating != null) ...[
+                              SizedBox(height: 2),
+                              RatingDisplay(
+                                rating: otherUser?.rating ?? 0.0,
+                                starSize: 9,
+                                fontSize: 8,
+                                starColor: Colors.amber,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ],
                           ],
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                   SizedBox(width: 8),
-                  // Top-Right: Message bubble
+                  // Message bubble
                   Expanded(
                     child: conversation.getLastMessageForUser(userId) != null
                         ? _buildMessagePreview(userId, unreadCount)
@@ -211,26 +158,147 @@ class ConversationCard extends StatelessWidget {
                 ],
               ),
               SizedBox(height: 8),
-              // BOTTOM ROW: Booking status label (left) + Ride details (right)
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Bottom-Left: Booking status label
-                  SizedBox(
-                    width: 80,
-                    child: !isSupport
-                        ? _buildBookingStatusBadge(context, isBooked, isCanceled)
-                        : SizedBox.shrink(),
-                  ),
-                  SizedBox(width: 8),
-                  // Bottom-Right: Ride details
-                  Expanded(
-                    child: _buildTopRow(context, isSupport, forInbox: true, l10n: l10n),
-                  ),
-                ],
-              ),
+              // BOTTOM ROW: Ride details (full width)
+              _buildTopRow(context, isSupport, forInbox: true, l10n: l10n),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  /// Build inbox grouped mode: simplified card without ride details (for use inside ride groups)
+  Widget _buildInboxGroupedMode(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final unreadCount = conversation.getUnreadCount(unreadUserId);
+    final isSupport = conversation.id.startsWith('support_');
+    final isAdmin = AuthService.currentUser?.id == 'admin';
+
+    // Determine current user and other user
+    final currentUser = AuthService.currentUser;
+    final amITheDriver = currentUser?.id == conversation.driverId;
+    final otherUserId = amITheDriver ? conversation.riderId : conversation.driverId;
+    final otherUser = MockUsers.getUserById(otherUserId);
+
+    final String otherUserName = (isSupport && !isAdmin)
+        ? l10n.support
+        : (otherUser != null
+            ? '${otherUser.name} ${otherUser.surname.isNotEmpty ? '${otherUser.surname[0]}.' : ''}'
+            : (amITheDriver ? conversation.riderName : conversation.driverName));
+
+    final profilePhotoUrl = otherUser?.profilePhotoUrl;
+
+    // Determine if we need a labeled avatar (rider or driver) - affects bubble tail visibility
+    final hasLabeledAvatar = showRiderLabel || showDriverLabel;
+
+    // Build the card content
+    final cardContent = Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Avatar with Name/Rating BELOW (optionally with Rider/Driver label)
+        // Skip avatar completely if hideAvatar is true
+        if (!hideAvatar) ...[
+          if (showRiderLabel)
+            _buildLabeledAvatar(
+              profilePhotoUrl: profilePhotoUrl,
+              label: 'Rider',
+              icon: Icons.person,
+              name: otherUserName,
+              rating: (!isSupport || isAdmin) && otherUser?.rating != null ? otherUser?.rating : null,
+            )
+          else if (showDriverLabel)
+            _buildLabeledAvatar(
+              profilePhotoUrl: profilePhotoUrl,
+              label: 'Driver',
+              icon: Icons.directions_car,
+              name: otherUserName,
+              rating: (!isSupport || isAdmin) && otherUser?.rating != null ? otherUser?.rating : null,
+              isDriver: true,
+            )
+          else
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (isSupport && !isAdmin)
+                  CircleAvatar(
+                    radius: 20,
+                    backgroundColor: Colors.red,
+                    child: Icon(Icons.support_agent, size: 20, color: Colors.white),
+                  )
+                else
+                  _buildInboxAvatar(profilePhotoUrl, radius: 20),
+                SizedBox(height: 4),
+                // Name below avatar
+                SizedBox(
+                  width: 60,
+                  child: Text(
+                    otherUserName,
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                // Rating below name
+                if ((!isSupport || isAdmin) && otherUser?.rating != null) ...[
+                  SizedBox(height: 2),
+                  RatingDisplay(
+                    rating: otherUser?.rating ?? 0.0,
+                    starSize: 9,
+                    fontSize: 8,
+                    starColor: Colors.amber,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ],
+              ],
+            ),
+          SizedBox(width: 8),
+        ],
+        // Message bubble + system status below
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // User message bubble (or empty placeholder if no messages)
+              if (currentUserId != null)
+                _getLastUserMessage(currentUserId!) != null
+                    ? _buildUserMessagePreview(currentUserId!, unreadCount, hideLeftTail: hasLabeledAvatar)
+                    : _buildEmptyMessageBubble(),
+              // System status below bubble (priority: canceled > booked > contact)
+              _buildSystemStatus(currentUserId),
+            ],
+          ),
+        ),
+      ],
+    );
+
+    // When onTap is null (canceled), return content with grey background
+    if (onTap == null) {
+      return Container(
+        padding: EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.grey.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: cardContent,
+      );
+    }
+
+    // Normal card with tap behavior
+    return Card(
+      margin: EdgeInsets.only(bottom: 8),
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: EdgeInsets.all(12),
+          child: cardContent,
         ),
       ),
     );
@@ -659,6 +727,90 @@ class ConversationCard extends StatelessWidget {
     );
   }
 
+  /// Build avatar with label - notched card style (like admin panel)
+  /// isDriver: if true, avatar is on left side; if false, avatar is on right side
+  Widget _buildLabeledAvatar({
+    required String? profilePhotoUrl,
+    required String label,
+    required IconData icon,
+    required String name,
+    double? rating,
+    bool isDriver = false,
+  }) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Notched label with avatar
+        Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Container(
+              padding: isDriver
+                  ? EdgeInsets.only(left: 22, right: 6, top: 6, bottom: 6)
+                  : EdgeInsets.only(left: 6, right: 22, top: 6, bottom: 6),
+              decoration: BoxDecoration(
+                color: Colors.grey.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(icon, size: 14, color: Colors.grey[600]),
+                  SizedBox(height: 1),
+                  Text(
+                    label,
+                    style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            ),
+            Positioned(
+              left: isDriver ? -14 : null,
+              right: isDriver ? null : -14,
+              top: 0,
+              bottom: 0,
+              child: Center(
+                child: Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.grey.withValues(alpha: 0.15), width: 1.5),
+                  ),
+                  child: _buildInboxAvatar(profilePhotoUrl, radius: 16),
+                ),
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: 4),
+        // Name below
+        SizedBox(
+          width: 60,
+          child: Text(
+            name,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+          ),
+        ),
+        // Rating below name
+        if (rating != null) ...[
+          SizedBox(height: 2),
+          RatingDisplay(
+            rating: rating,
+            starSize: 9,
+            fontSize: 8,
+            starColor: Colors.amber,
+            fontWeight: FontWeight.w600,
+          ),
+        ],
+      ],
+    );
+  }
+
   /// Build message preview bubble for inbox mode
   Widget _buildMessagePreview(String currentUserId, int unreadCount) {
     final lastMessage = conversation.getLastMessageForUser(currentUserId)!;
@@ -679,7 +831,6 @@ class ConversationCard extends StatelessWidget {
       children: [
         Container(
           width: double.infinity,
-          height: 48, // Fixed height for 2-row bubble (approximately 2 lines of text + padding)
           padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
             color: bubbleColor,
@@ -694,12 +845,12 @@ class ConversationCard extends StatelessWidget {
             border: Border.all(color: Colors.grey[300]!, width: 0.5),
           ),
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               // Robot icon for system messages
               if (isSystemMessage) ...[
                 Padding(
-                  padding: EdgeInsets.only(top: 2),
+                  padding: EdgeInsets.only(bottom: 2),
                   child: Icon(
                     Icons.smart_toy_outlined,
                     size: 14,
@@ -708,6 +859,7 @@ class ConversationCard extends StatelessWidget {
                 ),
                 SizedBox(width: 6),
               ],
+              // Message text (2 lines max)
               Expanded(
                 child: Text(
                   lastMessage.content,
@@ -721,7 +873,8 @@ class ConversationCard extends StatelessWidget {
                   textAlign: isSystemMessage ? TextAlign.left : (isFromCurrentUser ? TextAlign.right : TextAlign.left),
                 ),
               ),
-              SizedBox(width: 6),
+              // Timestamp at end
+              SizedBox(width: 8),
               Text(
                 _formatMessageTime(lastMessage.timestamp),
                 style: TextStyle(
@@ -794,83 +947,194 @@ class ConversationCard extends StatelessWidget {
     return Colors.grey[700]!;
   }
 
-  /// Build booking status badge with icon and text
-  Widget _buildBookingStatusBadge(BuildContext context, bool isBooked, bool isCanceled) {
-    final l10n = AppLocalizations.of(context)!;
-    IconData icon;
-    Color color;
-    String text;
+  /// Get the last non-system message for a user
+  Message? _getLastUserMessage(String userId) {
+    final messages = conversation.messages
+        .where((m) => !m.isSystemMessage)
+        .toList();
+    if (messages.isEmpty) return null;
+    messages.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    return messages.first;
+  }
 
-    if (isCanceled) {
-      icon = Icons.cancel;
-      color = Colors.red[700]!;
-      text = l10n.canceled;
-    } else if (isBooked) {
-      icon = Icons.check_circle;
-      color = Colors.green[700]!;
-      text = l10n.booked;
-    } else {
-      icon = Icons.schedule;
-      color = Colors.orange[700]!;
-      text = l10n.pending;
+  /// Get the most relevant system message (priority: canceled > booked > contact)
+  Message? _getRelevantSystemMessage() {
+    final systemMessages = conversation.messages
+        .where((m) => m.isSystemMessage)
+        .toList();
+    if (systemMessages.isEmpty) return null;
+
+    // Priority: canceled > booked > contact
+    Message? canceledMsg;
+    Message? bookedMsg;
+    Message? contactMsg;
+
+    for (final msg in systemMessages) {
+      final content = msg.content.toLowerCase();
+      if (content.contains('iptal') || content.contains('canceled') || content.contains('cancel')) {
+        canceledMsg = msg;
+      } else if (content.contains('rezerve') || content.contains('booked') || content.contains('book')) {
+        bookedMsg = msg;
+      } else if (content.contains('iletişime') || content.contains('contacted') || content.contains('contact')) {
+        contactMsg = msg;
+      }
     }
 
-    if (kDebugMode) {
-      print('🎨 Building booking status badge: isBooked=$isBooked, isCanceled=$isCanceled, text=$text');
-    }
+    // Return by priority
+    return canceledMsg ?? bookedMsg ?? contactMsg;
+  }
 
-    // Split text into words for two-row display
-    final words = text.split(' ');
+  /// Build empty message bubble placeholder (same size as regular bubble)
+  Widget _buildEmptyMessageBubble() {
+    // Fixed height for exactly 2 rows of text
+    const double fixedBubbleHeight = 48.0;
 
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+      width: double.infinity,
+      height: fixedBubbleHeight,
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(6),
+        color: isCanceled ? Colors.grey[300]! : Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey[300]!, width: 0.5),
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            icon,
-            size: 16,
-            color: color,
+      child: Center(
+        child: Text(
+          'No messages yet',
+          style: TextStyle(
+            fontSize: 12,
+            color: isCanceled ? Colors.grey[500]! : Colors.grey[400]!,
+            fontStyle: FontStyle.italic,
           ),
-          SizedBox(height: 4),
-          // Display text in two rows (one word per row if multiple words)
-          if (words.length == 1)
-            Text(
-              words[0],
-              style: TextStyle(
-                fontSize: 9,
-                fontWeight: FontWeight.w600,
-                color: color,
-              ),
-              textAlign: TextAlign.center,
-            )
-          else
-            Column(
-              children: [
-                Text(
-                  words[0],
-                  style: TextStyle(
-                    fontSize: 9,
-                    fontWeight: FontWeight.w600,
-                    color: color,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                Text(
-                  words.sublist(1).join(' '),
-                  style: TextStyle(
-                    fontSize: 9,
-                    fontWeight: FontWeight.w600,
-                    color: color,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
+        ),
+      ),
+    );
+  }
+
+  /// Build user message preview (non-system messages only)
+  Widget _buildUserMessagePreview(String currentUserId, int unreadCount, {bool hideLeftTail = false}) {
+    final lastMessage = _getLastUserMessage(currentUserId)!;
+    final isFromCurrentUser = lastMessage.senderId == currentUserId;
+
+    // Change bubble color: grey for canceled, green for unread, white otherwise
+    final bubbleColor = isCanceled
+        ? Colors.grey[300]!
+        : (unreadCount > 0 ? Colors.green[100]! : Colors.white);
+    final textColor = isCanceled ? Colors.grey[600]! : Colors.grey[700]!;
+
+    // Fixed height for exactly 2 rows of text (fontSize 12 * lineHeight ~1.4 * 2 rows + padding)
+    const double fixedBubbleHeight = 48.0;
+
+    // Don't show left tail when hideLeftTail is true (e.g., when notched avatar is present)
+    final showLeftTail = !isFromCurrentUser && !hideLeftTail;
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Container(
+          width: double.infinity,
+          height: fixedBubbleHeight,
+          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: bubbleColor,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(isFromCurrentUser ? 8 : (showLeftTail ? 2 : 8)),
+              topRight: Radius.circular(isFromCurrentUser ? 2 : 8),
+              bottomLeft: Radius.circular(8),
+              bottomRight: Radius.circular(8),
             ),
+            border: Border.all(color: Colors.grey[300]!, width: 0.5),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Message text (2 lines max)
+              Expanded(
+                child: Text(
+                  lastMessage.content,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: textColor,
+                    height: 1.3,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: isFromCurrentUser ? TextAlign.right : TextAlign.left,
+                ),
+              ),
+              // Timestamp at end
+              SizedBox(width: 8),
+              Text(
+                _formatMessageTime(lastMessage.timestamp),
+                style: TextStyle(
+                  fontSize: 10,
+                  color: Colors.grey[500],
+                ),
+              ),
+            ],
+          ),
+        ),
+        // Chat bubble tail - right tail for current user, left tail only if not hidden
+        if (isFromCurrentUser)
+          Positioned(
+            right: -8,
+            top: 8,
+            child: CustomPaint(
+              size: Size(12, 16),
+              painter: _BubbleTailPainterRight(color: bubbleColor),
+            ),
+          )
+        else if (showLeftTail)
+          Positioned(
+            left: -8,
+            top: 8,
+            child: CustomPaint(
+              size: Size(12, 16),
+              painter: _BubbleTailPainterLeft(color: bubbleColor),
+            ),
+          ),
+      ],
+    );
+  }
+
+  /// Build system status row below the bubble
+  Widget _buildSystemStatus(String? currentUserId) {
+    final systemMessage = _getRelevantSystemMessage();
+    if (systemMessage == null) return SizedBox.shrink();
+
+    // Determine the status based on message content
+    final content = systemMessage.content.toLowerCase();
+    String statusText;
+    Color color;
+    IconData icon;
+
+    if (content.contains('iptal') || content.contains('canceled') || content.contains('cancel')) {
+      statusText = 'Canceled';
+      color = Colors.red[700]!;
+      icon = Icons.cancel;
+    } else if (content.contains('rezerve') || content.contains('booked') || content.contains('book')) {
+      statusText = 'Booked';
+      color = Colors.green[700]!;
+      icon = Icons.check_circle;
+    } else {
+      return SizedBox.shrink(); // No contact message needed
+    }
+
+    return Padding(
+      padding: EdgeInsets.only(top: 4),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: color),
+          SizedBox(width: 4),
+          Text(
+            statusText,
+            style: TextStyle(
+              fontSize: 12,
+              color: color,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ],
       ),
     );

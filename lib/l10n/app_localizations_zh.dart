@@ -521,6 +521,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get ongoing => '进行中';
 
   @override
+  String get current => 'Current';
+
+  @override
   String get archive => '存档';
 
   @override
@@ -939,4 +942,16 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get tutorialInboxDesc2 =>
       'Need help? Use the support options to ask questions or share feedback.';
+
+  @override
+  String get makeAvailable => 'Make Available';
+
+  @override
+  String get makeUnavailable => 'Make Unavailable';
+
+  @override
+  String get updateSeats => 'Update Seats';
+
+  @override
+  String get seatsUpdated => 'Seat availability updated';
 }
