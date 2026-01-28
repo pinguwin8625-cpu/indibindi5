@@ -389,6 +389,7 @@ class _InboxScreenState extends State<InboxScreen>
 
             // Categorize (no support or archived sections - completed rides hidden after 7 days)
             final sevenDaysAgo = now.subtract(Duration(days: 7));
+            final oneDayAgo = now.subtract(Duration(days: 1));
 
             // Helper to check if a conversation's booking is canceled
             bool isCanceled(Conversation c) {
@@ -402,36 +403,29 @@ class _InboxScreenState extends State<InboxScreen>
               return booking?.isCanceled == true;
             }
 
-            // Current: upcoming + ongoing combined (arrival time in the future)
-            // Sort by: non-canceled first (by departure time), then canceled (by departure time)
+            // Current: upcoming + ongoing, NON-canceled only
+            // Sort by departure time
             final current = validConversations
-                .where((c) => !c.id.startsWith('support_') && (isUpcoming(c) || isOngoing(c)))
+                .where((c) => !c.id.startsWith('support_') && (isUpcoming(c) || isOngoing(c)) && !isCanceled(c))
                 .toList()
-              ..sort((a, b) {
-                final aCanceled = isCanceled(a);
-                final bCanceled = isCanceled(b);
-                if (aCanceled != bCanceled) {
-                  return aCanceled ? 1 : -1; // Canceled goes to bottom
-                }
-                return a.departureTime.compareTo(b.departureTime);
-              });
+              ..sort((a, b) => a.departureTime.compareTo(b.departureTime));
 
-            // Completed: only show rides completed within the last 7 days
-            // Sort by: non-canceled first (by departure time desc), then canceled (by departure time desc)
-            final completed = validConversations
-                .where((c) => !c.id.startsWith('support_') && isCompleted(c) && c.arrivalTime.isAfter(sevenDaysAgo))
+            // Canceled: all canceled rides (visible for 1 day after cancellation)
+            // Sort by departure time desc (most recent first)
+            final canceled = validConversations
+                .where((c) => !c.id.startsWith('support_') && isCanceled(c) && c.departureTime.isAfter(oneDayAgo))
                 .toList()
-              ..sort((a, b) {
-                final aCanceled = isCanceled(a);
-                final bCanceled = isCanceled(b);
-                if (aCanceled != bCanceled) {
-                  return aCanceled ? 1 : -1; // Canceled goes to bottom
-                }
-                return b.departureTime.compareTo(a.departureTime);
-              });
+              ..sort((a, b) => b.departureTime.compareTo(a.departureTime));
+
+            // Completed: completed rides within the last 7 days, NON-canceled only
+            // Sort by departure time desc (most recent first)
+            final completed = validConversations
+                .where((c) => !c.id.startsWith('support_') && isCompleted(c) && !isCanceled(c) && c.arrivalTime.isAfter(sevenDaysAgo))
+                .toList()
+              ..sort((a, b) => b.departureTime.compareTo(a.departureTime));
 
             // Check if we have any conversations
-            final hasAnyConversations = current.isNotEmpty || completed.isNotEmpty;
+            final hasAnyConversations = current.isNotEmpty || canceled.isNotEmpty || completed.isNotEmpty;
 
             if (!hasAnyConversations) {
               return Center(
@@ -446,73 +440,118 @@ class _InboxScreenState extends State<InboxScreen>
               );
             }
 
-            // Combine all conversations in order: Current, Completed
-            final allConversations = [
-              ...current,
-              ...completed,
-            ];
-
-            // Group by bookingId for ride grouping
-            final Map<String, List<Conversation>> groupedByRide = {};
-            for (final conv in allConversations) {
-              groupedByRide.putIfAbsent(conv.bookingId, () => []).add(conv);
+            // Group each category by bookingId
+            Map<String, List<Conversation>> groupByRide(List<Conversation> conversations) {
+              final Map<String, List<Conversation>> grouped = {};
+              for (final conv in conversations) {
+                grouped.putIfAbsent(conv.bookingId, () => []).add(conv);
+              }
+              return grouped;
             }
 
-            // Helper to check if a ride group is canceled (check first conversation)
-            bool isRideGroupCanceled(List<Conversation> conversations) {
-              if (conversations.isEmpty) return false;
-              final c = conversations.first;
-              String bookingIdToCheck;
-              if (c.driverId == currentUser.id) {
-                bookingIdToCheck = '${c.bookingId}_rider_${c.riderId}';
-              } else {
-                bookingIdToCheck = '${c.bookingId}_rider_${currentUser.id}';
+            List<List<Conversation>> toRideGroups(List<Conversation> conversations) {
+              final grouped = groupByRide(conversations);
+              final groups = <List<Conversation>>[];
+              final addedKeys = <String>{};
+              for (final conv in conversations) {
+                if (!addedKeys.contains(conv.bookingId)) {
+                  addedKeys.add(conv.bookingId);
+                  groups.add(grouped[conv.bookingId]!);
+                }
               }
-              final booking = BookingStorage().getBookingById(bookingIdToCheck);
-              return booking?.isCanceled == true;
+              return groups;
             }
 
-            // Convert to list of ride groups maintaining order
-            final rideGroups = <List<Conversation>>[];
-            final addedKeys = <String>{};
-            for (final conv in allConversations) {
-              if (!addedKeys.contains(conv.bookingId)) {
-                addedKeys.add(conv.bookingId);
-                rideGroups.add(groupedByRide[conv.bookingId]!);
-              }
-            }
+            final currentGroups = toRideGroups(current);
+            final canceledGroups = toRideGroups(canceled);
+            final completedGroups = toRideGroups(completed);
 
-            // Sort ride groups: non-canceled first, then canceled at the bottom
-            rideGroups.sort((a, b) {
-              final aCanceled = isRideGroupCanceled(a);
-              final bCanceled = isRideGroupCanceled(b);
-              if (aCanceled != bCanceled) {
-                return aCanceled ? 1 : -1; // Canceled goes to bottom
-              }
-              // Keep the original order (by departure time) for same-status groups
-              return a.first.departureTime.compareTo(b.first.departureTime);
-            });
+            // Build list items with section headers
+            final List<Widget> listItems = [];
 
-            return ListView.builder(
-              padding: EdgeInsets.all(16),
-              itemCount: rideGroups.length,
-              itemBuilder: (context, index) {
-                final conversations = rideGroups[index];
-
-                // Ride group
-                return Padding(
+            // Current section
+            if (currentGroups.isNotEmpty) {
+              listItems.add(_buildSectionHeader(l10n.current, Icons.schedule, Colors.blue[700]!));
+              for (final group in currentGroups) {
+                listItems.add(Padding(
                   padding: EdgeInsets.only(bottom: 12),
                   child: _RideGroupCard(
-                    bookingId: conversations.first.bookingId,
-                    conversations: conversations,
+                    bookingId: group.first.bookingId,
+                    conversations: group,
                     currentUserId: currentUser.id,
                     isDriver: role == 'driver',
                   ),
-                );
-              },
+                ));
+              }
+            }
+
+            // Canceled section
+            if (canceledGroups.isNotEmpty) {
+              listItems.add(_buildSectionHeader(l10n.canceled, Icons.cancel, Colors.red[700]!));
+              for (final group in canceledGroups) {
+                listItems.add(Padding(
+                  padding: EdgeInsets.only(bottom: 12),
+                  child: _RideGroupCard(
+                    bookingId: group.first.bookingId,
+                    conversations: group,
+                    currentUserId: currentUser.id,
+                    isDriver: role == 'driver',
+                  ),
+                ));
+              }
+            }
+
+            // Completed section
+            if (completedGroups.isNotEmpty) {
+              listItems.add(_buildSectionHeader(l10n.completed, Icons.check_circle, Colors.green[700]!));
+              for (final group in completedGroups) {
+                listItems.add(Padding(
+                  padding: EdgeInsets.only(bottom: 12),
+                  child: _RideGroupCard(
+                    bookingId: group.first.bookingId,
+                    conversations: group,
+                    currentUserId: currentUser.id,
+                    isDriver: role == 'driver',
+                  ),
+                ));
+              }
+            }
+
+            return ListView(
+              padding: EdgeInsets.all(16),
+              children: listItems,
             );
           },
         );
+  }
+
+  /// Build section header separator
+  Widget _buildSectionHeader(String title, IconData icon, Color color) {
+    return Padding(
+      padding: EdgeInsets.only(top: 8, bottom: 12),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: color),
+          SizedBox(width: 8),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: color,
+              letterSpacing: 0.5,
+            ),
+          ),
+          SizedBox(width: 12),
+          Expanded(
+            child: Container(
+              height: 1,
+              color: color.withValues(alpha: 0.3),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -535,8 +574,6 @@ class _RideGroupCard extends StatefulWidget {
 }
 
 class _RideGroupCardState extends State<_RideGroupCard> {
-  bool _isExpanded = false;
-
   @override
   Widget build(BuildContext context) {
     // Sort conversations: non-canceled first, then canceled at the bottom
@@ -574,16 +611,13 @@ class _RideGroupCardState extends State<_RideGroupCard> {
       final booking = BookingStorage().getBookingById(riderBookingId);
       final isCanceled = booking?.isCanceled == true;
 
-      // Get driver info for photo
+      // Get driver info for photo and rating
       final driver = MockUsers.getUserById(firstConversation.driverId);
       final driverPhotoUrl = driver?.profilePhotoUrl;
-
-      // Determine ride status
-      final now = DateTime.now();
-      final isArchived = booking?.isArchived == true;
-      final isOngoing = booking != null && booking.departureTime.isBefore(now) && booking.arrivalTime.isAfter(now);
-      final isCompleted = booking != null && booking.arrivalTime.isBefore(now) && !isArchived;
-      final isUpcoming = booking == null || (booking.departureTime.isAfter(now) && !isArchived);
+      final driverName = driver != null
+          ? (driver.surname.isNotEmpty ? '${driver.name} ${driver.surname[0]}.' : driver.name)
+          : 'Driver';
+      final driverRating = driver != null ? MockUsers.getLiveRating(driver.id) : 0.0;
 
       return Container(
         decoration: BoxDecoration(
@@ -596,9 +630,9 @@ class _RideGroupCardState extends State<_RideGroupCard> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Compact ride header - same width as message card
+            // Compact ride header - Ride details | Driver sign (original layout)
             Container(
-              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               decoration: BoxDecoration(
                 color: isCanceled
                     ? Colors.grey.withValues(alpha: 0.08)
@@ -610,10 +644,7 @@ class _RideGroupCardState extends State<_RideGroupCard> {
               ),
               child: Row(
                 children: [
-                  // Left: Driver photo with label (opposite of driver's inbox)
-                  _buildDriverSignLeft(driverPhotoUrl),
-                  SizedBox(width: 8),
-                  // Middle: Ride details
+                  // Left: Ride details
                   Expanded(
                     child: RideInfoCard(
                       routeName: firstConversation.routeName,
@@ -625,15 +656,9 @@ class _RideGroupCardState extends State<_RideGroupCard> {
                       centered: false,
                     ),
                   ),
-                  SizedBox(width: 10),
-                  // Right: Status badge (compact)
-                  _buildStatusBadge(
-                    isArchived: isArchived,
-                    isCanceled: isCanceled,
-                    isOngoing: isOngoing,
-                    isCompleted: isCompleted,
-                    isUpcoming: isUpcoming,
-                  ),
+                  SizedBox(width: 8),
+                  // Right: Driver sign with name/rating next to avatar
+                  _buildDriverSign(driverPhotoUrl, driverName, driverRating),
                 ],
               ),
             ),
@@ -675,26 +700,23 @@ class _RideGroupCardState extends State<_RideGroupCard> {
     }
 
     // Driver view: expandable header with rider count indicator
-    // Get driver info for photo
+    // Get driver info for photo and rating
     final driver = MockUsers.getUserById(firstConversation.driverId);
     final driverPhotoUrl = driver?.profilePhotoUrl;
+    final driverName = driver != null
+        ? (driver.surname.isNotEmpty ? '${driver.name} ${driver.surname[0]}.' : driver.name)
+        : 'Driver';
+    final driverRating = driver != null ? MockUsers.getLiveRating(driver.id) : 0.0;
 
-    // Determine ride status for driver (check the driver booking)
+    // Get the driver booking for seat mapping
     final driverBooking = BookingStorage().getBookingById(widget.bookingId);
-    final now = DateTime.now();
-    final isDriverArchived = driverBooking?.isArchived == true;
-    final isDriverCanceled = driverBooking?.isCanceled == true;
-    final isDriverOngoing = driverBooking != null && driverBooking.departureTime.isBefore(now) && driverBooking.arrivalTime.isAfter(now);
-    final isDriverCompleted = driverBooking != null && driverBooking.arrivalTime.isBefore(now) && !isDriverArchived;
-    final isDriverUpcoming = driverBooking == null || (driverBooking.departureTime.isAfter(now) && !isDriverArchived);
 
-    // Build seat-to-rider mapping for mini grid
+    // Build seat-to-rider mapping for all 4 seats
     final seatRiderMap = _buildSeatRiderMap(sortedConversations, driverBooking);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Header card with ride details and mini seat grid
         Card(
           margin: EdgeInsets.zero,
           elevation: 2,
@@ -702,85 +724,32 @@ class _RideGroupCardState extends State<_RideGroupCard> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Top row: Status | Ride Info | Driver Sign
-              InkWell(
-                onTap: () {
-                  setState(() {
-                    _isExpanded = !_isExpanded;
-                  });
-                },
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(12),
-                  topRight: Radius.circular(12),
-                  bottomLeft: Radius.circular(_isExpanded ? 0 : 12),
-                  bottomRight: Radius.circular(_isExpanded ? 0 : 12),
-                ),
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                  child: Row(
-                    children: [
-                      // Left: Status badge
-                      _buildStatusBadge(
-                        isArchived: isDriverArchived,
-                        isCanceled: isDriverCanceled,
-                        isOngoing: isDriverOngoing,
-                        isCompleted: isDriverCompleted,
-                        isUpcoming: isDriverUpcoming,
-                      ),
-                      SizedBox(width: 10),
-                      // Middle: Ride details
-                      Expanded(
-                        child: RideInfoCard(
-                          routeName: firstConversation.routeName,
-                          originName: firstConversation.originName,
-                          destinationName: firstConversation.destinationName,
-                          departureTime: firstConversation.departureTime,
-                          arrivalTime: firstConversation.arrivalTime,
-                          embedded: true,
-                          centered: false,
-                        ),
-                      ),
-                      SizedBox(width: 8),
-                      // Right: Driver photo with label
-                      _buildDriverSign(driverPhotoUrl),
-                    ],
-                  ),
+              // Top row: Ride Info only (full width)
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                child: RideInfoCard(
+                  routeName: firstConversation.routeName,
+                  originName: firstConversation.originName,
+                  destinationName: firstConversation.destinationName,
+                  departureTime: firstConversation.departureTime,
+                  arrivalTime: firstConversation.arrivalTime,
+                  embedded: true,
+                  centered: false,
                 ),
               ),
-              // Mini Seat Grid - always visible, shows rider occupancy
-              if (sortedConversations.isNotEmpty)
-                _buildMiniSeatGrid(seatRiderMap, sortedConversations),
+              // Subtle horizontal separator
+              Container(
+                height: 1,
+                color: Colors.grey.withValues(alpha: 0.15),
+              ),
+              // Bottom row: riders who messaged + Driver
+              Container(
+                padding: EdgeInsets.fromLTRB(12, 8, 12, 10),
+                child: _buildSeatsAndDriverRow(seatRiderMap, sortedConversations, driverPhotoUrl, driverName, driverRating),
+              ),
             ],
           ),
         ),
-        // Message cards with status icons (expanded below the card)
-        if (_isExpanded)
-          ...sortedConversations.map((conversation) {
-            // Check if this specific rider's booking is canceled
-            final riderBookingId = '${conversation.bookingId}_rider_${conversation.riderId}';
-            final riderBooking = BookingStorage().getBookingById(riderBookingId);
-            final isRiderCanceled = riderBooking?.isCanceled == true;
-
-            return Padding(
-              padding: EdgeInsets.only(left: 10, top: 12),
-              child: ConversationCard(
-                conversation: conversation,
-                mode: ConversationCardMode.inboxGrouped,
-                currentUserId: widget.currentUserId,
-                unreadUserId: widget.currentUserId,
-                showRiderLabel: true,
-                isCanceled: isRiderCanceled,
-                onTap: isRiderCanceled ? null : () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ChatScreen(conversation: conversation),
-                    ),
-                  );
-                },
-              ),
-            );
-          }),
       ],
     );
   }
@@ -834,239 +803,28 @@ class _RideGroupCardState extends State<_RideGroupCard> {
     return seatMap;
   }
 
-  /// Build passenger row - all riders in a clean row with message indicators
-  Widget _buildMiniSeatGrid(Map<int, _SeatRiderInfo> seatMap, List<Conversation> conversations) {
-    // Separate booked riders from available seats
-    final bookedRiders = <_SeatRiderInfo>[];
-    int availableCount = 0;
-
-    for (int i = 0; i < 4; i++) {
-      final info = seatMap[i];
-      if (info != null && info.riderId != null && !info.isCanceled) {
-        bookedRiders.add(info);
-      } else if (info == null || (!info.isBlocked && info.riderId == null)) {
-        availableCount++;
-      }
-    }
-
-    // All items to display: booked riders + available seats indicator
-    final totalItems = bookedRiders.length + (availableCount > 0 ? 1 : 0);
-
-    if (totalItems == 0) {
-      return SizedBox.shrink();
-    }
-
-    return Container(
-      padding: EdgeInsets.fromLTRB(12, 8, 12, 10),
-      child: _buildRiderRow(bookedRiders, availableCount),
-    );
-  }
-
-  /// Build a clean row of rider avatars (no stacking)
-  Widget _buildRiderRow(List<_SeatRiderInfo> bookedRiders, int availableCount) {
-    const avatarSize = 40.0;
-    const spacing = 12.0;
-
-    // Calculate if we need carousel (more than 4 items won't fit nicely)
-    final totalItems = bookedRiders.length + (availableCount > 0 ? 1 : 0);
-    final needsCarousel = totalItems > 4;
-
-    if (needsCarousel) {
-      return _RiderCarousel(
-        bookedRiders: bookedRiders,
-        availableCount: availableCount,
-        avatarSize: avatarSize,
-        onRiderTap: (rider) {
-          if (rider.conversation != null) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ChatScreen(conversation: rider.conversation!),
-              ),
-            );
-          }
-        },
-        buildAvatar: _buildSlotAvatar,
-      );
-    }
-
-    // Normal row layout
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        // Booked riders
-        ...bookedRiders.map((rider) => Padding(
-          padding: EdgeInsets.symmetric(horizontal: spacing / 2),
-          child: _buildRiderAvatar(rider, avatarSize),
-        )),
-        // Available seats indicator
-        if (availableCount > 0)
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: spacing / 2),
-            child: _buildAvailableSeatsIndicator(availableCount, avatarSize),
-          ),
-      ],
-    );
-  }
-
-  /// Build a single rider avatar with optional message indicator
-  Widget _buildRiderAvatar(_SeatRiderInfo rider, double size) {
-    return GestureDetector(
-      onTap: rider.conversation != null ? () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ChatScreen(conversation: rider.conversation!),
-          ),
-        );
-      } : null,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Avatar with message indicator
-          SizedBox(
-            width: size + 8, // Extra space for indicator
-            height: size + 8,
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                // Main avatar
-                Positioned(
-                  left: 4,
-                  top: 4,
-                  child: Container(
-                    width: size,
-                    height: size,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white,
-                      border: Border.all(color: Colors.green[400]!, width: 2),
-                    ),
-                    child: ClipOval(
-                      child: rider.profilePhotoUrl != null
-                          ? _buildSlotAvatar(rider.profilePhotoUrl!, false)
-                          : Icon(Icons.person, size: size * 0.5, color: Colors.green[600]),
-                    ),
-                  ),
-                ),
-                // Small message indicator (top-right, not overlapping avatar)
-                if (rider.hasUnread)
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    child: Container(
-                      width: 16,
-                      height: 16,
-                      decoration: BoxDecoration(
-                        color: Colors.green[500],
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 1.5),
-                      ),
-                      child: Center(
-                        child: Icon(
-                          Icons.mail,
-                          size: 9,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          SizedBox(height: 2),
-          // Name below
-          SizedBox(
-            width: size + 8,
-            child: Text(
-              rider.riderName?.split(' ').first ?? '',
-              style: TextStyle(
-                fontSize: 9,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey[700],
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-            ),
-          ),
-          // Rating below name
-          if (rider.rating != null)
-            RatingDisplay(
-              rating: rider.rating!,
-              starSize: 8,
-              fontSize: 8,
-              starColor: Colors.amber,
-            ),
-        ],
-      ),
-    );
-  }
-
-  /// Build available seats indicator
-  Widget _buildAvailableSeatsIndicator(int count, double size) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        SizedBox(
-          width: size + 8,
-          height: size + 8,
-          child: Center(
-            child: Container(
-              width: size,
-              height: size,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.green[50],
-                border: Border.all(color: Colors.green[300]!, width: 2),
-              ),
-              child: Center(
-                child: Text(
-                  '+$count',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.green[600],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-        SizedBox(height: 2),
-        Text(
-          'seats',
-          style: TextStyle(
-            fontSize: 9,
-            color: Colors.green[600],
-          ),
-        ),
-      ],
-    );
-  }
-
   /// Build slot avatar from photo URL
-  Widget _buildSlotAvatar(String photoUrl, bool isCanceled) {
+  Widget _buildSlotAvatar(String photoUrl, bool isCanceled, {double size = 60}) {
     Widget image;
     if (photoUrl.startsWith('assets/')) {
       image = Image.asset(
         photoUrl,
-        width: 40,
-        height: 40,
+        width: size,
+        height: size,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => Icon(Icons.person, size: 20, color: Colors.blue[400]),
+        errorBuilder: (_, __, ___) => Icon(Icons.person, size: size * 0.5, color: Colors.blue[400]),
       );
     } else {
       final file = File(photoUrl);
       if (file.existsSync()) {
         image = Image.file(
           file,
-          width: 40,
-          height: 40,
+          width: size,
+          height: size,
           fit: BoxFit.cover,
         );
       } else {
-        return Icon(Icons.person, size: 20, color: Colors.blue[400]);
+        return Icon(Icons.person, size: size * 0.5, color: Colors.blue[400]);
       }
     }
 
@@ -1079,40 +837,72 @@ class _RideGroupCardState extends State<_RideGroupCard> {
     return image;
   }
 
-  /// Build driver sign - notched card style (like admin panel) - avatar on LEFT
-  Widget _buildDriverSign(String? profilePhotoUrl) {
-    return Stack(
-      clipBehavior: Clip.none,
+  /// Build driver sign with avatar above name/rating + DRIVER label on right
+  Widget _buildDriverSign(String? profilePhotoUrl, String name, double rating) {
+    const avatarSize = 40.0;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Container(
-          padding: EdgeInsets.only(left: 22, right: 6, top: 6, bottom: 6),
-          decoration: BoxDecoration(
-            color: Colors.grey.withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(6),
-          ),
+        // Avatar and info
+        SizedBox(
+          width: 52,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.directions_car, size: 14, color: Colors.grey[600]),
-              SizedBox(height: 1),
-              Text(
-                'Driver',
-                style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: Colors.grey[600]),
+              // Avatar
+              Container(
+                width: avatarSize,
+                height: avatarSize,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.red[300]!, width: 2),
+                ),
+                child: ClipOval(
+                  child: profilePhotoUrl != null
+                      ? _buildSlotAvatar(profilePhotoUrl, false, size: avatarSize)
+                      : Icon(Icons.person, size: avatarSize * 0.5, color: Colors.red[400]),
+                ),
+              ),
+              // Name and rating below avatar
+              Transform.translate(
+                offset: Offset(0, -3),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      name.split(' ').first,
+                      style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey[800],
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                    ),
+                    RatingDisplay(
+                      rating: rating,
+                      starSize: 8,
+                      fontSize: 8,
+                      starColor: Colors.amber,
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
         ),
-        Positioned(
-          left: -14,
-          top: 0,
-          bottom: 0,
-          child: Center(
-            child: Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.grey.withValues(alpha: 0.15), width: 1.5),
-              ),
-              child: _buildAvatar(profilePhotoUrl, radius: 16),
+        SizedBox(width: 6),
+        // Vertical "DRIVER" label on right (notched style)
+        RotatedBox(
+          quarterTurns: 1,
+          child: Text(
+            'DRIVER',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              color: Colors.red[600],
+              letterSpacing: 1.5,
             ),
           ),
         ),
@@ -1120,111 +910,217 @@ class _RideGroupCardState extends State<_RideGroupCard> {
     );
   }
 
-  /// Build driver sign for rider's view - avatar on RIGHT (opposite of driver's inbox)
-  Widget _buildDriverSignLeft(String? profilePhotoUrl) {
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        Container(
-          padding: EdgeInsets.only(left: 6, right: 22, top: 6, bottom: 6),
-          decoration: BoxDecoration(
-            color: Colors.grey.withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(6),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.directions_car, size: 14, color: Colors.grey[600]),
-              SizedBox(height: 1),
-              Text(
-                'Driver',
-                style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: Colors.grey[600]),
-              ),
-            ],
-          ),
-        ),
-        Positioned(
-          right: -14,
-          top: 0,
-          bottom: 0,
-          child: Center(
-            child: Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.grey.withValues(alpha: 0.15), width: 1.5),
-              ),
-              child: _buildAvatar(profilePhotoUrl, radius: 16),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
+  /// Build bottom row with riders who messaged + driver
+  Widget _buildSeatsAndDriverRow(
+    Map<int, _SeatRiderInfo> seatRiderMap,
+    List<Conversation> conversations,
+    String? driverPhotoUrl,
+    String driverName,
+    double driverRating,
+  ) {
+    // Collect booked riders who have messaged
+    final ridersWithMessages = <_SeatRiderInfo>[];
+    final bookedRiderIds = <String>{};
 
-  /// Build avatar widget
-  Widget _buildAvatar(String? profilePhotoUrl, {Color? fallbackColor, double radius = 14}) {
-    final color = fallbackColor ?? Colors.blue;
-    if (profilePhotoUrl != null && profilePhotoUrl.isNotEmpty) {
-      if (profilePhotoUrl.startsWith('assets/')) {
-        return CircleAvatar(
-          radius: radius,
-          backgroundImage: AssetImage(profilePhotoUrl),
-        );
-      } else {
-        final photoFile = File(profilePhotoUrl);
-        if (photoFile.existsSync()) {
-          return CircleAvatar(
-            radius: radius,
-            backgroundImage: FileImage(photoFile),
-          );
-        }
+    for (int i = 0; i < 4; i++) {
+      final rider = seatRiderMap[i];
+      if (rider != null && rider.conversation != null && rider.riderId != null && !rider.isCanceled) {
+        ridersWithMessages.add(rider);
+        bookedRiderIds.add(rider.riderId!);
       }
     }
-    // Fallback
-    return CircleAvatar(
-      radius: radius,
-      backgroundColor: color.withValues(alpha: 0.1),
-      child: Icon(Icons.person, color: color, size: radius),
-    );
-  }
 
-  /// Build status badge - compact icon only
-  Widget _buildStatusBadge({
-    required bool isArchived,
-    required bool isCanceled,
-    required bool isOngoing,
-    required bool isCompleted,
-    required bool isUpcoming,
-  }) {
-    IconData icon;
-    Color color;
-
-    if (isArchived) {
-      icon = Icons.archive;
-      color = Colors.grey[600]!;
-    } else if (isCanceled) {
-      icon = Icons.cancel;
-      color = Colors.red[700]!;
-    } else if (isOngoing) {
-      icon = Icons.directions_car;
-      color = Colors.orange[700]!;
-    } else if (isCompleted) {
-      icon = Icons.check_circle;
-      color = Colors.green[700]!;
-    } else {
-      icon = Icons.schedule;
-      color = Colors.blue[700]!;
+    // Add messaged-but-not-booked riders (orange)
+    for (final conv in conversations) {
+      if (!bookedRiderIds.contains(conv.riderId)) {
+        // This rider messaged but didn't book
+        final riderUser = MockUsers.getUserById(conv.riderId);
+        ridersWithMessages.add(_SeatRiderInfo(
+          seatIndex: -1, // Not booked, so no seat
+          riderId: conv.riderId,
+          riderName: riderUser != null
+              ? (riderUser.surname.isNotEmpty ? '${riderUser.name} ${riderUser.surname[0]}.' : riderUser.name)
+              : 'Rider',
+          profilePhotoUrl: riderUser?.profilePhotoUrl,
+          rating: riderUser != null ? MockUsers.getLiveRating(riderUser.id) : null,
+          hasUnread: conv.getUnreadCount(widget.currentUserId) > 0,
+          unreadCount: conv.getUnreadCount(widget.currentUserId),
+          conversation: conv,
+        ));
+      }
     }
 
-    return Container(
-      padding: EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(4),
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Vertical "RIDERS" label (notched style)
+          if (ridersWithMessages.isNotEmpty)
+            RotatedBox(
+              quarterTurns: 3,
+              child: Text(
+                'RIDERS',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.green[600],
+                  letterSpacing: 1.5,
+                ),
+              ),
+            ),
+          if (ridersWithMessages.isNotEmpty)
+            SizedBox(width: 6),
+          // Riders who messaged (scrollable with edge fade)
+          if (ridersWithMessages.isNotEmpty)
+            Expanded(
+              child: ShaderMask(
+                shaderCallback: (Rect bounds) {
+                  return LinearGradient(
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                    colors: [
+                      Colors.white,
+                      Colors.white,
+                      Colors.white,
+                      Colors.transparent,
+                    ],
+                    stops: [0.0, 0.7, 0.85, 1.0],
+                  ).createShader(bounds);
+                },
+                blendMode: BlendMode.dstIn,
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  physics: BouncingScrollPhysics(),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      for (final rider in ridersWithMessages)
+                        Padding(
+                          padding: EdgeInsets.only(right: 8),
+                          child: _buildRiderSlot(rider),
+                        ),
+                      SizedBox(width: 16), // Extra space for fade area
+                    ],
+                  ),
+                ),
+              ),
+            )
+          else
+            Spacer(),
+          // Subtle vertical divider
+          Container(
+            width: 1,
+            margin: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            color: Colors.grey.withValues(alpha: 0.3),
+          ),
+          // Driver
+          _buildDriverSign(driverPhotoUrl, driverName, driverRating),
+        ],
       ),
-      child: Icon(icon, size: 14, color: color),
     );
   }
+
+  /// Build a rider slot (booked = green, messaged only = orange)
+  Widget _buildRiderSlot(_SeatRiderInfo rider) {
+    const avatarSize = 40.0;
+
+    // Booked riders have a seat index assigned, messaged-only don't
+    final bool isBooked = rider.seatIndex >= 0;
+    final bool hasUnread = rider.hasUnread;
+
+    // Green for booked, orange for messaged-only
+    final Color borderColor = isBooked ? Colors.green[400]! : Colors.orange[400]!;
+    final Color bgColor = isBooked ? Colors.green[50]! : Colors.orange[50]!;
+
+    return GestureDetector(
+      onTap: rider.conversation != null ? () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ChatScreen(conversation: rider.conversation!),
+          ),
+        );
+      } : null,
+      child: SizedBox(
+        width: 52,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Avatar
+            SizedBox(
+              width: avatarSize + 4,
+              height: avatarSize + 4,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Container(
+                    width: avatarSize,
+                    height: avatarSize,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: bgColor,
+                      border: Border.all(color: borderColor, width: 2),
+                    ),
+                    child: ClipOval(
+                      child: rider.profilePhotoUrl != null
+                          ? _buildSlotAvatar(rider.profilePhotoUrl!, false, size: avatarSize)
+                          : Icon(Icons.person, size: avatarSize * 0.5, color: borderColor),
+                    ),
+                  ),
+                  // Unread badge
+                  if (hasUnread)
+                    Positioned(
+                      right: -2,
+                      top: -2,
+                      child: Container(
+                        width: 12,
+                        height: 12,
+                        decoration: BoxDecoration(
+                          color: isBooked ? Colors.green[500] : Colors.orange[500],
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 1.5),
+                        ),
+                        child: Center(
+                          child: Icon(Icons.mail, size: 7, color: Colors.white),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            // Name and rating below
+            Transform.translate(
+              offset: Offset(0, -3),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    rider.riderName?.split(' ').first ?? '',
+                    style: TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey[800],
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                  ),
+                  if (rider.rating != null)
+                    RatingDisplay(
+                      rating: rider.rating!,
+                      starSize: 8,
+                      fontSize: 8,
+                      starColor: Colors.amber,
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
 }
 
 /// Helper class to hold rider info for mini seat grid
@@ -1253,180 +1149,3 @@ class _SeatRiderInfo {
     this.conversation,
   });
 }
-
-/// Carousel widget for rider avatars when there are too many to fit
-class _RiderCarousel extends StatefulWidget {
-  final List<_SeatRiderInfo> bookedRiders;
-  final int availableCount;
-  final double avatarSize;
-  final void Function(_SeatRiderInfo rider) onRiderTap;
-  final Widget Function(String photoUrl, bool isCanceled) buildAvatar;
-
-  const _RiderCarousel({
-    required this.bookedRiders,
-    required this.availableCount,
-    required this.avatarSize,
-    required this.onRiderTap,
-    required this.buildAvatar,
-  });
-
-  @override
-  State<_RiderCarousel> createState() => _RiderCarouselState();
-}
-
-class _RiderCarouselState extends State<_RiderCarousel> {
-  final ScrollController _scrollController = ScrollController();
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final itemWidth = widget.avatarSize + 20; // avatar + padding
-
-    return SizedBox(
-      height: widget.avatarSize + 42, // avatar + name + rating + spacing
-      child: ListView.builder(
-        controller: _scrollController,
-        scrollDirection: Axis.horizontal,
-        itemCount: widget.bookedRiders.length + (widget.availableCount > 0 ? 1 : 0),
-        itemBuilder: (context, index) {
-          if (index < widget.bookedRiders.length) {
-            final rider = widget.bookedRiders[index];
-            return SizedBox(
-              width: itemWidth,
-              child: _buildRiderItem(rider),
-            );
-          } else {
-            // Available seats indicator
-            return SizedBox(
-              width: itemWidth,
-              child: _buildAvailableItem(),
-            );
-          }
-        },
-      ),
-    );
-  }
-
-  Widget _buildRiderItem(_SeatRiderInfo rider) {
-    return GestureDetector(
-      onTap: () => widget.onRiderTap(rider),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Avatar with message indicator
-          SizedBox(
-            width: widget.avatarSize + 8,
-            height: widget.avatarSize + 8,
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Positioned(
-                  left: 4,
-                  top: 4,
-                  child: Container(
-                    width: widget.avatarSize,
-                    height: widget.avatarSize,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white,
-                      border: Border.all(color: Colors.green[400]!, width: 2),
-                    ),
-                    child: ClipOval(
-                      child: rider.profilePhotoUrl != null
-                          ? widget.buildAvatar(rider.profilePhotoUrl!, false)
-                          : Icon(Icons.person, size: widget.avatarSize * 0.5, color: Colors.green[600]),
-                    ),
-                  ),
-                ),
-                if (rider.hasUnread)
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    child: Container(
-                      width: 16,
-                      height: 16,
-                      decoration: BoxDecoration(
-                        color: Colors.green[500],
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 1.5),
-                      ),
-                      child: Center(
-                        child: Icon(Icons.mail, size: 9, color: Colors.white),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          SizedBox(height: 2),
-          SizedBox(
-            width: widget.avatarSize + 8,
-            child: Text(
-              rider.riderName?.split(' ').first ?? '',
-              style: TextStyle(
-                fontSize: 9,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey[700],
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-            ),
-          ),
-          // Rating below name
-          if (rider.rating != null)
-            RatingDisplay(
-              rating: rider.rating!,
-              starSize: 8,
-              fontSize: 8,
-              starColor: Colors.amber,
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAvailableItem() {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        SizedBox(
-          width: widget.avatarSize + 8,
-          height: widget.avatarSize + 8,
-          child: Center(
-            child: Container(
-              width: widget.avatarSize,
-              height: widget.avatarSize,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.green[50],
-                border: Border.all(color: Colors.green[300]!, width: 2),
-              ),
-              child: Center(
-                child: Text(
-                  '+${widget.availableCount}',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.green[600],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-        SizedBox(height: 2),
-        Text(
-          'seats',
-          style: TextStyle(fontSize: 9, color: Colors.green[600]),
-        ),
-      ],
-    );
-  }
-}
-

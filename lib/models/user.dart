@@ -3,6 +3,7 @@ class User {
   final String name;
   final String surname;
   final String? title; // Mr., Ms., Dr., etc.
+  final String sex; // M, F
   final String email;
   final String phoneNumber;
   final String countryCode;
@@ -19,6 +20,7 @@ class User {
     required this.name,
     required this.surname,
     this.title,
+    required this.sex,
     required this.email,
     required this.phoneNumber,
     required this.countryCode,
@@ -37,6 +39,7 @@ class User {
       name: json['name'],
       surname: json['surname'],
       title: json['title'],
+      sex: json['sex'] ?? 'M',
       email: json['email'],
       phoneNumber: json['phoneNumber'],
       countryCode: json['countryCode'],
@@ -56,6 +59,7 @@ class User {
       'name': name,
       'surname': surname,
       'title': title,
+      'sex': sex,
       'email': email,
       'phoneNumber': phoneNumber,
       'countryCode': countryCode,
@@ -74,6 +78,7 @@ class User {
     String? name,
     String? surname,
     String? title,
+    String? sex,
     String? email,
     String? phoneNumber,
     String? countryCode,
@@ -90,6 +95,7 @@ class User {
       name: name ?? this.name,
       surname: surname ?? this.surname,
       title: title ?? this.title,
+      sex: sex ?? this.sex,
       email: email ?? this.email,
       phoneNumber: phoneNumber ?? this.phoneNumber,
       countryCode: countryCode ?? this.countryCode,

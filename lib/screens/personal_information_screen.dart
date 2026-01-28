@@ -22,6 +22,7 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
   final ScrollController _scrollController = ScrollController();
   
   String _selectedCountryIso = 'US';
+  String _selectedSex = 'M';
   bool _isSaved = false;
   File? _profileImage;
   final _picker = ImagePicker();
@@ -62,6 +63,11 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
           });
         }
       }
+
+      // Load sex
+      setState(() {
+        _selectedSex = user.sex;
+      });
     }
   }
   
@@ -642,7 +648,121 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
                 ),
                 
                 SizedBox(height: 20),
-                
+
+                // Sex selector
+                Text(
+                  'Sex',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF2E2E2E),
+                  ),
+                ),
+                SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _selectedSex = 'M';
+                          });
+                        },
+                        child: Container(
+                          padding: EdgeInsets.symmetric(vertical: 14),
+                          decoration: BoxDecoration(
+                            color: _selectedSex == 'M'
+                                ? Theme.of(context).primaryColor.withOpacity(0.1)
+                                : Colors.grey[50],
+                            border: Border.all(
+                              color: _selectedSex == 'M'
+                                  ? Theme.of(context).primaryColor
+                                  : Colors.grey[400]!,
+                              width: _selectedSex == 'M' ? 2 : 1,
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.male,
+                                color: _selectedSex == 'M'
+                                    ? Theme.of(context).primaryColor
+                                    : Colors.grey[600],
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                'Male',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: _selectedSex == 'M'
+                                      ? FontWeight.w600
+                                      : FontWeight.normal,
+                                  color: _selectedSex == 'M'
+                                      ? Theme.of(context).primaryColor
+                                      : Colors.grey[600],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _selectedSex = 'F';
+                          });
+                        },
+                        child: Container(
+                          padding: EdgeInsets.symmetric(vertical: 14),
+                          decoration: BoxDecoration(
+                            color: _selectedSex == 'F'
+                                ? Theme.of(context).primaryColor.withOpacity(0.1)
+                                : Colors.grey[50],
+                            border: Border.all(
+                              color: _selectedSex == 'F'
+                                  ? Theme.of(context).primaryColor
+                                  : Colors.grey[400]!,
+                              width: _selectedSex == 'F' ? 2 : 1,
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.female,
+                                color: _selectedSex == 'F'
+                                    ? Theme.of(context).primaryColor
+                                    : Colors.grey[600],
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                'Female',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: _selectedSex == 'F'
+                                      ? FontWeight.w600
+                                      : FontWeight.normal,
+                                  color: _selectedSex == 'F'
+                                      ? Theme.of(context).primaryColor
+                                      : Colors.grey[600],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                SizedBox(height: 20),
+
                 // Phone number field
                 Text(
                   l10n.phoneNumber,
@@ -827,6 +947,7 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
                         final updatedUser = currentUser.copyWith(
                           name: _nameController.text.trim(),
                           surname: _surnameController.text.trim(),
+                          sex: _selectedSex,
                           phoneNumber: phoneDigitsOnly,
                           countryCode: _selectedCountryIso,
                           profilePhotoUrl: _profileImage?.path,

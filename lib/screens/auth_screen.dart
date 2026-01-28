@@ -23,6 +23,7 @@ class _AuthScreenState extends State<AuthScreen> {
   String? _errorMessage;
   bool _isSignUp = false; // Toggle between sign in and sign up
   String _selectedCountryIso = 'TR'; // Default to Turkey for admin login
+  String _selectedSex = 'M'; // Default to Male for sign up
 
   @override
   void initState() {
@@ -723,6 +724,119 @@ class _AuthScreenState extends State<AuthScreen> {
                         ),
                       ),
                     ),
+                  ),
+                  SizedBox(height: 16),
+
+                  // Sex selector
+                  Text(
+                    'Sex',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _selectedSex = 'M';
+                            });
+                          },
+                          child: Container(
+                            padding: EdgeInsets.symmetric(vertical: 14),
+                            decoration: BoxDecoration(
+                              color: _selectedSex == 'M'
+                                  ? Color(0xFFDD2C00).withValues(alpha: 0.1)
+                                  : Colors.grey[50],
+                              border: Border.all(
+                                color: _selectedSex == 'M'
+                                    ? Color(0xFFDD2C00)
+                                    : Colors.grey[400]!,
+                                width: _selectedSex == 'M' ? 2 : 1,
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.male,
+                                  color: _selectedSex == 'M'
+                                      ? Color(0xFFDD2C00)
+                                      : Colors.grey[600],
+                                ),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Male',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: _selectedSex == 'M'
+                                        ? FontWeight.w600
+                                        : FontWeight.normal,
+                                    color: _selectedSex == 'M'
+                                        ? Color(0xFFDD2C00)
+                                        : Colors.grey[600],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _selectedSex = 'F';
+                            });
+                          },
+                          child: Container(
+                            padding: EdgeInsets.symmetric(vertical: 14),
+                            decoration: BoxDecoration(
+                              color: _selectedSex == 'F'
+                                  ? Color(0xFFDD2C00).withValues(alpha: 0.1)
+                                  : Colors.grey[50],
+                              border: Border.all(
+                                color: _selectedSex == 'F'
+                                    ? Color(0xFFDD2C00)
+                                    : Colors.grey[400]!,
+                                width: _selectedSex == 'F' ? 2 : 1,
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.female,
+                                  color: _selectedSex == 'F'
+                                      ? Color(0xFFDD2C00)
+                                      : Colors.grey[600],
+                                ),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Female',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: _selectedSex == 'F'
+                                        ? FontWeight.w600
+                                        : FontWeight.normal,
+                                    color: _selectedSex == 'F'
+                                        ? Color(0xFFDD2C00)
+                                        : Colors.grey[600],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   SizedBox(height: 16),
 
