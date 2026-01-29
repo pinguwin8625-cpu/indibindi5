@@ -950,6 +950,20 @@ class _RideGroupCardState extends State<_RideGroupCard> {
       }
     }
 
+    // Sort by most recent message timestamp (newest first)
+    // This ensures new messages bring the rider to the leftmost position
+    ridersWithMessages.sort((a, b) {
+      final aLastMessage = a.conversation?.messages.lastOrNull?.timestamp;
+      final bLastMessage = b.conversation?.messages.lastOrNull?.timestamp;
+
+      if (aLastMessage == null && bLastMessage == null) return 0;
+      if (aLastMessage == null) return 1;
+      if (bLastMessage == null) return -1;
+
+      // Newest first (reverse chronological)
+      return bLastMessage.compareTo(aLastMessage);
+    });
+
     return IntrinsicHeight(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -1007,11 +1021,93 @@ class _RideGroupCardState extends State<_RideGroupCard> {
             )
           else
             Spacer(),
-          // Subtle vertical divider
-          Container(
-            width: 1,
-            margin: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            color: Colors.grey.withValues(alpha: 0.3),
+          // Subtle vertical divider with indicator dots
+          SizedBox(
+            width: 21, // 10 (margin) + 1 (divider) + 10 (margin)
+            child: Stack(
+              children: [
+                // Vertical divider line
+                Center(
+                  child: Container(
+                    width: 1,
+                    margin: EdgeInsets.symmetric(vertical: 4),
+                    color: Colors.grey.withValues(alpha: 0.3),
+                  ),
+                ),
+                // Check if there are hidden riders with unread
+                // Assume first 2 riders are visible, check if riders beyond that have unread
+                Builder(
+                  builder: (context) {
+                    // Only check riders that are likely hidden (beyond first 2)
+                    final hiddenRiders = ridersWithMessages.length > 2
+                        ? ridersWithMessages.skip(2).toList()
+                        : <_SeatRiderInfo>[];
+
+                    // Check if any hidden riders have unread
+                    final hiddenBookedWithUnread = hiddenRiders.where((r) => r.seatIndex >= 0 && r.hasUnread).isNotEmpty;
+                    final hiddenMessagedWithUnread = hiddenRiders.where((r) => r.seatIndex < 0 && r.hasUnread).isNotEmpty;
+
+                    return Stack(
+                      children: [
+                        // Green dot for hidden booked riders with unread (on separator line)
+                        if (hiddenBookedWithUnread)
+                          Positioned(
+                            left: 0,
+                            right: 0,
+                            top: 0,
+                            bottom: 0,
+                            child: Center(
+                              child: Container(
+                                width: 12,
+                                height: 12,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.green[600],
+                                  border: Border.all(color: Colors.white, width: 2),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.green.withValues(alpha: 0.4),
+                                      blurRadius: 8,
+                                      spreadRadius: 2,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        // Orange dot for hidden messaged-but-not-booked riders with unread (on separator line)
+                        // Only show if no green dot (green takes priority)
+                        if (!hiddenBookedWithUnread && hiddenMessagedWithUnread)
+                          Positioned(
+                            left: 0,
+                            right: 0,
+                            top: 0,
+                            bottom: 0,
+                            child: Center(
+                              child: Container(
+                                width: 12,
+                                height: 12,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.orange[600],
+                                  border: Border.all(color: Colors.white, width: 2),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.orange.withValues(alpha: 0.4),
+                                      blurRadius: 8,
+                                      spreadRadius: 2,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
           // Driver
           _buildDriverSign(driverPhotoUrl, driverName, driverRating),
@@ -1046,47 +1142,33 @@ class _RideGroupCardState extends State<_RideGroupCard> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Avatar
+            // Avatar with breathing animation for unread
             SizedBox(
               width: avatarSize + 4,
               height: avatarSize + 4,
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Container(
-                    width: avatarSize,
-                    height: avatarSize,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: bgColor,
-                      border: Border.all(color: borderColor, width: 2),
-                    ),
-                    child: ClipOval(
+              child: hasUnread
+                  ? _BreathingAvatar(
+                      borderColor: borderColor,
+                      bgColor: bgColor,
+                      avatarSize: avatarSize,
                       child: rider.profilePhotoUrl != null
                           ? _buildSlotAvatar(rider.profilePhotoUrl!, false, size: avatarSize)
                           : Icon(Icons.person, size: avatarSize * 0.5, color: borderColor),
-                    ),
-                  ),
-                  // Unread badge
-                  if (hasUnread)
-                    Positioned(
-                      right: -2,
-                      top: -2,
-                      child: Container(
-                        width: 12,
-                        height: 12,
-                        decoration: BoxDecoration(
-                          color: isBooked ? Colors.green[500] : Colors.orange[500],
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 1.5),
-                        ),
-                        child: Center(
-                          child: Icon(Icons.mail, size: 7, color: Colors.white),
-                        ),
+                    )
+                  : Container(
+                      width: avatarSize,
+                      height: avatarSize,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: bgColor,
+                        border: Border.all(color: borderColor, width: 2),
+                      ),
+                      child: ClipOval(
+                        child: rider.profilePhotoUrl != null
+                            ? _buildSlotAvatar(rider.profilePhotoUrl!, false, size: avatarSize)
+                            : Icon(Icons.person, size: avatarSize * 0.5, color: borderColor),
                       ),
                     ),
-                ],
-              ),
             ),
             // Name and rating below
             Transform.translate(
@@ -1148,4 +1230,76 @@ class _SeatRiderInfo {
     this.isBlocked = false,
     this.conversation,
   });
+}
+
+/// Breathing avatar animation for riders with unread messages
+class _BreathingAvatar extends StatefulWidget {
+  final Color borderColor;
+  final Color bgColor;
+  final double avatarSize;
+  final Widget child;
+
+  const _BreathingAvatar({
+    required this.borderColor,
+    required this.bgColor,
+    required this.avatarSize,
+    required this.child,
+  });
+
+  @override
+  State<_BreathingAvatar> createState() => _BreathingAvatarState();
+}
+
+class _BreathingAvatarState extends State<_BreathingAvatar>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    )..repeat(reverse: true);
+
+    _animation = Tween<double>(begin: 1.0, end: 1.15).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        return Container(
+          width: widget.avatarSize,
+          height: widget.avatarSize,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: widget.bgColor,
+            border: Border.all(
+              color: widget.borderColor,
+              width: 2 * _animation.value,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: widget.borderColor.withValues(alpha: 0.3 * _animation.value),
+                blurRadius: 8 * _animation.value,
+                spreadRadius: 2 * _animation.value,
+              ),
+            ],
+          ),
+          child: ClipOval(child: widget.child),
+        );
+      },
+    );
+  }
 }

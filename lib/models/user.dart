@@ -3,7 +3,7 @@ class User {
   final String name;
   final String surname;
   final String? title; // Mr., Ms., Dr., etc.
-  final String sex; // M, F
+  final String? sex; // M, F, or null (prefer not to say)
   final String email;
   final String phoneNumber;
   final String countryCode;
@@ -14,13 +14,14 @@ class User {
   final String? licensePlate;
   final bool isAdmin;
   final double rating;
+  final bool hasEditedPersonalInfo; // Tracks if name, surname, or gender has been changed once
 
   User({
     required this.id,
     required this.name,
     required this.surname,
     this.title,
-    required this.sex,
+    this.sex,
     required this.email,
     required this.phoneNumber,
     required this.countryCode,
@@ -31,6 +32,7 @@ class User {
     this.licensePlate,
     this.isAdmin = false,
     this.rating = 0.0,
+    this.hasEditedPersonalInfo = false,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -39,7 +41,7 @@ class User {
       name: json['name'],
       surname: json['surname'],
       title: json['title'],
-      sex: json['sex'] ?? 'M',
+      sex: json['sex'],
       email: json['email'],
       phoneNumber: json['phoneNumber'],
       countryCode: json['countryCode'],
@@ -50,6 +52,7 @@ class User {
       licensePlate: json['licensePlate'],
       isAdmin: json['isAdmin'] ?? false,
       rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
+      hasEditedPersonalInfo: json['hasEditedPersonalInfo'] ?? false,
     );
   }
 
@@ -70,6 +73,7 @@ class User {
       'licensePlate': licensePlate,
       'isAdmin': isAdmin,
       'rating': rating,
+      'hasEditedPersonalInfo': hasEditedPersonalInfo,
     };
   }
 
@@ -89,6 +93,7 @@ class User {
     String? licensePlate,
     bool? isAdmin,
     double? rating,
+    bool? hasEditedPersonalInfo,
   }) {
     return User(
       id: id ?? this.id,
@@ -106,6 +111,7 @@ class User {
       licensePlate: licensePlate ?? this.licensePlate,
       isAdmin: isAdmin ?? this.isAdmin,
       rating: rating ?? this.rating,
+      hasEditedPersonalInfo: hasEditedPersonalInfo ?? this.hasEditedPersonalInfo,
     );
   }
 

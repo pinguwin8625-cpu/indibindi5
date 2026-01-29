@@ -5,6 +5,7 @@ import '../l10n/app_localizations.dart';
 import '../services/auth_service.dart';
 import '../widgets/scroll_indicator.dart';
 import '../models/user.dart';
+import '../utils/dialog_helper.dart';
 
 class PersonalInformationScreen extends StatefulWidget {
   const PersonalInformationScreen({super.key});
@@ -20,10 +21,15 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
   final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  
+
   String _selectedCountryIso = 'US';
-  String _selectedSex = 'M';
+  String? _selectedSex;
   bool _isSaved = false;
+
+  // Original values to detect changes
+  String _originalName = '';
+  String _originalSurname = '';
+  String? _originalSex;
   File? _profileImage;
   final _picker = ImagePicker();
   
@@ -40,7 +46,12 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
       _surnameController.text = user.surname;
       _phoneController.text = User.formatPhoneNumber(user.phoneNumber, user.countryCode);
       _emailController.text = user.email;
-      
+
+      // Store original values to detect changes
+      _originalName = user.name;
+      _originalSurname = user.surname;
+      _originalSex = user.sex;
+
       // Load profile photo if exists (skip for asset paths - they're mock data)
       if (user.profilePhotoUrl != null && user.profilePhotoUrl!.isNotEmpty) {
         if (!user.profilePhotoUrl!.startsWith('assets/')) {
@@ -53,7 +64,7 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
           }
         }
       }
-      
+
       // Use user's stored country code or default to US
       if (user.countryCode.isNotEmpty) {
         final countryExists = _countryCodes.any((c) => c['iso'] == user.countryCode);
@@ -581,6 +592,7 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
                 SizedBox(height: 8),
                 TextFormField(
                   controller: _nameController,
+                  enabled: !(AuthService.currentUser?.hasEditedPersonalInfo ?? false),
                   decoration: InputDecoration(
                     hintText: l10n.enterName,
                     contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
@@ -592,12 +604,16 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
                       borderRadius: BorderRadius.circular(8),
                       borderSide: BorderSide(color: Colors.grey[400]!),
                     ),
+                    disabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: Colors.grey[300]!),
+                    ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                       borderSide: BorderSide(color: Color(0xFFDD2C00), width: 2),
                     ),
                     filled: true,
-                    fillColor: Colors.grey[50],
+                    fillColor: (AuthService.currentUser?.hasEditedPersonalInfo ?? false) ? Colors.grey[200] : Colors.grey[50],
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -621,6 +637,7 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
                 SizedBox(height: 8),
                 TextFormField(
                   controller: _surnameController,
+                  enabled: !(AuthService.currentUser?.hasEditedPersonalInfo ?? false),
                   decoration: InputDecoration(
                     hintText: l10n.enterSurname,
                     contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
@@ -632,12 +649,16 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
                       borderRadius: BorderRadius.circular(8),
                       borderSide: BorderSide(color: Colors.grey[400]!),
                     ),
+                    disabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: Colors.grey[300]!),
+                    ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                       borderSide: BorderSide(color: Color(0xFFDD2C00), width: 2),
                     ),
                     filled: true,
-                    fillColor: Colors.grey[50],
+                    fillColor: (AuthService.currentUser?.hasEditedPersonalInfo ?? false) ? Colors.grey[200] : Colors.grey[50],
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -649,9 +670,9 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
                 
                 SizedBox(height: 20),
 
-                // Sex selector
+                // Gender selector
                 Text(
-                  'Sex',
+                  'Gender',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -659,106 +680,38 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
                   ),
                 ),
                 SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _selectedSex = 'M';
-                          });
-                        },
-                        child: Container(
-                          padding: EdgeInsets.symmetric(vertical: 14),
-                          decoration: BoxDecoration(
-                            color: _selectedSex == 'M'
-                                ? Theme.of(context).primaryColor.withOpacity(0.1)
-                                : Colors.grey[50],
-                            border: Border.all(
-                              color: _selectedSex == 'M'
-                                  ? Theme.of(context).primaryColor
-                                  : Colors.grey[400]!,
-                              width: _selectedSex == 'M' ? 2 : 1,
-                            ),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.male,
-                                color: _selectedSex == 'M'
-                                    ? Theme.of(context).primaryColor
-                                    : Colors.grey[600],
-                              ),
-                              SizedBox(width: 8),
-                              Text(
-                                'Male',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: _selectedSex == 'M'
-                                      ? FontWeight.w600
-                                      : FontWeight.normal,
-                                  color: _selectedSex == 'M'
-                                      ? Theme.of(context).primaryColor
-                                      : Colors.grey[600],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                Container(
+                  decoration: BoxDecoration(
+                    color: (AuthService.currentUser?.hasEditedPersonalInfo ?? false) ? Colors.grey[200] : Colors.grey[50],
+                    border: Border.all(color: (AuthService.currentUser?.hasEditedPersonalInfo ?? false) ? Colors.grey[300]! : Colors.grey[400]!),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  child: DropdownButton<String?>(
+                    value: _selectedSex,
+                    isExpanded: true,
+                    underline: SizedBox.shrink(),
+                    hint: Text('Select gender'),
+                    items: [
+                      DropdownMenuItem<String?>(
+                        value: 'M',
+                        child: Text('Male'),
                       ),
-                    ),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _selectedSex = 'F';
-                          });
-                        },
-                        child: Container(
-                          padding: EdgeInsets.symmetric(vertical: 14),
-                          decoration: BoxDecoration(
-                            color: _selectedSex == 'F'
-                                ? Theme.of(context).primaryColor.withOpacity(0.1)
-                                : Colors.grey[50],
-                            border: Border.all(
-                              color: _selectedSex == 'F'
-                                  ? Theme.of(context).primaryColor
-                                  : Colors.grey[400]!,
-                              width: _selectedSex == 'F' ? 2 : 1,
-                            ),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.female,
-                                color: _selectedSex == 'F'
-                                    ? Theme.of(context).primaryColor
-                                    : Colors.grey[600],
-                              ),
-                              SizedBox(width: 8),
-                              Text(
-                                'Female',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: _selectedSex == 'F'
-                                      ? FontWeight.w600
-                                      : FontWeight.normal,
-                                  color: _selectedSex == 'F'
-                                      ? Theme.of(context).primaryColor
-                                      : Colors.grey[600],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                      DropdownMenuItem<String?>(
+                        value: 'F',
+                        child: Text('Female'),
                       ),
-                    ),
-                  ],
+                      DropdownMenuItem<String?>(
+                        value: null,
+                        child: Text('Prefer not to say'),
+                      ),
+                    ],
+                    onChanged: (AuthService.currentUser?.hasEditedPersonalInfo ?? false) ? null : (value) {
+                      setState(() {
+                        _selectedSex = value;
+                      });
+                    },
+                  ),
                 ),
 
                 SizedBox(height: 20),
@@ -936,13 +889,36 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
                 
                 // Save button
                 GestureDetector(
-                  onTap: _isSaved ? null : () {
+                  onTap: _isSaved ? null : () async {
                     if (_formKey.currentState!.validate()) {
-                      // Save user data
                       final currentUser = AuthService.currentUser;
                       if (currentUser != null) {
+                        // Check if name, surname, or gender has changed
+                        final nameChanged = _nameController.text.trim() != _originalName;
+                        final surnameChanged = _surnameController.text.trim() != _originalSurname;
+                        final sexChanged = _selectedSex != _originalSex;
+
+                        // If any of these fields changed and this is the FIRST time editing, show warning
+                        if (!currentUser.hasEditedPersonalInfo && (nameChanged || surnameChanged || sexChanged)) {
+                          final confirmed = await DialogHelper.showConfirmDialog(
+                            context: context,
+                            title: 'Warning',
+                            content: 'Name, surname, and gender can only be changed once. After saving, these fields cannot be modified again. Are you sure you want to proceed?',
+                            cancelText: 'Cancel',
+                            confirmText: 'Yes, Save',
+                            isDangerous: true,
+                          );
+
+                          if (!confirmed) {
+                            return;
+                          }
+                        }
+
                         // Remove formatting from phone number (keep only digits)
                         final phoneDigitsOnly = _phoneController.text.trim().replaceAll(RegExp(r'\D'), '');
+
+                        // Mark as edited if name, surname, or gender changed
+                        final shouldMarkAsEdited = (nameChanged || surnameChanged || sexChanged) || currentUser.hasEditedPersonalInfo;
 
                         final updatedUser = currentUser.copyWith(
                           name: _nameController.text.trim(),
@@ -951,14 +927,15 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
                           phoneNumber: phoneDigitsOnly,
                           countryCode: _selectedCountryIso,
                           profilePhotoUrl: _profileImage?.path,
+                          hasEditedPersonalInfo: shouldMarkAsEdited,
                         );
                         AuthService.updateProfile(updatedUser);
                       }
-                      
+
                       setState(() {
                         _isSaved = true;
                       });
-                      
+
                       // Navigate back after a short delay
                       Future.delayed(Duration(milliseconds: 800), () {
                         if (mounted) {
