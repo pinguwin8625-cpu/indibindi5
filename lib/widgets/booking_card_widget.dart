@@ -13,7 +13,6 @@ class BookingCard extends StatefulWidget {
   final bool isOngoing;
   final bool isArchived;
   final VoidCallback? onCancel;
-  final VoidCallback? onArchive;
   final Widget Function(List<int>, Booking) buildMiniatureSeatLayout;
   final bool showActions; // Whether to show cancel/archive buttons
   final bool showSeatsForCanceled; // Whether to show seat layout for canceled rides (admin only)
@@ -28,7 +27,6 @@ class BookingCard extends StatefulWidget {
     this.isOngoing = false,
     this.isArchived = false,
     this.onCancel,
-    this.onArchive,
     required this.buildMiniatureSeatLayout,
     this.showActions = true,
     this.showSeatsForCanceled = false,
@@ -357,49 +355,26 @@ class _BookingCardState extends State<BookingCard> {
                   ], // End of seat layout section
                 ], // End of _isExpanded section
 
-                // Cancel/Archive button at the bottom (hidden for ongoing rides and archived items)
-                if (_isExpanded && widget.showActions && !widget.isOngoing && !widget.isArchived)
-                  Builder(
-                    builder: (context) {
-                      return Padding(
-                        padding: EdgeInsets.only(top: 12),
-                        child: SizedBox(
-                          width: double.infinity,
-                          child: widget.isCanceled || widget.isPast
-                              ? OutlinedButton.icon(
-                                  onPressed: widget.onArchive,
-                                  icon: Icon(
-                                    Icons.archive,
-                                    size: 18,
-                                  ),
-                                  label: Text(l10n.archive),
-                                  style: OutlinedButton.styleFrom(
-                                    foregroundColor: Colors.grey[700],
-                                    side: BorderSide(
-                                      color: Colors.grey[400]!,
-                                    ),
-                                    padding: EdgeInsets.symmetric(vertical: 12),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                  ),
-                                )
-                              : OutlinedButton.icon(
-                                  onPressed: widget.onCancel,
-                                  icon: Icon(Icons.close, size: 18),
-                                  label: Text(l10n.cancelRide),
-                                  style: OutlinedButton.styleFrom(
-                                    foregroundColor: Colors.red[600],
-                                    side: BorderSide(color: Colors.red[300]!),
-                                    padding: EdgeInsets.symmetric(vertical: 12),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                  ),
-                                ),
+                // Cancel button at the bottom (only for upcoming rides)
+                if (_isExpanded && widget.showActions && !widget.isOngoing && !widget.isArchived && !widget.isCanceled && !widget.isPast)
+                  Padding(
+                    padding: EdgeInsets.only(top: 12),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: widget.onCancel,
+                        icon: Icon(Icons.close, size: 18),
+                        label: Text(l10n.cancelRide),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.red[600],
+                          side: BorderSide(color: Colors.red[300]!),
+                          padding: EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                         ),
-                      );
-                    },
+                      ),
+                    ),
                   ),
                 ],
               ),

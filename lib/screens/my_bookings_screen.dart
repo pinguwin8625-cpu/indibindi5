@@ -484,19 +484,6 @@ class MyBookingsScreenState extends State<MyBookingsScreen>
     }
   }
 
-  Future<void> _archiveBooking(Booking booking) async {
-    final confirmed = await DialogHelper.showConfirmDialog(
-      context: context,
-      title: 'Archive Booking',
-      content: 'Are you sure you want to archive this booking?\n\nThe affiliated conversation will also be archived.',
-      cancelText: 'No',
-      confirmText: 'Yes, Archive',
-    );
-
-    if (confirmed) {
-      BookingStorage().archiveBooking(booking.id);
-    }
-  }
 
   Widget _buildBookingCard(
     Booking booking, {
@@ -512,7 +499,6 @@ class MyBookingsScreenState extends State<MyBookingsScreen>
       isOngoing: isOngoing,
       isArchived: isArchived,
       onCancel: () => _cancelBooking(booking),
-      onArchive: () => _archiveBooking(booking),
       showActions: true, // Show action buttons in My Bookings
       showSeatsForCanceled: false, // Don't show seats for canceled rides
       isCollapsible: false, // Individual cards are not collapsible
